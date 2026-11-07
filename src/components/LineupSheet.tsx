@@ -63,7 +63,9 @@ export function LineupSheet({ teamMatch, side, onClose, onSaved }: Props) {
         <p className="muted small">{teamMatch.teams[idx].name}</p>
         <AccountSwitcher label="Sparas som" />
 
-        {roster.length === 0 ? (
+        {teamMatch.slots.length === 0 ? (
+          <p className="notice notice--info">Rankedin har inte skapat matcherna för den här lagmatchen än, så det finns inget att sätta uppställning på.</p>
+        ) : roster.length === 0 ? (
           <p className="notice notice--warn">Rankedin visar inga spelare för laget. Kontrollera att du är inloggad som lagkapten.</p>
         ) : (
           <>

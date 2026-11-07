@@ -65,11 +65,19 @@ export default function TeamMatch() {
             {t.teams[1].name}
           </Link>
           <p className="team-score__sub">
-            {played} av {t.matches.length} matcher spelade
+            {t.matches.length ? `${played} av ${t.matches.length} matcher spelade` : 'Matcherna är inte skapade i Rankedin än'}
           </p>
         </div>
 
-        {t.canLineup.some(Boolean) && (
+        {t.matches.length === 0 && (
+          <Notice tone="info">
+            <strong>Matcherna är inte öppnade än.</strong> Rankedin har inte skapat de enskilda matcherna för den här lagmatchen, så
+            laguppställning och resultat går inte att lägga in ännu, varken här eller på rankedin.com. De öppnas när arrangören
+            startar omgången, oftast närmare matchdagen.
+          </Notice>
+        )}
+
+        {t.matches.length > 0 && t.canLineup.some(Boolean) && (
           <Notice tone="info">
             <div className="row gap" style={{ justifyContent: 'space-between' }}>
               <span>
