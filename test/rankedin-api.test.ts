@@ -57,3 +57,17 @@ describe('league links and pools', () => {
     expect(splitPoolName('Gul-södra')).toEqual({ region: '', division: 'Gul-södra' });
   });
 });
+
+import { klubbliganSeason, shortKlubbliganName } from '../src/lib/leagues';
+
+describe('Klubbligan names', () => {
+  it('orders seasons', () => {
+    expect(klubbliganSeason('Klubbligan Sydväst 10-14 år HT 26')).toBe(2026.5);
+    expect(klubbliganSeason('Klubbligan Syd 13-19 år VT26')).toBe(2026);
+    expect(klubbliganSeason('Klubbligan 10-12 år HT 2024')).toBeNull();
+  });
+  it('shortens names', () => {
+    expect(shortKlubbliganName('Klubbligan Sydväst 10-14 år HT 26')).toBe('Sydväst 10–14 år');
+    expect(shortKlubbliganName('Klubbligan Öst 13-16 och 16-19 år HT 26')).toBe('Öst 13–16 och 16–19 år');
+  });
+});

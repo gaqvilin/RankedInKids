@@ -887,3 +887,11 @@ a.fixture {
   font-weight: 700;
   padding: 0 4px;
 }
+
+.chips--wrap {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+a.chip {
+  text-decoration: none;
+}

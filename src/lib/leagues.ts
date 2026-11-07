@@ -231,3 +231,28 @@ export async function getPlayerTeams(leagueId: number, playerId: number): Promis
   );
   return (raw || []).map((t) => ({ teamId: t.teamId, name: t.teamName, division: t.divisionName, region: t.regionName }));
 }
+
+/** "Klubbligan Sydväst 10-14 år HT 26" -> sortable season key, e.g. 2026.5 for HT 26. */
+export function klubbliganSeason(name: string): number | null {
+  const m = name.match(/\b(HT|VT)\s*-?\s*(\d{2})\b/i);
+  if (!m) return null;
+  return 2000 + Number(m[2]) + (m[1].toUpperCase() === 'HT' ? 0.5 : 0);
+}
+
+/** The current season's Klubbligan leagues (youth team leagues run by SPF). */
+export async function currentKlubbligan(): Promise<LeagueSummary[]> {
+  const all = (await searchLeagues('Klubbligan')).filter((l) => /klubbligan/i.test(l.name));
+  const seasons = all.map((l) => klubbliganSeason(l.name)).filter((s): s is number => s != null);
+  if (seasons.length === 0) return [];
+  const newest = Math.max(...seasons);
+  return all.filter((l) => klubbliganSeason(l.name) === newest).sort((a, b) => a.name.localeCompare(b.name, 'sv'));
+}
+
+/** "Klubbligan Sydväst 10-14 år HT 26" -> "Sydväst 10–14 år". */
+export function shortKlubbliganName(name: string): string {
+  return name
+    .replace(/^Klubbligan\s+(region\s+)?/i, '')
+    .replace(/\s*\b(HT|VT)\s*-?\s*\d{2}\b.*$/i, '')
+    .replace(/(\d+)-(\d+)/g, '$1–$2')
+    .trim();
+}

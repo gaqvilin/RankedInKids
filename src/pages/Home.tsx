@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppHeader, Empty, ErrorBox, Loading, Page, Section } from '../components/ui';
 import { appPathFromRankedinUrl, searchPlayers, type PlayerHit } from '../lib/rankedin';
-import { currentSplLeagues } from '../lib/leagues';
+import { ADULT_LEAGUES } from '../lib/features';
+import { currentKlubbligan, currentSplLeagues, shortKlubbliganName } from '../lib/leagues';
 import { getSavedPlayers, getSavedTeams, removePlayer, type SavedPlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
 
@@ -14,7 +15,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState('');
   const [teams] = useState(getSavedTeams);
-  const spl = useAsync(() => currentSplLeagues(), []);
+  const spl = useAsync(() => (ADULT_LEAGUES ? currentSplLeagues() : Promise.resolve([])), []);
+  const klubbligan = useAsync(() => currentKlubbligan(), []);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -102,7 +104,7 @@ export default function Home() {
           )}
         </Section>
 
-        <Section title="Lagserier">
+        <Section title="Klubbligan">
           {teams.length > 0 && (
             <ul className="card-list" style={{ marginBottom: 8 }}>
               {teams.map((t) => (
@@ -120,14 +122,19 @@ export default function Home() {
               ))}
             </ul>
           )}
-          <div className="chips">
+          <div className="chips chips--wrap">
+            {klubbligan.data?.map((l) => (
+              <Link key={l.id} to={`/liga/${l.id}`} className="chip">
+                {shortKlubbliganName(l.name)}
+              </Link>
+            ))}
             {spl.data?.map((l) => (
               <Link key={l.id} to={`/liga/${l.id}`} className="chip">
                 {l.name.replace(/^SPL Swedish Padel League\s*/i, 'SPL ')}
               </Link>
             ))}
           </div>
-          <p className="muted small">Klistra in en Rankedin-länk till ett lag eller en serie ovan för att öppna den direkt.</p>
+          <p className="muted small">Spara barnets lag med stjärnan så hamnar det här. Du kan också klistra in en Rankedin-länk i sökrutan.</p>
         </Section>
 
         <Section title="Döma en match">
