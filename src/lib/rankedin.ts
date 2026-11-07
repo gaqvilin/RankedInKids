@@ -118,7 +118,8 @@ export type UpcomingMatch = {
 
 type RawP = { Id: number; Name: string; IsWinner: boolean } | null;
 
-export async function getUpcomingMatches(playerId: number, fresh = false): Promise<UpcomingMatch[]> {
+/** auth: include enter-result buttons for the logged-in account (slower, not shared-cached). */
+export async function getUpcomingMatches(playerId: number, fresh = false, auth = false): Promise<UpcomingMatch[]> {
   const raw = await rin<{
     Payload: {
       ChallengeId: number;
@@ -140,7 +141,7 @@ export async function getUpcomingMatches(playerId: number, fresh = false): Promi
       Score: { Score: { Score1: number; Score2: number }[] } | null;
       Buttons: Record<string, { IsActive: boolean } | number>;
     }[];
-  }>(`player/GetPlayerMatchesAsync?playerid=${playerId}&takehistory=false&skip=0&take=30&language=sv`, { fresh });
+  }>(`player/GetPlayerMatchesAsync?playerid=${playerId}&takehistory=false&skip=0&take=30&language=sv`, { fresh, auth });
 
   const side = (a: RawP, b: RawP): Side => {
     const players = [a, b].filter((p): p is NonNullable<RawP> => !!p && !!p.Id);
@@ -294,7 +295,7 @@ export async function getTournamentMatches(tournamentId: number, fresh = false):
       EnterResultsButton: boolean;
       AwaitingResultConfirmation: boolean;
     }[];
-  }>(`tournament/GetMatchesSectionAsync?Id=${tournamentId}&LanguageCode=sv&IsReadonly=true`, { fresh });
+  }>(`tournament/GetMatchesSectionAsync?Id=${tournamentId}&LanguageCode=sv&IsReadonly=true`, { fresh, auth: true });
 
   const side = (s: RSide, won: boolean): Side => ({
     names: s ? [s.Name, s.Player2Name].filter((n): n is string => !!n) : [],
@@ -440,8 +441,8 @@ export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<
           }[];
         };
       }[]
-    >(`TeamLeague/GetTeamLeagueTeamsMatchesAsync?teamMatchId=${teamMatchId}&language=sv`, { fresh }),
-    rin<Record<'firstTeam' | 'secondTeam', RawLineupTeam>>(`TeamLeague/GetTeamsLineupsAsync?teamMatchId=${teamMatchId}&language=sv`, { fresh }),
+    >(`TeamLeague/GetTeamLeagueTeamsMatchesAsync?teamMatchId=${teamMatchId}&language=sv`, { fresh, auth: true }),
+    rin<Record<'firstTeam' | 'secondTeam', RawLineupTeam>>(`TeamLeague/GetTeamsLineupsAsync?teamMatchId=${teamMatchId}&language=sv`, { fresh, auth: true }),
     rin<{ scoresViewModels: { participantName: string; participantUrl: string }[] }>(
       `TeamLeague/TeamLeagueTeamMatchStandingsAsync?teamMatchId=${teamMatchId}&language=sv`,
     ).catch(() => ({ scoresViewModels: [] })),

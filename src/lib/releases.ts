@@ -5,6 +5,17 @@ export type Release = { version: string; date: string; title: string; items: str
 
 export const RELEASES: Release[] = [
   {
+    version: '0.8',
+    date: '2026-11-08',
+    title: 'Snabbare',
+    items: [
+      'Sidor visar det du såg senast direkt och uppdaterar i bakgrunden.',
+      'Publik information (profiler, lag, serier, klubbar) cachas och laddar mycket snabbare.',
+      'En tunn linje överst visar när något hämtas.',
+      'Lagmatcher förklarar när resultat inte går att rapportera eller ändra.',
+    ],
+  },
+  {
     version: '0.7',
     date: '2026-11-07',
     title: 'Min Klubbliga och tydligare meny',

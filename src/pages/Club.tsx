@@ -11,8 +11,8 @@ import { fmtRange } from './Player';
 export default function Club() {
   const { id = '' } = useParams();
   const cid = Number(id);
-  const club = useAsync(() => getClub(cid), [cid]);
-  const leagues = useAsync(() => getClubLeagues(cid), [cid]);
+  const club = useAsync(() => getClub(cid), [cid], `club.${cid}`);
+  const leagues = useAsync(() => getClubLeagues(cid), [cid], `clubLeagues.${cid}`);
   const members = useAsync(() => getClubMembers(cid), [cid]);
   const name = club.data?.name;
   const tournaments = useAsync(() => (name ? getClubTournaments(name) : Promise.resolve([])), [name]);

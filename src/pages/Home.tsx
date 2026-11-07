@@ -17,8 +17,8 @@ import { LeagueTeamCard } from './Player';
 function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove?: () => void }) {
   const { version } = useSession();
   const first = p.name.split(' ')[0];
-  const matches = useAsync(() => getUpcomingMatches(p.id), [p.id, version]);
-  const overview = useAsync(() => loadOverview(p.id), [p.id]);
+  const matches = useAsync(() => getUpcomingMatches(p.id), [p.id, version], `matches.${p.id}`);
+  const overview = useAsync(() => loadOverview(p.id), [p.id], `overview.${p.id}`);
   const o = overview.data;
   const next = matches.data?.[0];
   const missing = o?.entries.filter((e) => e.missingPartner) ?? [];

@@ -21,7 +21,7 @@ async function teamStatus(teamId: number) {
 export default function Leagues() {
   const players = useKnownPlayers();
   const savedTeams = getSavedTeams();
-  const klubbligan = useAsync(() => currentKlubbligan(), []);
+  const klubbligan = useAsync(() => currentKlubbligan(), [], 'klubbligan');
   const spl = useAsync(() => (ADULT_LEAGUES ? currentSplLeagues() : Promise.resolve([])), []);
   const playerKey = players.map((p) => p.id).join(',');
   const leagueKey = (klubbligan.data || []).map((l) => l.id).join(',');
@@ -40,7 +40,7 @@ export default function Leagues() {
       else byTeam.set(f.teamId, { ...f, players: [firstName(f.player.name)] });
     }
     return Promise.all([...byTeam.values()].map(async (t) => ({ ...t, status: await teamStatus(t.teamId).catch(() => null) })));
-  }, [playerKey, leagueKey]);
+  }, [playerKey, leagueKey], playerKey ? `mine.${playerKey}` : undefined);
 
   const myLeagueIds = new Set((mine.data || []).map((t) => t.leagueId));
   const otherSavedTeams = savedTeams.filter((s) => !(mine.data || []).some((m) => m.teamId === s.id));
@@ -62,8 +62,8 @@ export default function Leagues() {
               eller logga in med barnets Rankedin-konto, så visas laget här.
             </Empty>
           )}
-          {players.length > 0 && (!klubbligan.data || mine.loading) && !mine.data && <Loading label="Letar efter era lag…" />}
-          {mine.data && mine.data.length === 0 && players.length > 0 && (
+          {players.length > 0 && (!klubbligan.data || mine.loading) && !mine.data?.length && <Loading label="Letar efter era lag…" />}
+          {mine.data && mine.data.length === 0 && players.length > 0 && klubbligan.data && !mine.loading && (
             <Empty>{players.map((p) => firstName(p.name)).join(' och ')} spelar inte i någon Klubbliga den här säsongen.</Empty>
           )}
           {mine.data && mine.data.length > 0 && (

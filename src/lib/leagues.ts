@@ -160,13 +160,14 @@ function toFixture(f: RawFixture): Fixture {
   };
 }
 
-export async function getPoolFixtures(poolId: number, fresh = false): Promise<Fixture[]> {
-  const raw = await rin<{ matches: RawFixture[] }>(`TeamLeague/GetMatchesForPoolAsync?poolId=${poolId}&language=sv`, { fresh });
+export async function getPoolFixtures(poolId: number, fresh = false, auth = false): Promise<Fixture[]> {
+  const raw = await rin<{ matches: RawFixture[] }>(`TeamLeague/GetMatchesForPoolAsync?poolId=${poolId}&language=sv`, { fresh, auth });
   return fillMissingScores((raw.matches || []).map(toFixture), fresh);
 }
 
-export async function getTeamFixtures(teamId: number, fresh = false): Promise<Fixture[]> {
-  const raw = await rin<{ matches: RawFixture[] }>(`TeamLeague/GetTeamMatchesAsync?teamId=${teamId}&language=sv`, { fresh });
+/** auth: include captain/enter-result flags for the logged-in account. */
+export async function getTeamFixtures(teamId: number, fresh = false, auth = false): Promise<Fixture[]> {
+  const raw = await rin<{ matches: RawFixture[] }>(`TeamLeague/GetTeamMatchesAsync?teamId=${teamId}&language=sv`, { fresh, auth });
   return fillMissingScores((raw.matches || []).map(toFixture), fresh);
 }
 

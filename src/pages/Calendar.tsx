@@ -41,7 +41,7 @@ export default function Calendar() {
     setPlaceState(p);
     storePlace(p);
   };
-  const events = useAsync(() => getJuniorCalendar(place ? { lat: place.lat, lng: place.lng, radiusKm: radius } : {}), [place?.lat, place?.lng, radius]);
+  const events = useAsync(() => getJuniorCalendar(place ? { lat: place.lat, lng: place.lng, radiusKm: radius } : {}), [place?.lat, place?.lng, radius], `calendar.${place?.lat ?? 'se'}.${place?.lng ?? ''}.${radius}`);
 
   const list = useMemo(
     () => (events.data || []).filter((e) => (level === 'Alla' || e.level === level) && (!onlySanctioned || e.sanctioned)),

@@ -7,6 +7,7 @@ import {
   switchAccount as apiSwitch,
   type SessionUser,
 } from './lib/api';
+import { clearStoredCache } from './lib/useAsync';
 
 type Ctx = {
   /** Active account, plus all accounts logged in on this device in user.accounts. */
@@ -47,6 +48,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const switchAccount = useCallback(
     async (playerId: number) => {
       await apiSwitch(playerId);
+      clearStoredCache();
       await refresh();
     },
     [refresh],
@@ -54,6 +56,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(
     async (playerId?: number) => {
       await apiLogout(playerId);
+      clearStoredCache();
       await refresh();
     },
     [refresh],

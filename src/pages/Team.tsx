@@ -16,8 +16,8 @@ export default function Team() {
   const { teamId = '' } = useParams();
   const tid = Number(teamId);
   const { version } = useSession();
-  const team = useAsync(() => getTeam(tid), [tid]);
-  const fixtures = useAsync((fresh) => getTeamFixtures(tid, fresh), [tid, version]);
+  const team = useAsync(() => getTeam(tid), [tid], `team.${tid}`);
+  const fixtures = useAsync((fresh) => getTeamFixtures(tid, fresh, true), [tid, version]);
   const poolId = team.data?.poolId;
   const leagueId = team.data?.leagueId;
   const standings = useAsync(() => (poolId ? getStandings(poolId) : Promise.resolve([])), [poolId]);

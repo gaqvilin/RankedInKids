@@ -150,3 +150,27 @@ export function publicUser(layout: LayoutInfo) {
     name: [layout.FirstName, layout.LastName].filter(Boolean).join(' '),
   };
 }
+
+/** Data that rarely changes (profiles, teams, leagues, clubs) can be cached longer. */
+const STABLE_PATHS = [
+  'player/playerprofileinfoasync',
+  'player/participatedeventsasync',
+  'teamleague/getteamleagueteamdetailsasync',
+  'teamleague/getteamleagueteamhomepageasync',
+  'teamleague/getheaderasync',
+  'teamleague/getinfoasync',
+  'teamleague/getpoolsinfoasync',
+  'tournament/getheaderasync',
+  'tournament/getclassesanddrawnamesasync',
+  'organization/',
+  'search/',
+];
+
+/** Cache-Control for an anonymous (shared) response. */
+export function publicCacheControl(path: string): string {
+  const p = path.replace(/^\/+/, '').toLowerCase();
+  const stable = STABLE_PATHS.some((s) => p.startsWith(s));
+  return stable
+    ? 'public, max-age=60, s-maxage=600, stale-while-revalidate=3600'
+    : 'public, max-age=0, s-maxage=30, stale-while-revalidate=300';
+}

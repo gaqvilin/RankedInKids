@@ -120,7 +120,7 @@ export type AdminEvent = {
 export async function getAdminOrganisations(): Promise<AdminOrg[]> {
   const raw = await rin<{ payload: { id: number; name: string; location: string | null; eventsCount: number; managerUrl: string | null }[] }>(
     `Player/GetAdminOrganizationsAsync?Language=sv&Skip=0&Take=50`,
-    { fresh: true },
+    { fresh: true, auth: true },
   );
   return (raw.payload || []).map((o) => ({ id: o.id, name: o.name, location: o.location, eventsCount: o.eventsCount, managerUrl: o.managerUrl }));
 }
@@ -128,7 +128,7 @@ export async function getAdminOrganisations(): Promise<AdminOrg[]> {
 export async function getAdminEvents(): Promise<AdminEvent[]> {
   const raw = await rin<{ payload: { id: number; name: string; startDate: string | null; state: string | number | null; link: string; adminLink: string | null }[] }>(
     `Player/GetAdminOrganizedEventsAsync?Language=sv&Skip=0&Take=100`,
-    { fresh: true },
+    { fresh: true, auth: true },
   );
   return (raw.payload || []).map((e) => ({ id: e.id, name: e.name.trim(), startDate: e.startDate, state: e.state, link: e.link, adminLink: e.adminLink }));
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, type LinkProps } from 'react-router-dom';
+import { onLoadingChange } from '../lib/api';
 import { CURRENT_VERSION, hasUnseenRelease } from '../lib/releases';
 import { useKnownPlayers } from '../lib/known';
 import { getSavedTeams } from '../lib/storage';
@@ -134,9 +135,23 @@ function TabBar() {
   );
 }
 
+/** Thin bar at the top while anything is loading from Rankedin. */
+function LoadingBar() {
+  const [busy, setBusy] = useState(false);
+  useEffect(
+    () =>
+      onLoadingChange((n) => {
+        setBusy(n > 0);
+      }),
+    [],
+  );
+  return <div className={`loading-bar ${busy ? 'is-busy' : ''}`} role="progressbar" aria-hidden={!busy} aria-label="Hämtar från Rankedin" />;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="shell">
+      <LoadingBar />
       <Sidebar />
       <div className="shell__main">
         {children}

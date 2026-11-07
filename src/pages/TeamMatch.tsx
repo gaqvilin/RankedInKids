@@ -82,7 +82,14 @@ export default function TeamMatch() {
           <Notice tone="info">
             <div className="row gap" style={{ justifyContent: 'space-between' }}>
               <span>
-                Du är lagkapten för <strong>{t.teams[t.canLineup[0] ? 0 : 1].name}</strong>.
+                Du kan sätta uppställning för{' '}
+                <strong>
+                  {t.teams
+                    .filter((_, i) => t.canLineup[i])
+                    .map((x) => x.name)
+                    .join(' och ')}
+                </strong>
+                .
               </span>
               {t.canLineup.map(
                 (can, i) =>
@@ -95,6 +102,14 @@ export default function TeamMatch() {
               )}
             </div>
           </Notice>
+        )}
+
+        {t.matches.length > 0 && t.canLineup.some(Boolean) && !t.matches.some((m) => m.canEnterResult) && (
+          <p className="muted small">
+            {played === t.matches.length
+              ? 'Resultaten är inlagda. I Rankedin kan bara seriens administratör ändra ett inlagt resultat.'
+              : 'Resultat kan rapporteras när båda lagens uppställning är satt.'}
+          </p>
         )}
 
         <Section title="Matcher" action={<RefreshButton onClick={() => tm.reload()} loading={tm.loading} />}>

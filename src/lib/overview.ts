@@ -48,8 +48,8 @@ export async function loadEntries(playerId: number, events: PlayerEvent[]): Prom
         const [header, classes] = await Promise.all([getTournament(event.id), getClasses(event.id)]);
         entry.closeSignInDate = header.closeSignInDate;
         entry.signInOpen = header.signInOpen;
-        for (const c of classes) {
-          const pairs = await getClassPairs(event.id, c.id);
+        const perClass = await Promise.all(classes.map(async (c) => ({ c, pairs: await getClassPairs(event.id, c.id).catch(() => []) })));
+        for (const { c, pairs } of perClass) {
           const pair = pairs.find((p) => p.players.some((x) => x.id === playerId));
           if (pair) {
             entry.className = c.name;

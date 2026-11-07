@@ -11,16 +11,41 @@ export class ApiError extends Error {
 }
 
 const cache = new Map<string, { at: number; data: unknown }>();
-const CACHE_MS = 15_000;
 
-/** GET a Rankedin read path (e.g. "Tournament/GetHeaderAsync?id=1") through /api/rin. */
-export async function rin<T>(path: string, opts: { fresh?: boolean } = {}): Promise<T> {
-  const hit = cache.get(path);
+/** Number of Rankedin requests in flight; the shell shows a thin progress bar while > 0. */
+let inFlight = 0;
+const listeners = new Set<(n: number) => void>();
+export function onLoadingChange(fn: (n: number) => void): () => void {
+  listeners.add(fn);
+  fn(inFlight);
+  return () => listeners.delete(fn);
+}
+function setInFlight(delta: number) {
+  inFlight = Math.max(0, inFlight + delta);
+  listeners.forEach((l) => l(inFlight));
+}
+const CACHE_MS = 30_000;
+
+/**
+ * GET a Rankedin read path (e.g. "Tournament/GetHeaderAsync?id=1") through /api/rin.
+ * Public by default: no login is sent, so answers are shared and cached at the edge.
+ * Pass auth: true only where the answer depends on who is logged in
+ * (enter-result buttons, captain rights, admin lists).
+ */
+export async function rin<T>(path: string, opts: { fresh?: boolean; auth?: boolean } = {}): Promise<T> {
+  const key = opts.auth ? `auth:${path}` : path;
+  const hit = cache.get(key);
   if (!opts.fresh && hit && Date.now() - hit.at < CACHE_MS) return hit.data as T;
-  const res = await fetch(`/api/rin?p=${encodeURIComponent(path)}`, { credentials: 'same-origin' });
-  if (!res.ok) throw new ApiError(`Rankedin svarade ${res.status}`, res.status);
-  const data = (await res.json()) as T;
-  cache.set(path, { at: Date.now(), data });
+  setInFlight(1);
+  let data: T;
+  try {
+    const res = await fetch(`/api/rin?p=${encodeURIComponent(path)}${opts.auth ? '' : '&anon=1'}`, { credentials: 'same-origin' });
+    if (!res.ok) throw new ApiError(`Rankedin svarade ${res.status}`, res.status);
+    data = (await res.json()) as T;
+  } finally {
+    setInFlight(-1);
+  }
+  cache.set(key, { at: Date.now(), data });
   return data;
 }
 

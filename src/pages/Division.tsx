@@ -25,7 +25,7 @@ export default function Division() {
   const league = useAsync(() => (leagueId ? getLeague(leagueId) : Promise.resolve(null)), [leagueId]);
   const standings = useAsync((fresh) => getStandings(pid, fresh), [pid]);
   const { version } = useSession();
-  const fixtures = useAsync((fresh) => getPoolFixtures(pid, fresh), [pid, version]);
+  const fixtures = useAsync((fresh) => getPoolFixtures(pid, fresh, true), [pid, version]);
 
   const pool = league.data?.pools.find((p) => p.id === pid);
   const rounds = byRound(fixtures.data || []);

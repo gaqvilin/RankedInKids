@@ -58,10 +58,10 @@ export function LeagueTeamCard({ t, from }: { t: LeagueTeamSummary; from: string
 export default function Player() {
   const { rid = '' } = useParams();
   const { version } = useSession();
-  const profile = useAsync(() => getProfile(rid), [rid]);
+  const profile = useAsync(() => getProfile(rid), [rid], `profile.${rid}`);
   const playerId = profile.data?.id;
-  const matches = useAsync((fresh) => (playerId ? getUpcomingMatches(playerId, fresh) : Promise.resolve([])), [playerId, version]);
-  const overview = useAsync(() => (playerId ? loadOverview(playerId) : Promise.resolve(null)), [playerId]);
+  const matches = useAsync((fresh) => (playerId ? getUpcomingMatches(playerId, fresh, true) : Promise.resolve([])), [playerId, version]);
+  const overview = useAsync(() => (playerId ? loadOverview(playerId) : Promise.resolve(null)), [playerId], playerId ? `overview.${playerId}` : undefined);
   const [saved, setSaved] = useState(() => isSaved(rid));
   const [reporting, setReporting] = useState<UpcomingMatch | null>(null);
 
