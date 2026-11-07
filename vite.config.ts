@@ -49,4 +49,6 @@ function vercelApi(): Plugin {
 
 export default defineConfig({
   plugins: [react(), vercelApi()],
+  // Dev only: allow the app's preview proxy (any host name) to reach the dev server.
+  server: { allowedHosts: true },
 });
