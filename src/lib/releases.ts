@@ -5,6 +5,17 @@ export type Release = { version: string; date: string; title: string; items: str
 
 export const RELEASES: Release[] = [
   {
+    version: '0.10',
+    date: '2026-11-08',
+    title: 'Fylligare meny och rättningar',
+    items: [
+      'Menyn visar dina lag med nästa speldag, din klubb och vad som är på gång (tävlingar och speldagar) med direktlänkar.',
+      'Speldagen visar anläggningen för hela sammandraget, och spelare som inte är uttagna visas som "Ej uttagna".',
+      '"Resultat saknas" visas inte längre inför en speldag som inte har varit.',
+      'Rättat: den gamla adressen padelkids.vercel.app skickar nu vidare även från startsidan.',
+    ],
+  },
+  {
     version: '0.9',
     date: '2026-11-08',
     title: 'SPL och lagledare',
