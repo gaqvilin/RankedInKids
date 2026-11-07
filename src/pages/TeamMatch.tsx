@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Go } from '../components/shell';
 import { MatchCard } from '../components/MatchCard';
 import { LineupSheet } from '../components/LineupSheet';
 import { ResultSheet } from '../components/ResultSheet';
@@ -30,7 +31,7 @@ export default function TeamMatch() {
   if (tm.error) {
     return (
       <>
-        <AppHeader back="history" title="Lagmatch" />
+        <AppHeader back="/serier" backLabel="Klubbligan" title="Lagmatch" />
         <Page>
           <ErrorBox error={tm.error} onRetry={() => tm.reload()} />
         </Page>
@@ -40,7 +41,7 @@ export default function TeamMatch() {
   if (!tm.data) {
     return (
       <>
-        <AppHeader back="history" title="Lagmatch" />
+        <AppHeader back="/serier" backLabel="Klubbligan" title="Lagmatch" />
         <Page>
           <Loading />
         </Page>
@@ -52,18 +53,18 @@ export default function TeamMatch() {
   const played = t.matches.filter((m) => m.played).length;
   return (
     <>
-      <AppHeader back="history" title="Lagmatch" />
+      <AppHeader back="/serier" backLabel="Klubbligan" title="Lagmatch" />
       <Page>
         <div className="team-score">
-          <Link className="team-score__team" to={`/lag/${t.teams[0].id}`}>
+          <Go className="team-score__team" to={`/lag/${t.teams[0].id}`} from="Lagmatch">
             {t.teams[0].name}
-          </Link>
+          </Go>
           <div className="team-score__num" aria-label={`Ställning ${t.score[0]} mot ${t.score[1]}`}>
             {t.score[0]}–{t.score[1]}
           </div>
-          <Link className="team-score__team" to={`/lag/${t.teams[1].id}`}>
+          <Go className="team-score__team" to={`/lag/${t.teams[1].id}`} from="Lagmatch">
             {t.teams[1].name}
-          </Link>
+          </Go>
           <p className="team-score__sub">
             {t.matches.length ? `${played} av ${t.matches.length} matcher spelade` : 'Matcherna är inte skapade i Rankedin än'}
           </p>

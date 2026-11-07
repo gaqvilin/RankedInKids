@@ -1,6 +1,6 @@
-# Padelkids (RankedInKids)
+# PadelAdmin (RankedInKids)
 
-En enklare mobilapp för barn som spelar padel och deras föräldrar, ovanpå Rankedin.
+En enklare app för padelspelare, föräldrar och lagledare ovanpå Rankedins data. Först för barn och ungdom (Step In, Klubbligan), därefter vuxna (SPL).
 
 ## Vad den gör (v1)
 - **Spelare:** sök barnet, spara som "min spelare", se kommande matcher (tid, bana, motståndare) och anmälda tävlingar.

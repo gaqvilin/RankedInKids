@@ -33,8 +33,11 @@ export default function Account() {
 
   return (
     <>
-      <AppHeader back="history" title="Konton" />
+      <AppHeader title="Konton" />
       <Page>
+        <div className="page-title">
+          <h1>Konton</h1>
+        </div>
         {accounts.length > 0 && (
           <Section title="Inloggade Rankedin-konton">
             <ul className="card-list">

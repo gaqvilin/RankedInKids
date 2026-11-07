@@ -1,12 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Go } from './shell';
 import type { Fixture } from '../lib/leagues';
 import { fmtDay, fmtTime } from '../lib/format';
 
-export function FixtureCard({ f, highlightTeamId }: { f: Fixture; highlightTeamId?: number }) {
+export function FixtureCard({ f, highlightTeamId, from }: { f: Fixture; highlightTeamId?: number; from: string }) {
   const teams = [f.home, f.away];
   const time = fmtTime(f.date);
   return (
-    <Link to={`/lagmatch/${f.teamMatchId}`} className={`match fixture ${teams.some((t) => t.id === highlightTeamId) ? 'match--mine' : ''}`}>
+    <Go to={`/lagmatch/${f.teamMatchId}`} from={from} className={`match fixture ${teams.some((t) => t.id === highlightTeamId) ? 'match--mine' : ''}`}>
       <div className="match__meta">
         {f.date && <span className="match__time">{fmtDay(f.date)}{time ? ` ${time}` : ''}</span>}
         {f.round != null && <span className="pill">Omg. {f.round}</span>}
@@ -26,6 +26,6 @@ export function FixtureCard({ f, highlightTeamId }: { f: Fixture; highlightTeamI
           {f.canEnterResult && <span className="pill pill--warn">Resultat kan rapporteras (lagkapten)</span>}
         </div>
       )}
-    </Link>
+    </Go>
   );
 }

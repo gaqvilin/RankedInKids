@@ -1,149 +1,115 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { ResultSheet } from '../components/ResultSheet';
+import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
-import { fmtDay, hoursUntil, relativeDays } from '../lib/format';
-import {
-  getClasses,
-  getClassPairs,
-  getPlayerEvents,
-  getProfile,
-  getTournament,
-  getUpcomingMatches,
-  rinUrl,
-  type PlayerEvent,
-  type UpcomingMatch,
-} from '../lib/rankedin';
-import { getPlayerTeams } from '../lib/leagues';
+import { fmtDay, fmtTime, hoursUntil, relativeDays } from '../lib/format';
+import { loadOverview, type LeagueTeamSummary } from '../lib/overview';
+import { getProfile, getUpcomingMatches, rinUrl, type UpcomingMatch } from '../lib/rankedin';
 import { isSaved, removePlayer, savePlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 
-type Entry = {
-  event: PlayerEvent;
-  closeSignInDate: string | null;
-  signInOpen: boolean;
-  className: string | null;
-  partner: string | null;
-  missingPartner: boolean;
-};
+export function fmtRange(start: string | null, end: string | null): string {
+  if (!start) return '';
+  return end ? `${fmtDay(start)} – ${fmtDay(end)}` : fmtDay(start);
+}
 
-/** For upcoming tournaments: which class the player is in, and whether a partner is missing. */
-async function loadEntries(playerId: number, events: PlayerEvent[]): Promise<Entry[]> {
-  const upcoming = events.filter((e) => e.kind === 'tournament' && e.state !== 4);
-  return Promise.all(
-    upcoming.map(async (event) => {
-      const entry: Entry = { event, closeSignInDate: null, signInOpen: false, className: null, partner: null, missingPartner: false };
-      try {
-        const [header, classes] = await Promise.all([getTournament(event.id), getClasses(event.id)]);
-        entry.closeSignInDate = header.closeSignInDate;
-        entry.signInOpen = header.signInOpen;
-        for (const c of classes) {
-          const pairs = await getClassPairs(event.id, c.id);
-          const pair = pairs.find((p) => p.players.some((x) => x.id === playerId));
-          if (pair) {
-            entry.className = c.name;
-            entry.missingPartner = pair.missingPartner;
-            entry.partner = pair.players.find((x) => x.id !== playerId)?.name ?? null;
-            break;
-          }
-        }
-      } catch {
-        /* keep partial info */
-      }
-      return entry;
-    }),
+export function LeagueTeamCard({ t, from }: { t: LeagueTeamSummary; from: string }) {
+  const opponent = t.next ? (t.next.home.id === t.teamId ? t.next.away : t.next.home) : null;
+  const last = t.last;
+  const lastOwn = last ? (last.home.id === t.teamId ? last.home : last.away) : null;
+  const lastOpp = last ? (last.home.id === t.teamId ? last.away : last.home) : null;
+  return (
+    <Go to={`/lag/${t.teamId}`} from={from} className="item">
+      <span className="item__main">
+        <strong>{t.teamName}</strong>
+        <span className="muted small block">
+          {t.leagueName} · {t.division}
+        </span>
+        <span className="muted small block">{fmtRange(t.startDate, t.endDate)}</span>
+      </span>
+      {t.active && (
+        <span className="item__side small">
+          {t.position != null && (
+            <span className="block">
+              Plats <strong>{t.position}</strong>
+              {t.teamsInDivision ? ` av ${t.teamsInDivision}` : ''}
+            </span>
+          )}
+          {lastOwn && lastOpp && (
+            <span className="block muted">
+              Senast {lastOwn.result}–{lastOpp.result} mot {lastOpp.name}
+            </span>
+          )}
+          {opponent && t.next && (
+            <span className="block muted">
+              Nästa {fmtDay(t.next.date)} mot {opponent.name}
+            </span>
+          )}
+        </span>
+      )}
+    </Go>
   );
 }
 
 export default function Player() {
   const { rid = '' } = useParams();
+  const { version } = useSession();
   const profile = useAsync(() => getProfile(rid), [rid]);
   const playerId = profile.data?.id;
-  const { version } = useSession();
   const matches = useAsync((fresh) => (playerId ? getUpcomingMatches(playerId, fresh) : Promise.resolve([])), [playerId, version]);
-  const events = useAsync(() => (playerId ? getPlayerEvents(playerId) : Promise.resolve([])), [playerId]);
-  const entries = useAsync(
-    () => (playerId && events.data ? loadEntries(playerId, events.data) : Promise.resolve([])),
-    [playerId, events.data],
-  );
-  const leagueTeams = useAsync(async () => {
-    if (!playerId || !events.data) return new Map<number, { teamId: number; name: string; division: string }>();
-    const leagues = events.data.filter((e) => e.kind === 'teamleague');
-    const found = await Promise.all(leagues.map((l) => getPlayerTeams(l.id, playerId).then((t) => [l.id, t[0]] as const).catch(() => [l.id, undefined] as const)));
-    return new Map(found.filter((x): x is readonly [number, { teamId: number; name: string; division: string; region: string }] => !!x[1]));
-  }, [playerId, events.data]);
+  const overview = useAsync(() => (playerId ? loadOverview(playerId) : Promise.resolve(null)), [playerId]);
   const [saved, setSaved] = useState(() => isSaved(rid));
   const [reporting, setReporting] = useState<UpcomingMatch | null>(null);
 
-  if (profile.error) {
+  if (profile.error || !profile.data) {
     return (
       <>
-        <AppHeader back="history" />
-        <Page>
-          <ErrorBox error={profile.error} onRetry={() => profile.reload()} />
-        </Page>
-      </>
-    );
-  }
-  if (!profile.data) {
-    return (
-      <>
-        <AppHeader back="history" />
-        <Page>
-          <Loading />
-        </Page>
+        <AppHeader back="/" backLabel="Översikt" />
+        <Page>{profile.error ? <ErrorBox error={profile.error} onRetry={() => profile.reload()} /> : <Loading />}</Page>
       </>
     );
   }
 
   const p = profile.data;
+  const o = overview.data;
   const toggleSave = () => {
     if (saved) removePlayer(p.rankedinId);
     else savePlayer({ rankedinId: p.rankedinId, name: p.name, id: p.id });
     setSaved(!saved);
   };
-
-  const finished = (events.data || []).filter((e) => e.state === 4 || e.kind !== 'tournament');
+  const activeTeams = o?.leagueTeams.filter((t) => t.active) ?? [];
+  const pastTeams = o?.leagueTeams.filter((t) => !t.active) ?? [];
 
   return (
     <>
-      <AppHeader back="history" />
-      <Page>
-        <div className="profile">
-          <div className="profile__avatar" aria-hidden="true">
-            {p.imageUrl ? <img src={p.imageUrl} alt="" /> : p.firstName[0]}
-          </div>
-          <div className="profile__info">
+      <AppHeader back="/" backLabel="Översikt" title={p.name} />
+      <Page wide>
+        <div className="page-title">
+          <div>
             <h1>{p.name}</h1>
             <p className="muted">
-              {[p.club, p.age && `${p.age} år`].filter(Boolean).join(' · ')}
+              {[p.club, p.age && `${p.age} år`, `dubbel i år ${p.doublesThisYear}`].filter(Boolean).join(' · ')}
             </p>
-            <div className="form-row" aria-label="Senaste matcherna">
-              {p.form.map((f, i) => (
-                <span key={i} className={`form-dot form-dot--${f === 'W' ? 'w' : 'l'}`} title={f === 'W' ? 'Vinst' : 'Förlust'}>
-                  {f === 'W' ? 'V' : 'F'}
-                </span>
-              ))}
-              <span className="muted small">Dubbel i år: {p.doublesThisYear}</span>
-            </div>
           </div>
-          <button className={`star ${saved ? 'star--on' : ''}`} onClick={toggleSave} aria-pressed={saved} aria-label={saved ? 'Ta bort från mina spelare' : 'Spara som min spelare'}>
-            ★
+          <button className={`btn btn--small ${saved ? '' : 'btn--primary'}`} onClick={toggleSave} aria-pressed={saved}>
+            {saved ? 'Sparad' : 'Spara som min spelare'}
           </button>
         </div>
 
-        {(entries.data || [])
+        {o?.entries
           .filter((e) => e.missingPartner)
           .map((e) => {
             const h = hoursUntil(e.closeSignInDate);
             return (
               <Notice key={e.event.id} tone={h != null && h < 72 ? 'error' : 'warn'}>
-                <strong>Partner saknas</strong> i {e.className} – {e.event.name}.{' '}
+                <strong>Partner saknas</strong> i {e.className}, {e.event.name}.{' '}
                 {e.closeSignInDate && (
                   <>
-                    Anmälan stänger {fmtDay(e.closeSignInDate)} ({relativeDays(e.closeSignInDate)}). Utan partner kommer {p.firstName} inte med i lottningen.{' '}
+                    Anmälan stänger {fmtDay(e.closeSignInDate)} {fmtTime(e.closeSignInDate)} ({relativeDays(e.closeSignInDate)}). Utan partner kommer{' '}
+                    {p.firstName} inte med i lottningen.{' '}
                   </>
                 )}
                 <ExternalLink href={rinUrl(e.event.link)}>Lägg till partner i Rankedin</ExternalLink>
@@ -151,106 +117,106 @@ export default function Player() {
             );
           })}
 
-        <Section title="Kommande matcher" action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
-          {matches.error && <ErrorBox error={matches.error} onRetry={() => matches.reload()} />}
-          {!matches.data && matches.loading && <Loading />}
-          {matches.data && matches.data.length === 0 && <Empty>Inga lottade matcher just nu.</Empty>}
-          {matches.data?.map((m) => (
-            <MatchCard
-              key={m.challengeId}
-              sides={m.sides}
-              sets={m.sets}
-              played={m.sets.length > 0}
-              date={m.date}
-              court={m.court}
-              showDay
-              label={m.teamNames ? `${m.eventName} · ${m.teamNames.join(' – ')}` : m.eventName}
-              highlightIds={[p.id]}
-              refereeCode={m.refereeCode}
-              canEnterResult={m.canEnterResult}
-              awaitingConfirmation={m.awaitingConfirmation}
-              onEnterResult={() => setReporting(m)}
-              teamMatchPath={m.teamMatchId ? `/lagmatch/${m.teamMatchId}?spelare=${p.id}` : undefined}
-            />
-          ))}
-        </Section>
+        <div className="columns">
+          <div>
+            <Section title="Kommande matcher" action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
+              {matches.error && <ErrorBox error={matches.error} onRetry={() => matches.reload()} />}
+              {!matches.data && matches.loading && <Loading />}
+              {matches.data && matches.data.length === 0 && <Empty>Inga lottade matcher just nu.</Empty>}
+              {matches.data?.map((m) => (
+                <MatchCard
+                  key={m.challengeId}
+                  sides={m.sides}
+                  sets={m.sets}
+                  played={m.sets.length > 0}
+                  date={m.date}
+                  court={m.court}
+                  showDay
+                  label={m.teamNames ? `${m.eventName} · ${m.teamNames.join(' – ')}` : m.eventName}
+                  highlightIds={[p.id]}
+                  refereeCode={m.refereeCode}
+                  canEnterResult={m.canEnterResult}
+                  awaitingConfirmation={m.awaitingConfirmation}
+                  onEnterResult={() => setReporting(m)}
+                  teamMatchPath={m.teamMatchId ? `/lagmatch/${m.teamMatchId}?spelare=${p.id}` : undefined}
+                  from={p.firstName}
+                />
+              ))}
+            </Section>
 
-        <Section title="Anmäld till">
-          {(events.loading || entries.loading) && !entries.data && <Loading />}
-          {entries.data && entries.data.length === 0 && <Empty>Inga kommande tävlingar.</Empty>}
-          <ul className="card-list">
-            {entries.data?.map((e) => (
-              <li key={e.event.id}>
-                <Link
-                  to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`}
-                  className="event-row"
-                >
-                  <span className="event-row__date">
-                    <strong>{fmtDay(e.event.startDate)}</strong>
-                    <span className="muted small">{relativeDays(e.event.startDate)}</span>
-                  </span>
-                  <span className="event-row__main">
-                    <strong>{e.event.name}</strong>
-                    <span className="small block">
-                      {e.className ?? 'Klass okänd'}
-                      {e.partner ? ` · med ${e.partner}` : ''}
-                      {e.missingPartner && <span className="pill pill--warn">Partner saknas</span>}
-                    </span>
-                    {e.signInOpen && e.closeSignInDate && (
-                      <span className="muted small block">Anmälan stänger {fmtDay(e.closeSignInDate)}</span>
-                    )}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Section>
-
-        <Section title="Tidigare och ligor">
-          {finished.length === 0 && !events.loading && <Empty>Inget ännu.</Empty>}
-          <ul className="card-list">
-            {finished.map((e) => (
-              <li key={`${e.kind}-${e.id}`}>
-                {e.kind === 'tournament' ? (
-                  <Link to={`/tavling/${e.id}?spelare=${p.id}`} className="event-row">
-                    <span className="event-row__date">
-                      <strong>{fmtDay(e.startDate)}</strong>
-                    </span>
-                    <span className="event-row__main">
-                      <strong>{e.name}</strong>
-                    </span>
-                  </Link>
-                ) : leagueTeams.data?.get(e.id) ? (
-                  <Link to={`/lag/${leagueTeams.data.get(e.id)!.teamId}`} className="event-row">
-                    <span className="event-row__date">
-                      <strong>{fmtDay(e.startDate)}</strong>
-                    </span>
-                    <span className="event-row__main">
-                      <strong>{e.name}</strong>
-                      <span className="muted small block">
-                        {leagueTeams.data.get(e.id)!.name} · {leagueTeams.data.get(e.id)!.division}
+            <Section title="Anmäld till">
+              {!o && overview.loading && <Loading />}
+              {o && o.entries.length === 0 && <Empty>Inga kommande tävlingar.</Empty>}
+              {o && o.entries.length > 0 && (
+                <div className="list">
+                  {o.entries.map((e) => (
+                    <Go
+                      key={e.event.id}
+                      from={p.firstName}
+                      to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`}
+                      className="item"
+                    >
+                      <span className="item__date">
+                        {fmtDay(e.event.startDate)}
+                        <span className="muted small block">{relativeDays(e.event.startDate)}</span>
                       </span>
-                    </span>
-                  </Link>
-                ) : (
-                  <a href={rinUrl(e.link)} target="_blank" rel="noreferrer" className="event-row">
-                    <span className="event-row__date">
-                      <strong>{fmtDay(e.startDate)}</strong>
-                    </span>
-                    <span className="event-row__main">
-                      <strong>{e.name}</strong>
-                      <span className="muted small block">{e.kind === 'teamleague' ? 'Lagliga' : 'Liga'} · öppnas i Rankedin</span>
-                    </span>
-                  </a>
-                )}
-              </li>
-            ))}
-          </ul>
-        </Section>
+                      <span className="item__main">
+                        <strong>{e.event.name}</strong>
+                        <span className="small block">
+                          {e.className ?? 'Klass okänd'}
+                          {e.partner ? ` · med ${e.partner}` : ''}
+                          {e.missingPartner && <span className="tag tag--warn">Partner saknas</span>}
+                        </span>
+                        {e.signInOpen && e.closeSignInDate && <span className="muted small block">Anmälan stänger {fmtDay(e.closeSignInDate)}</span>}
+                      </span>
+                    </Go>
+                  ))}
+                </div>
+              )}
+            </Section>
+          </div>
 
-        <p className="center">
-          <ExternalLink href={rinUrl(`/sv/player/${p.rankedinId}`)}>Profil på Rankedin</ExternalLink>
-        </p>
+          <div>
+            <Section title="Lag">
+              {!o && overview.loading && <Loading />}
+              {o && o.leagueTeams.length === 0 && <Empty>Inget lag i någon serie.</Empty>}
+              {activeTeams.length > 0 && (
+                <div className="list">
+                  {activeTeams.map((t) => (
+                    <LeagueTeamCard key={t.leagueId} t={t} from={p.firstName} />
+                  ))}
+                </div>
+              )}
+              {pastTeams.length > 0 && (
+                <>
+                  <p className="list-label">Tidigare säsonger</p>
+                  <div className="list">
+                    {pastTeams.map((t) => (
+                      <LeagueTeamCard key={t.leagueId} t={t} from={p.firstName} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </Section>
+
+            {o && o.pastTournaments.length > 0 && (
+              <Section title="Tidigare tävlingar">
+                <div className="list">
+                  {o.pastTournaments.map((e) => (
+                    <Go key={e.id} from={p.firstName} to={`/tavling/${e.id}?spelare=${p.id}`} className="item">
+                      <span className="item__date">{fmtDay(e.startDate)}</span>
+                      <span className="item__main">{e.name}</span>
+                    </Go>
+                  ))}
+                </div>
+              </Section>
+            )}
+
+            <p className="small">
+              <ExternalLink href={rinUrl(`/sv/player/${p.rankedinId}`)}>Profil på Rankedin</ExternalLink>
+            </p>
+          </div>
+        </div>
       </Page>
 
       {reporting && (

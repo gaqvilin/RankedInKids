@@ -1,11 +1,111 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { AppHeader, Empty, ErrorBox, Loading, Page, Section } from '../components/ui';
-import { appPathFromRankedinUrl, searchPlayers, type PlayerHit } from '../lib/rankedin';
-import { ADULT_LEAGUES } from '../lib/features';
-import { currentKlubbligan, currentSplLeagues, shortKlubbliganName } from '../lib/leagues';
-import { getSavedPlayers, getSavedTeams, removePlayer, type SavedPlayer } from '../lib/storage';
+import { useNavigate } from 'react-router-dom';
+import { MatchCard } from '../components/MatchCard';
+import { Go } from '../components/shell';
+import { AppHeader, Empty, ErrorBox, Loading, Notice, Page, Section } from '../components/ui';
+import { fmtDay, relativeDays } from '../lib/format';
+import { loadOverview } from '../lib/overview';
+import { appPathFromRankedinUrl, getUpcomingMatches, searchPlayers, type PlayerHit } from '../lib/rankedin';
+import { getSavedPlayers, removePlayer, type SavedPlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
+import { useSession } from '../session';
+import { LeagueTeamCard } from './Player';
+
+/** The most important things for one saved child, without clicking further. */
+function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove: () => void }) {
+  const { version } = useSession();
+  const first = p.name.split(' ')[0];
+  const matches = useAsync(() => getUpcomingMatches(p.id), [p.id, version]);
+  const overview = useAsync(() => loadOverview(p.id), [p.id]);
+  const o = overview.data;
+  const next = matches.data?.[0];
+  const missing = o?.entries.filter((e) => e.missingPartner) ?? [];
+  const activeTeams = o?.leagueTeams.filter((t) => t.active) ?? [];
+
+  return (
+    <section className="summary">
+      <div className="summary__head">
+        <h2>
+          <Go to={`/spelare/${p.rankedinId}`} from="Översikt">
+            {p.name}
+          </Go>
+        </h2>
+        <button className="link-btn small muted" onClick={onRemove}>
+          Ta bort
+        </button>
+      </div>
+
+      {missing.map((e) => (
+        <Notice key={e.event.id} tone="error">
+          <strong>Partner saknas</strong> i {e.className}, {e.event.name}. Anmälan stänger {fmtDay(e.closeSignInDate)} ({relativeDays(e.closeSignInDate)}).
+        </Notice>
+      ))}
+
+      <div className="columns">
+        <div>
+          <p className="list-label">Nästa match</p>
+          {!matches.data && <Loading />}
+          {matches.data && !next && <Empty>Inga lottade matcher.</Empty>}
+          {next && (
+            <MatchCard
+              sides={next.sides}
+              sets={next.sets}
+              played={next.sets.length > 0}
+              date={next.date}
+              court={next.court}
+              showDay
+              label={next.eventName}
+              highlightIds={[p.id]}
+              refereeCode={next.refereeCode}
+              teamMatchPath={next.teamMatchId ? `/lagmatch/${next.teamMatchId}?spelare=${p.id}` : undefined}
+              from="Översikt"
+            />
+          )}
+
+          <p className="list-label">Tävlingar</p>
+          {!o && <Loading />}
+          {o && o.entries.length === 0 && <Empty>Inte anmäld till någon tävling.</Empty>}
+          {o && o.entries.length > 0 && (
+            <div className="list">
+              {o.entries.map((e) => (
+                <Go key={e.event.id} from="Översikt" to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`} className="item">
+                  <span className="item__date">
+                    {fmtDay(e.event.startDate)}
+                    <span className="muted small block">{relativeDays(e.event.startDate)}</span>
+                  </span>
+                  <span className="item__main">
+                    <strong>{e.event.name}</strong>
+                    <span className="small block">
+                      {e.className}
+                      {e.partner ? ` · med ${e.partner}` : ''}
+                    </span>
+                  </span>
+                </Go>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <p className="list-label">Lag</p>
+          {!o && <Loading />}
+          {o && activeTeams.length === 0 && <Empty>Inget lag i en pågående serie.</Empty>}
+          {activeTeams.length > 0 && (
+            <div className="list">
+              {activeTeams.map((t) => (
+                <LeagueTeamCard key={t.leagueId} t={t} from="Översikt" />
+              ))}
+            </div>
+          )}
+          <p className="small">
+            <Go to={`/spelare/${p.rankedinId}`} from="Översikt">
+              Allt om {first} →
+            </Go>
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
   const [saved, setSaved] = useState<SavedPlayer[]>(getSavedPlayers);
@@ -14,9 +114,6 @@ export default function Home() {
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState('');
-  const [teams] = useState(getSavedTeams);
-  const spl = useAsync(() => (ADULT_LEAGUES ? currentSplLeagues() : Promise.resolve([])), []);
-  const klubbligan = useAsync(() => currentKlubbligan(), []);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,10 +122,9 @@ export default function Home() {
       setHits(null);
       return;
     }
-    // A pasted Rankedin link (player, tournament, team match) or R-number opens directly.
     const direct = appPathFromRankedinUrl(q);
     if (direct) {
-      navigate(direct);
+      navigate(direct, { state: { from: { label: 'Översikt', to: '/' } } });
       return;
     }
     const t = setTimeout(() => {
@@ -46,34 +142,18 @@ export default function Home() {
 
   return (
     <>
-      <AppHeader />
-      <Page>
-        <Section title="Mina spelare">
-          {saved.length === 0 ? (
-            <Empty>Sök fram ditt barn nedan och tryck på stjärnan för att spara.</Empty>
-          ) : (
-            <ul className="card-list">
-              {saved.map((p) => (
-                <li key={p.rankedinId} className="player-row">
-                  <Link to={`/spelare/${p.rankedinId}`} className="player-row__link">
-                    <span className="avatar" aria-hidden="true">
-                      {p.name[0]}
-                    </span>
-                    <span>
-                      <strong>{p.name}</strong>
-                      <span className="muted small block">{p.rankedinId}</span>
-                    </span>
-                  </Link>
-                  <button className="icon-btn" aria-label={`Ta bort ${p.name}`} onClick={() => setSaved(removePlayer(p.rankedinId))}>
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
+      <AppHeader title="Översikt" />
+      <Page wide>
+        <div className="page-title">
+          <h1>Översikt</h1>
+        </div>
 
-        <Section title="Hitta spelare">
+        {saved.map((p) => (
+          <PlayerSummary key={p.rankedinId} p={p} onRemove={() => setSaved(removePlayer(p.rankedinId))} />
+        ))}
+
+        <Section title={saved.length ? 'Lägg till spelare' : 'Hitta ditt barn'}>
+          {saved.length === 0 && <p className="muted">Sök på namn och spara spelaren, så samlas allt viktigt här.</p>}
           <input
             className="input"
             type="search"
@@ -86,55 +166,17 @@ export default function Home() {
           {error && <ErrorBox error={error} />}
           {hits && hits.length === 0 && <Empty>Ingen spelare hittades.</Empty>}
           {hits && hits.length > 0 && (
-            <ul className="card-list">
+            <div className="list">
               {hits.map((h) => (
-                <li key={h.id}>
-                  <Link to={`/spelare/${h.rankedinId}`} className="player-row__link">
-                    <span className="avatar" aria-hidden="true">
-                      {h.name[0]}
-                    </span>
-                    <span>
-                      <strong>{h.name}</strong>
-                      <span className="muted small block">{h.rankedinId}</span>
-                    </span>
-                  </Link>
-                </li>
+                <Go key={h.id} to={`/spelare/${h.rankedinId}`} from="Översikt" className="item">
+                  <span className="item__main">
+                    <strong>{h.name}</strong>
+                    <span className="muted small block">{h.rankedinId}</span>
+                  </span>
+                </Go>
               ))}
-            </ul>
+            </div>
           )}
-        </Section>
-
-        <Section title="Klubbligan">
-          {teams.length > 0 && (
-            <ul className="card-list" style={{ marginBottom: 8 }}>
-              {teams.map((t) => (
-                <li key={t.id}>
-                  <Link to={`/lag/${t.id}`} className="player-row__link">
-                    <span className="avatar" aria-hidden="true">
-                      ★
-                    </span>
-                    <span>
-                      <strong>{t.name}</strong>
-                      <span className="muted small block">{t.league}</span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="chips chips--wrap">
-            {klubbligan.data?.map((l) => (
-              <Link key={l.id} to={`/liga/${l.id}`} className="chip">
-                {shortKlubbliganName(l.name)}
-              </Link>
-            ))}
-            {spl.data?.map((l) => (
-              <Link key={l.id} to={`/liga/${l.id}`} className="chip">
-                {l.name.replace(/^SPL Swedish Padel League\s*/i, 'SPL ')}
-              </Link>
-            ))}
-          </div>
-          <p className="muted small">Spara barnets lag med stjärnan så hamnar det här. Du kan också klistra in en Rankedin-länk i sökrutan.</p>
         </Section>
 
         <Section title="Döma en match">
@@ -142,23 +184,15 @@ export default function Home() {
             className="row gap"
             onSubmit={(e) => {
               e.preventDefault();
-              if (code.trim()) navigate(`/doma/${encodeURIComponent(code.trim())}`);
+              if (code.trim()) navigate(`/doma/${encodeURIComponent(code.trim())}`, { state: { from: { label: 'Översikt', to: '/' } } });
             }}
           >
             <input className="input" placeholder="Domarkod" value={code} onChange={(e) => setCode(e.target.value)} autoCapitalize="off" />
-            <button className="btn btn--primary" type="submit" disabled={!code.trim()}>
+            <button className="btn" type="submit" disabled={!code.trim()}>
               Starta
             </button>
           </form>
         </Section>
-
-        <Link to="/tavlingar" className="big-link">
-          <span>
-            <strong>Juniortävlingar</strong>
-            <span className="muted small block">Step In, Level Up, SPT Future m.fl.</span>
-          </span>
-          <span aria-hidden="true">›</span>
-        </Link>
       </Page>
     </>
   );

@@ -230,6 +230,7 @@ export async function getTeam(teamId: number): Promise<Team> {
       regionName: string | null;
       divisionName: string | null;
       initiator: { id: number }[];
+      isLicenseRequired: boolean;
       players: { id: number; firstName: string; lastName: string; rankedinId: string; hasLicense: boolean; ratingBegin: number | null }[];
     };
   }>(`TeamLeague/GetTeamLeagueTeamHomepageAsync?TeamId=${teamId}&Language=sv`);
@@ -249,7 +250,8 @@ export async function getTeam(teamId: number): Promise<Team> {
       id: p.id,
       name: `${p.firstName} ${p.lastName}`.trim(),
       rankedinId: p.rankedinId,
-      hasLicense: p.hasLicense,
+      // Leagues like Klubbligan need no licence; Rankedin then reports hasLicense=false for everyone.
+      hasLicense: !raw.team.isLicenseRequired || p.hasLicense,
       rating: p.ratingBegin,
       isCaptain: captainIds.includes(p.id),
     })),
@@ -287,4 +289,10 @@ export function shortKlubbliganName(name: string): string {
     .replace(/\s*\b(HT|VT)\s*-?\s*\d{2}\b.*$/i, '')
     .replace(/(\d+)-(\d+)/g, '$1–$2')
     .trim();
+}
+
+/** Light league lookup (name and season dates), without pools. */
+export async function getLeagueHeader(id: number): Promise<{ id: number; name: string; startDate: string; endDate: string; active: boolean }> {
+  const h = await rin<{ Id: number; Name: string; StartDate: string; EndDate: string; EventState: number }>(`TeamLeague/GetHeaderAsync?id=${id}&language=sv`);
+  return { id: h.Id, name: h.Name.trim(), startDate: h.StartDate, endDate: h.EndDate, active: h.EventState === 3 };
 }

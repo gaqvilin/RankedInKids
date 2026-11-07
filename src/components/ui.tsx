@@ -1,39 +1,61 @@
-import type { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, type ReactNode } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import type { From } from './shell';
 import { useSession } from '../session';
 
-/** back: a path, or 'history' to go to the previous page (falls back to start). */
-export function AppHeader({ title, back }: { title?: string; back?: string }) {
+/**
+ * Page top bar. The back link shows where it goes: the page we came from
+ * (carried by <Go>), otherwise the given fallback.
+ * back: a fallback path, or 'history' to go to the previous page.
+ */
+export function AppHeader({ title, back, backLabel }: { title?: string; back?: string; backLabel?: string }) {
   const { user } = useSession();
   const navigate = useNavigate();
-  const backArrow = (
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+  const loc = useLocation();
+  const from = (loc.state as { from?: From } | null)?.from;
+
+  useEffect(() => {
+    document.title = title ? `${title} · PadelAdmin` : 'PadelAdmin';
+  }, [title]);
+
+  const arrow = (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
       <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
+  let backEl: ReactNode = (
+    <Link to="/" className="brand brand--mobile" aria-label="PadelAdmin start">
+      PadelAdmin
+    </Link>
+  );
+  if (from) {
+    backEl = (
+      <Link to={from.to} className="back-link">
+        {arrow}
+        <span>{from.label}</span>
+      </Link>
+    );
+  } else if (back === 'history') {
+    backEl = (
+      <button className="back-link" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>
+        {arrow}
+        <span>{backLabel ?? 'Tillbaka'}</span>
+      </button>
+    );
+  } else if (back) {
+    backEl = (
+      <Link to={back} className="back-link">
+        {arrow}
+        <span>{backLabel ?? 'Tillbaka'}</span>
+      </Link>
+    );
+  }
+
   return (
     <header className="app-header">
       <div className="app-header__inner">
-        {back === 'history' ? (
-          <button
-            className="icon-btn"
-            aria-label="Tillbaka"
-            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}
-          >
-            {backArrow}
-          </button>
-        ) : back ? (
-          <Link to={back} className="icon-btn" aria-label="Tillbaka">
-            {backArrow}
-          </Link>
-        ) : (
-          <Link to="/" className="brand" aria-label="Padelkids start">
-            <span className="brand__ball" aria-hidden="true" />
-            Padelkids
-          </Link>
-        )}
-        {title && <h1 className="app-header__title">{title}</h1>}
-        <Link to="/konto" className="account-chip" aria-label="Konto">
+        {backEl}
+        <Link to="/konto" className="account-chip" aria-label="Konton">
           {user.loggedIn ? initials(user.name) : 'Logga in'}
           {user.accounts.length > 1 && <span className="account-chip__more">+{user.accounts.length - 1}</span>}
         </Link>
@@ -52,8 +74,8 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function Page({ children }: { children: ReactNode }) {
-  return <main className="page">{children}</main>;
+export function Page({ children, wide }: { children: ReactNode; wide?: boolean }) {
+  return <main className={`page ${wide ? 'page--wide' : ''}`}>{children}</main>;
 }
 
 export function Section({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {

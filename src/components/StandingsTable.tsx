@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Go } from './shell';
 import type { StandingRow } from '../lib/leagues';
 
-export function StandingsTable({ rows, highlightTeamId, leagueId }: { rows: StandingRow[]; highlightTeamId?: number; leagueId?: number }) {
+export function StandingsTable({ rows, highlightTeamId, leagueId, from }: { rows: StandingRow[]; highlightTeamId?: number; leagueId?: number; from: string }) {
   return (
     <>
       <table className="table">
@@ -20,7 +20,13 @@ export function StandingsTable({ rows, highlightTeamId, leagueId }: { rows: Stan
             <tr key={r.teamId || r.name} className={r.teamId === highlightTeamId ? 'is-mine' : ''}>
               <td>{r.position}</td>
               <td>
-                {r.teamId ? <Link to={`/lag/${r.teamId}${leagueId ? `?liga=${leagueId}` : ''}`}>{r.name}</Link> : r.name}
+                {r.teamId ? (
+                  <Go to={`/lag/${r.teamId}${leagueId ? `?liga=${leagueId}` : ''}`} from={from}>
+                    {r.name}
+                  </Go>
+                ) : (
+                  r.name
+                )}
               </td>
               <td>{r.played}</td>
               <td>

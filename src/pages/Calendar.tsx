@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Page, Section } from '../components/ui';
 import { fmtDay, relativeDays } from '../lib/format';
 import { getJuniorCalendar } from '../lib/rankedin';
@@ -29,8 +29,11 @@ export default function Calendar() {
 
   return (
     <>
-      <AppHeader back="/" title="Juniortävlingar" />
-      <Page>
+      <AppHeader title="Tävlingar" />
+      <Page wide>
+        <div className="page-title">
+          <h1>Juniortävlingar</h1>
+        </div>
         <div className="chips">
           {LEVELS.map((l) => (
             <button key={l} className={`chip ${level === l ? 'chip--on' : ''}`} onClick={() => setLevel(l)}>
@@ -67,7 +70,7 @@ export default function Calendar() {
           <ul className="card-list">
             {list.map((e) => (
               <li key={e.id}>
-                <Link to={`/tavling/${e.id}`} className="event-row">
+                <Go to={`/tavling/${e.id}`} from="Tävlingar" className="event-row">
                   <span className="event-row__date">
                     <strong>{fmtDay(e.startDate)}</strong>
                     <span className="muted small">{relativeDays(e.startDate)}</span>
@@ -79,7 +82,7 @@ export default function Calendar() {
                       {e.sanctioned ? ' · Sanktionerad' : ''}
                     </span>
                   </span>
-                </Link>
+                </Go>
               </li>
             ))}
           </ul>

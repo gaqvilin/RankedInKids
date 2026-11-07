@@ -1,42 +1,34 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { FixtureCard } from '../components/FixtureCard';
+import { Go } from '../components/shell';
 import { StandingsTable } from '../components/StandingsTable';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDay, fmtTime, relativeDays } from '../lib/format';
-import { getStandings, getTeam, getTeamFixtures } from '../lib/leagues';
+import { getLeagueHeader, getStandings, getTeam, getTeamFixtures } from '../lib/leagues';
 import { rinUrl } from '../lib/rankedin';
 import { getSavedTeams, toggleTeam } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
+import { fmtRange } from './Player';
 
 export default function Team() {
   const { teamId = '' } = useParams();
   const tid = Number(teamId);
-  const team = useAsync(() => getTeam(tid), [tid]);
   const { version } = useSession();
+  const team = useAsync(() => getTeam(tid), [tid]);
   const fixtures = useAsync((fresh) => getTeamFixtures(tid, fresh), [tid, version]);
   const poolId = team.data?.poolId;
+  const leagueId = team.data?.leagueId;
   const standings = useAsync(() => (poolId ? getStandings(poolId) : Promise.resolve([])), [poolId]);
+  const league = useAsync(() => (leagueId ? getLeagueHeader(leagueId) : Promise.resolve(null)), [leagueId]);
   const [saved, setSaved] = useState(() => getSavedTeams().some((t) => t.id === tid));
 
-  if (team.error) {
+  if (team.error || !team.data) {
     return (
       <>
-        <AppHeader back="history" title="Lag" />
-        <Page>
-          <ErrorBox error={team.error} onRetry={() => team.reload()} />
-        </Page>
-      </>
-    );
-  }
-  if (!team.data) {
-    return (
-      <>
-        <AppHeader back="history" title="Lag" />
-        <Page>
-          <Loading />
-        </Page>
+        <AppHeader back="/serier" backLabel="Klubbligan" />
+        <Page>{team.error ? <ErrorBox error={team.error} onRetry={() => team.reload()} /> : <Loading />}</Page>
       </>
     );
   }
@@ -49,97 +41,116 @@ export default function Team() {
   const opponent = next ? (next.home.id === t.id ? next.away : next.home) : null;
   const row = standings.data?.find((r) => r.teamId === t.id);
   const unlicensed = t.players.filter((p) => !p.hasLicense);
+  const me = t.name;
 
   return (
     <>
-      <AppHeader back="history" title="Lag" />
-      <Page>
-        <div className="profile">
-          <div className="profile__avatar" aria-hidden="true">
-            {t.clubImageUrl ? <img src={t.clubImageUrl} alt="" /> : t.name[0]}
-          </div>
-          <div className="profile__info">
+      <AppHeader back="/serier" backLabel="Klubbligan" title={t.name} />
+      <Page wide>
+        <div className="page-title">
+          <div>
             <h1>{t.name}</h1>
-            <p className="muted small">
-              <Link to={`/liga/${t.leagueId}`}>{t.leagueName}</Link>
+            <p className="muted">
+              <Go to={`/liga/${t.leagueId}`} from={me}>
+                {t.leagueName}
+              </Go>
               {t.division ? ` · ${t.division}` : ''}
             </p>
-            {row && (
-              <p className="small">
-                Plats <strong>{row.position}</strong> · {row.points} p · {row.wins}–{row.losses}
-              </p>
-            )}
+            {league.data && <p className="muted small">Säsong {fmtRange(league.data.startDate, league.data.endDate)}</p>}
           </div>
           <button
-            className={`star ${saved ? 'star--on' : ''}`}
+            className={`btn btn--small ${saved ? '' : 'btn--primary'}`}
             aria-pressed={saved}
-            aria-label={saved ? 'Ta bort från mina lag' : 'Spara som mitt lag'}
             onClick={() => {
               toggleTeam({ id: t.id, name: t.name, league: t.leagueName });
               setSaved(!saved);
             }}
           >
-            ★
+            {saved ? 'Sparat' : 'Spara lag'}
           </button>
         </div>
 
-        {next && opponent && (
-          <Notice tone="ok">
-            <strong>Nästa match:</strong> {fmtDay(next.date)} {fmtTime(next.date)} ({relativeDays(next.date)}) mot <strong>{opponent.name}</strong>
-            {next.location ? ` · ${next.location}` : ''}
-          </Notice>
-        )}
-        {unlicensed.length > 0 && (
-          <Notice tone="warn">
-            Licens saknas för: {unlicensed.map((p) => p.name).join(', ')}.
-          </Notice>
-        )}
+        <div className="stats">
+          {row && (
+            <>
+              <div>
+                <span className="stats__value">{row.position}</span>
+                <span className="stats__label">plats av {standings.data?.length}</span>
+              </div>
+              <div>
+                <span className="stats__value">{row.points}</span>
+                <span className="stats__label">poäng</span>
+              </div>
+              <div>
+                <span className="stats__value">
+                  {row.wins}–{row.losses}
+                </span>
+                <span className="stats__label">vunna–förlorade</span>
+              </div>
+            </>
+          )}
+          {next && opponent && (
+            <div className="stats__wide">
+              <span className="stats__label">Nästa match</span>
+              <span>
+                {fmtDay(next.date)} {fmtTime(next.date)} ({relativeDays(next.date)}) mot <strong>{opponent.name}</strong>
+                {next.location ? `, ${next.location}` : ''}
+              </span>
+            </div>
+          )}
+        </div>
 
-        <Section title="Kommande" action={<RefreshButton onClick={() => fixtures.reload()} loading={fixtures.loading} />}>
-          {fixtures.error && <ErrorBox error={fixtures.error} onRetry={() => fixtures.reload()} />}
-          {!fixtures.data && fixtures.loading && <Loading />}
-          {fixtures.data && upcoming.length === 0 && <Empty>Inga fler matcher.</Empty>}
-          {upcoming.map((f) => (
-            <FixtureCard key={f.teamMatchId} f={f} highlightTeamId={t.id} />
-          ))}
-        </Section>
+        {unlicensed.length > 0 && <Notice tone="warn">Licens saknas för: {unlicensed.map((p) => p.name).join(', ')}.</Notice>}
 
-        {played.length > 0 && (
-          <Section title="Spelade">
-            {played.map((f) => (
-              <FixtureCard key={f.teamMatchId} f={f} highlightTeamId={t.id} />
-            ))}
-          </Section>
-        )}
-
-        {standings.data && standings.data.length > 0 && (
-          <Section
-            title="Tabell"
-            action={
-              <Link className="btn btn--ghost btn--small" to={`/division/${t.poolId}?liga=${t.leagueId}&lag=${t.id}`}>
-                Hela divisionen
-              </Link>
-            }
-          >
-            <StandingsTable rows={standings.data} highlightTeamId={t.id} leagueId={t.leagueId} />
-          </Section>
-        )}
-
-        <Section title={`Spelare (${t.players.length})`}>
-          <ul className="pairs">
-            {t.players.map((p) => (
-              <li key={p.id}>
-                <Link to={`/spelare/${p.rankedinId}`}>{p.name}</Link>
-                {p.isCaptain && <span className="pill">Kapten</span>}
-                {!p.hasLicense && <span className="pill pill--warn">Licens saknas</span>}
-              </li>
-            ))}
-          </ul>
-        </Section>
-
-        <p className="center">
-          <ExternalLink href={rinUrl(`/sv/team/homepage/${t.id}`)}>Laget på Rankedin</ExternalLink>
-        </p>
+        <div className="columns">
+          <div>
+            <Section title="Kommande" action={<RefreshButton onClick={() => fixtures.reload()} loading={fixtures.loading} />}>
+              {fixtures.error && <ErrorBox error={fixtures.error} onRetry={() => fixtures.reload()} />}
+              {!fixtures.data && fixtures.loading && <Loading />}
+              {fixtures.data && upcoming.length === 0 && <Empty>Inga fler matcher den här säsongen.</Empty>}
+              {upcoming.map((f) => (
+                <FixtureCard key={f.teamMatchId} f={f} highlightTeamId={t.id} from={me} />
+              ))}
+            </Section>
+            {played.length > 0 && (
+              <Section title="Spelade">
+                {played.map((f) => (
+                  <FixtureCard key={f.teamMatchId} f={f} highlightTeamId={t.id} from={me} />
+                ))}
+              </Section>
+            )}
+          </div>
+          <div>
+            {standings.data && standings.data.length > 0 && (
+              <Section
+                title="Tabell"
+                action={
+                  <Go className="btn btn--ghost btn--small" to={`/division/${t.poolId}?liga=${t.leagueId}&lag=${t.id}`} from={me}>
+                    Hela divisionen
+                  </Go>
+                }
+              >
+                <StandingsTable rows={standings.data} highlightTeamId={t.id} leagueId={t.leagueId} from={me} />
+              </Section>
+            )}
+            <Section title={`Spelare (${t.players.length})`}>
+              <div className="list">
+                {t.players.map((p) => (
+                  <Go key={p.id} to={`/spelare/${p.rankedinId}`} from={me} className="item">
+                    <span className="item__main">
+                      {p.name}
+                      {p.isCaptain && <span className="tag">Lagledare</span>}
+                      {!p.hasLicense && <span className="tag tag--warn">Licens saknas</span>}
+                    </span>
+                  </Go>
+                ))}
+              </div>
+            </Section>
+            <p className="small">
+              <ExternalLink href={rinUrl(`/sv/team/homepage/${t.id}`)}>Laget på Rankedin</ExternalLink>
+            </p>
+          </div>
+        </div>
       </Page>
     </>
   );

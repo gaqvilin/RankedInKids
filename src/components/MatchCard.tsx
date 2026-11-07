@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Go } from './shell';
 import type { Side } from '../lib/rankedin';
 import { fmtDayTime, fmtTime } from '../lib/format';
 
@@ -17,6 +17,8 @@ type Props = {
   onEnterResult?: () => void;
   /** Link to the whole team match (team leagues). */
   teamMatchPath?: string;
+  /** Label for "back" on pages opened from this card. */
+  from?: string;
 };
 
 export function MatchCard(p: Props) {
@@ -46,15 +48,15 @@ export function MatchCard(p: Props) {
       {(p.refereeCode || p.canEnterResult || p.awaitingConfirmation || p.teamMatchPath) && (
         <div className="match__actions">
           {p.teamMatchPath && (
-            <Link className="btn btn--ghost btn--small" to={p.teamMatchPath}>
+            <Go className="btn btn--ghost btn--small" to={p.teamMatchPath} from={p.from ?? 'Tillbaka'}>
               Hela lagmatchen
-            </Link>
+            </Go>
           )}
           {p.awaitingConfirmation && <span className="pill pill--warn">Väntar på bekräftelse</span>}
           {p.refereeCode && !p.played && (
-            <Link className="btn btn--primary btn--small" to={`/doma/${encodeURIComponent(p.refereeCode)}`}>
+            <Go className="btn btn--small" to={`/doma/${encodeURIComponent(p.refereeCode)}`} from={p.from ?? 'Tillbaka'}>
               Döm live
-            </Link>
+            </Go>
           )}
           {p.canEnterResult && p.onEnterResult && (
             <button className="btn btn--small" onClick={p.onEnterResult}>

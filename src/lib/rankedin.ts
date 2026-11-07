@@ -424,12 +424,13 @@ export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<
 
   const block = rawMatches[0]?.matches;
   const matchType = (rawMatches[0] as unknown as { settings?: { matchType: number } })?.settings?.matchType ?? 3;
+  const licenseRequired = (lineups as unknown as { isLicenseRequired?: boolean }).isLicenseRequired !== false;
   const roster = (t: RawLineupTeam): LineupPlayer[] =>
     (t.players || []).map((p) => ({
       id: p.playerId,
       name: `${p.firstName} ${p.lastName}`.trim(),
       rankedinId: p.playerRankedinId,
-      hasLicense: p.hasLicense,
+      hasLicense: !licenseRequired || p.hasLicense,
       rating: p.ratingBegin,
       points: p.rankingTypePoints?.length ? Math.max(...p.rankingTypePoints.map((r) => r.points)) : null,
     }));

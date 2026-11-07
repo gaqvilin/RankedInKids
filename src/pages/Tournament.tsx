@@ -54,7 +54,7 @@ export default function Tournament() {
   if (header.error) {
     return (
       <>
-        <AppHeader back="history" />
+        <AppHeader back="/tavlingar" backLabel="Tävlingar" />
         <Page>
           <ErrorBox error={header.error} onRetry={() => header.reload()} />
         </Page>
@@ -64,7 +64,7 @@ export default function Tournament() {
   if (!header.data) {
     return (
       <>
-        <AppHeader back="history" />
+        <AppHeader back="/tavlingar" backLabel="Tävlingar" />
         <Page>
           <Loading />
         </Page>
@@ -81,8 +81,8 @@ export default function Tournament() {
 
   return (
     <>
-      <AppHeader back="history" />
-      <Page>
+      <AppHeader back="/tavlingar" backLabel="Tävlingar" />
+      <Page wide>
         <div className="event-head">
           <p className="muted small">
             {fmtDay(t.startDate)} · {t.city} · {relativeDays(t.startDate)}

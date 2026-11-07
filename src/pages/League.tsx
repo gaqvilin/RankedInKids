@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { Go } from '../components/shell';
 import { AppHeader, ErrorBox, ExternalLink, Loading, Page, Section } from '../components/ui';
 import { fmtDay } from '../lib/format';
 import { getLeague, type Pool } from '../lib/leagues';
@@ -23,8 +24,8 @@ export default function League() {
 
   return (
     <>
-      <AppHeader back="history" title="Lagserie" />
-      <Page>
+      <AppHeader back="/serier" backLabel="Klubbligan" title={league.data?.name ?? 'Serie'} />
+      <Page wide>
         {league.error && <ErrorBox error={league.error} onRetry={() => league.reload()} />}
         {!league.data && !league.error && <Loading />}
         {league.data && (
@@ -45,11 +46,11 @@ export default function League() {
                 <ul className="card-list">
                   {pools.map((p) => (
                     <li key={p.id}>
-                      <Link to={`/division/${p.id}?liga=${league.data!.id}`} className="event-row">
+                      <Go to={`/division/${p.id}?liga=${league.data!.id}`} from={league.data!.name} className="event-row">
                         <span className="event-row__main">
                           <strong>{p.division}</strong>
                         </span>
-                      </Link>
+                      </Go>
                     </li>
                   ))}
                 </ul>
