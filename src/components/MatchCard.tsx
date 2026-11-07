@@ -15,6 +15,8 @@ type Props = {
   canEnterResult?: boolean;
   awaitingConfirmation?: boolean;
   onEnterResult?: () => void;
+  /** Link to the whole team match (team leagues). */
+  teamMatchPath?: string;
 };
 
 export function MatchCard(p: Props) {
@@ -41,8 +43,13 @@ export function MatchCard(p: Props) {
           </div>
         ))}
       </div>
-      {(p.refereeCode || p.canEnterResult || p.awaitingConfirmation) && (
+      {(p.refereeCode || p.canEnterResult || p.awaitingConfirmation || p.teamMatchPath) && (
         <div className="match__actions">
+          {p.teamMatchPath && (
+            <Link className="btn btn--ghost btn--small" to={p.teamMatchPath}>
+              Hela lagmatchen
+            </Link>
+          )}
           {p.awaitingConfirmation && <span className="pill pill--warn">Väntar på bekräftelse</span>}
           {p.refereeCode && !p.played && (
             <Link className="btn btn--primary btn--small" to={`/doma/${encodeURIComponent(p.refereeCode)}`}>

@@ -104,6 +104,7 @@ export type UpcomingMatch = {
   court: string | null;
   location: string | null;
   teamNames: [string, string] | null;
+  teamMatchId: number | null;
   sides: [Side, Side];
   refereeCode: string | null;
   sets: [number, number][];
@@ -127,7 +128,7 @@ export async function getUpcomingMatches(playerId: number, fresh = false): Promi
         Challenged: RawP;
         Challenger1: RawP;
         Challenged1: RawP;
-        TeamModel: { Team1Name: string; Team2Name: string } | null;
+        TeamModel: { Team1Name: string; Team2Name: string; TeamMatchLink: string | null } | null;
         RefereeCode: string | null;
         Date: string | null;
         Location: string | null;
@@ -157,6 +158,7 @@ export async function getUpcomingMatches(playerId: number, fresh = false): Promi
       court: m.Info.Court,
       location: m.Info.Location,
       teamNames: m.Info.TeamModel ? [m.Info.TeamModel.Team1Name, m.Info.TeamModel.Team2Name] : null,
+      teamMatchId: Number(m.Info.TeamModel?.TeamMatchLink?.match(/matchresults\/(\d+)/)?.[1]) || null,
       sides: withoutUnplayedWinner(
         [side(m.Info.Challenger, m.Info.Challenger1), side(m.Info.Challenged, m.Info.Challenged1)],
         (m.Score?.Score || []).length > 0,
@@ -362,4 +364,101 @@ export function rinUrl(path: string): string {
   if (!path) return RIN_WEB;
   if (/^https?:/.test(path)) return path;
   return `${RIN_WEB}${path.startsWith('/') ? '' : '/'}${path}`;
+}
+
+// ---------- Team league matches (e.g. Klubbligan) ----------
+
+export type TeamMatch = {
+  id: number;
+  eventId: number;
+  finished: boolean;
+  teams: [{ id: number; name: string }, { id: number; name: string }];
+  /** Individual matches won by each team. */
+  score: [number, number];
+  matches: TournamentMatch[];
+};
+
+type RawTLSide = { name: string; player2Name: string | null; player1Id: number; player2Id: number | null } | null;
+
+export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<TeamMatch> {
+  const [rawMatches, lineups, standings] = await Promise.all([
+    rin<
+      {
+        matches: {
+          eventId: number;
+          isEventFinished: boolean;
+          matches: {
+            id: number;
+            date: string | null;
+            challenger: RawTLSide;
+            challenged: RawTLSide;
+            matchResult: {
+              isPlayed: boolean;
+              isFirstParticipantWinner: boolean | null;
+              score: { detailedScoring: { firstParticipantScore: number; secondParticipantScore: number }[] | null } | null;
+            } | null;
+            enterResultsButton: boolean;
+            awaitingResultConfirmation?: boolean;
+          }[];
+        };
+      }[]
+    >(`TeamLeague/GetTeamLeagueTeamsMatchesAsync?teamMatchId=${teamMatchId}&language=sv`, { fresh }),
+    rin<{ firstTeam: { id: number; name: string }; secondTeam: { id: number; name: string } }>(
+      `TeamLeague/GetTeamsLineupsAsync?teamMatchId=${teamMatchId}&language=sv`,
+    ),
+    rin<{ scoresViewModels: { participantName: string; participantUrl: string }[] }>(
+      `TeamLeague/TeamLeagueTeamMatchStandingsAsync?teamMatchId=${teamMatchId}&language=sv`,
+    ).catch(() => ({ scoresViewModels: [] })),
+  ]);
+
+  // Lineup names can be truncated ("Varberg Padelklubb G..."); standings carry full names.
+  const fullName = (team: { id: number; name: string }) =>
+    standings.scoresViewModels.find((s) => s.participantUrl?.endsWith(`/${team.id}`))?.participantName || team.name;
+
+  const block = rawMatches[0]?.matches;
+  const side = (s: RawTLSide, won: boolean): Side => ({
+    names: s ? [s.name, s.player2Name].filter((n): n is string => !!n) : [],
+    ids: s ? [s.player1Id, s.player2Id].filter((n): n is number => !!n) : [],
+    isWinner: won,
+  });
+  const matches: TournamentMatch[] = (block?.matches || []).map((m) => {
+    const r = m.matchResult;
+    const played = !!r?.isPlayed;
+    return {
+      id: m.id,
+      date: null,
+      className: '',
+      draw: '',
+      court: null,
+      sides: [side(m.challenger, played && r?.isFirstParticipantWinner === true), side(m.challenged, played && r?.isFirstParticipantWinner === false)],
+      sets: (r?.score?.detailedScoring || []).map((s) => [s.firstParticipantScore, s.secondParticipantScore] as [number, number]),
+      played,
+      canEnterResult: !!m.enterResultsButton,
+      awaitingConfirmation: !!m.awaitingResultConfirmation,
+    };
+  });
+
+  return {
+    id: teamMatchId,
+    eventId: block?.eventId ?? 0,
+    finished: !!block?.isEventFinished,
+    teams: [
+      { id: lineups.firstTeam.id, name: fullName(lineups.firstTeam) },
+      { id: lineups.secondTeam.id, name: fullName(lineups.secondTeam) },
+    ],
+    score: [matches.filter((m) => m.sides[0].isWinner).length, matches.filter((m) => m.sides[1].isWinner).length],
+    matches,
+  };
+}
+
+/** Turns a pasted rankedin.com link into an in-app path, if we have a view for it. */
+export function appPathFromRankedinUrl(input: string): string | null {
+  const s = input.trim();
+  const team = s.match(/team\/matchresults\/(\d+)/i);
+  if (team) return `/lagmatch/${team[1]}`;
+  const tour = s.match(/tournament\/(\d+)/i);
+  if (tour) return `/tavling/${tour[1]}`;
+  const player = s.match(/R\d{9}/i);
+  if (player) return `/spelare/${player[0].toUpperCase()}`;
+  return null;
 }

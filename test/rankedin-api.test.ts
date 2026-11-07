@@ -33,3 +33,14 @@ describe('parseRinDate', () => {
     expect(parseRinDate(null)).toBeNull();
   });
 });
+
+import { appPathFromRankedinUrl } from '../src/lib/rankedin';
+
+describe('appPathFromRankedinUrl', () => {
+  it('maps rankedin links to app paths', () => {
+    expect(appPathFromRankedinUrl('https://www.rankedin.com/en/team/matchresults/168309')).toBe('/lagmatch/168309');
+    expect(appPathFromRankedinUrl('https://www.rankedin.com/sv/tournament/75555/step-in')).toBe('/tavling/75555');
+    expect(appPathFromRankedinUrl('https://www.rankedin.com/en/player/R000335756/aronaqvilin/info')).toBe('/spelare/R000335756');
+    expect(appPathFromRankedinUrl('Aron')).toBeNull();
+  });
+});

@@ -161,6 +161,7 @@ export default function Player() {
               canEnterResult={m.canEnterResult}
               awaitingConfirmation={m.awaitingConfirmation}
               onEnterResult={() => setReporting(m)}
+              teamMatchPath={m.teamMatchId ? `/lagmatch/${m.teamMatchId}?spelare=${p.id}` : undefined}
             />
           ))}
         </Section>

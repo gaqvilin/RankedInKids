@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppHeader, Empty, ErrorBox, Loading, Page, Section } from '../components/ui';
-import { searchPlayers, type PlayerHit } from '../lib/rankedin';
+import { appPathFromRankedinUrl, searchPlayers, type PlayerHit } from '../lib/rankedin';
 import { getSavedPlayers, removePlayer, type SavedPlayer } from '../lib/storage';
 
 export default function Home() {
@@ -19,10 +19,10 @@ export default function Home() {
       setHits(null);
       return;
     }
-    // A pasted profile link or R-number goes straight to the player.
-    const rid = q.match(/R\d{9}/i)?.[0];
-    if (rid) {
-      navigate(`/spelare/${rid.toUpperCase()}`);
+    // A pasted Rankedin link (player, tournament, team match) or R-number opens directly.
+    const direct = appPathFromRankedinUrl(q);
+    if (direct) {
+      navigate(direct);
       return;
     }
     const t = setTimeout(() => {
@@ -71,7 +71,7 @@ export default function Home() {
           <input
             className="input"
             type="search"
-            placeholder="Namn, R-nummer eller profillänk"
+            placeholder="Namn, R-nummer eller Rankedin-länk"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             autoComplete="off"
