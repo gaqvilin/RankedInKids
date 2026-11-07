@@ -1,0 +1,62 @@
+// Pure helpers for turning a typed-in padel score into Rankedin's
+// SubmitResultAsync payload. Shared by the API function and the UI.
+
+/** GetChallengeResultAsync response (Rankedin returns PascalCase, swagger says camelCase). */
+export type ChallengeResult = Record<string, unknown>;
+
+export type SetScore = [number, number];
+
+function pick(obj: ChallengeResult, name: string): unknown {
+  if (name in obj) return obj[name];
+  const pascal = name[0].toUpperCase() + name.slice(1);
+  if (pascal in obj) return obj[pascal];
+  const lower = name.toLowerCase();
+  const key = Object.keys(obj).find((k) => k.toLowerCase() === lower);
+  return key ? obj[key] : undefined;
+}
+
+/** Validates a list of set scores and returns sets won by each side. */
+export function summarizeSets(sets: SetScore[]): { p1: number; p2: number } {
+  if (!Array.isArray(sets) || sets.length === 0) throw new Error('Ange minst ett set.');
+  if (sets.length > 5) throw new Error('För många set.');
+  let p1 = 0;
+  let p2 = 0;
+  for (const set of sets) {
+    if (!Array.isArray(set) || set.length !== 2) throw new Error('Ogiltigt set.');
+    const [a, b] = set.map((n) => Number(n));
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0 || a > 99 || b > 99) {
+      throw new Error('Ogiltiga siffror.');
+    }
+    if (a === b) throw new Error('Ett set kan inte sluta oavgjort.');
+    if (a > b) p1++;
+    else p2++;
+  }
+  if (p1 === p2) throw new Error('Matchen måste ha en vinnare.');
+  return { p1, p2 };
+}
+
+/** Mirrors submitResultModel() in rankedin.com's enter-results dialog. */
+export function buildSubmitPayload(challengeId: number, challenge: ChallengeResult, sets: SetScore[]) {
+  const { p1, p2 } = summarizeSets(sets);
+  const games1 = sets.map((s) => `${Number(s[0])},`).join('');
+  const games2 = sets.map((s) => `${Number(s[1])},`).join('');
+  const durations = sets.map(() => '0,').join('');
+  return {
+    challengeId,
+    participant1CancellationType: 0,
+    participant2CancellationType: 0,
+    reset: false,
+    participant1Score: p1,
+    participant2Score: p2,
+    participant1Games: games1,
+    participant2Games: games2,
+    setDurations: durations,
+    participant1ID: Number(pick(challenge, 'participant1ID')) || 0,
+    participant2ID: Number(pick(challenge, 'participant2ID')) || 0,
+    duration: false,
+    games: false,
+    matchDuration: 0,
+    tiebreaks: [],
+    currPlayerId: Number(pick(challenge, 'currentPlayerId')) || 0,
+  };
+}
