@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppHeader, Empty, ErrorBox, Loading, Page, Section } from '../components/ui';
 import { appPathFromRankedinUrl, searchPlayers, type PlayerHit } from '../lib/rankedin';
-import { getSavedPlayers, removePlayer, type SavedPlayer } from '../lib/storage';
+import { currentSplLeagues } from '../lib/leagues';
+import { getSavedPlayers, getSavedTeams, removePlayer, type SavedPlayer } from '../lib/storage';
+import { useAsync } from '../lib/useAsync';
 
 export default function Home() {
   const [saved, setSaved] = useState<SavedPlayer[]>(getSavedPlayers);
@@ -11,6 +13,8 @@ export default function Home() {
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState('');
+  const [teams] = useState(getSavedTeams);
+  const spl = useAsync(() => currentSplLeagues(), []);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -96,6 +100,34 @@ export default function Home() {
               ))}
             </ul>
           )}
+        </Section>
+
+        <Section title="Lagserier">
+          {teams.length > 0 && (
+            <ul className="card-list" style={{ marginBottom: 8 }}>
+              {teams.map((t) => (
+                <li key={t.id}>
+                  <Link to={`/lag/${t.id}`} className="player-row__link">
+                    <span className="avatar" aria-hidden="true">
+                      ★
+                    </span>
+                    <span>
+                      <strong>{t.name}</strong>
+                      <span className="muted small block">{t.league}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="chips">
+            {spl.data?.map((l) => (
+              <Link key={l.id} to={`/liga/${l.id}`} className="chip">
+                {l.name.replace(/^SPL Swedish Padel League\s*/i, 'SPL ')}
+              </Link>
+            ))}
+          </div>
+          <p className="muted small">Klistra in en Rankedin-länk till ett lag eller en serie ovan för att öppna den direkt.</p>
         </Section>
 
         <Section title="Döma en match">

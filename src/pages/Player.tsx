@@ -15,6 +15,7 @@ import {
   type PlayerEvent,
   type UpcomingMatch,
 } from '../lib/rankedin';
+import { getPlayerTeams } from '../lib/leagues';
 import { isSaved, removePlayer, savePlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
 
@@ -65,6 +66,12 @@ export default function Player() {
     () => (playerId && events.data ? loadEntries(playerId, events.data) : Promise.resolve([])),
     [playerId, events.data],
   );
+  const leagueTeams = useAsync(async () => {
+    if (!playerId || !events.data) return new Map<number, { teamId: number; name: string; division: string }>();
+    const leagues = events.data.filter((e) => e.kind === 'teamleague');
+    const found = await Promise.all(leagues.map((l) => getPlayerTeams(l.id, playerId).then((t) => [l.id, t[0]] as const).catch(() => [l.id, undefined] as const)));
+    return new Map(found.filter((x): x is readonly [number, { teamId: number; name: string; division: string; region: string }] => !!x[1]));
+  }, [playerId, events.data]);
   const [saved, setSaved] = useState(() => isSaved(rid));
   const [reporting, setReporting] = useState<UpcomingMatch | null>(null);
 
@@ -209,6 +216,18 @@ export default function Player() {
                     </span>
                     <span className="event-row__main">
                       <strong>{e.name}</strong>
+                    </span>
+                  </Link>
+                ) : leagueTeams.data?.get(e.id) ? (
+                  <Link to={`/lag/${leagueTeams.data.get(e.id)!.teamId}`} className="event-row">
+                    <span className="event-row__date">
+                      <strong>{fmtDay(e.startDate)}</strong>
+                    </span>
+                    <span className="event-row__main">
+                      <strong>{e.name}</strong>
+                      <span className="muted small block">
+                        {leagueTeams.data.get(e.id)!.name} · {leagueTeams.data.get(e.id)!.division}
+                      </span>
                     </span>
                   </Link>
                 ) : (

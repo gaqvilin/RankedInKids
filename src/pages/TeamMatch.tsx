@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { ResultSheet } from '../components/ResultSheet';
 import { AppHeader, ErrorBox, ExternalLink, Loading, Page, RefreshButton, Section } from '../components/ui';
@@ -51,11 +51,15 @@ export default function TeamMatch() {
       <AppHeader back="history" title="Lagmatch" />
       <Page>
         <div className="team-score">
-          <div className="team-score__team">{t.teams[0].name}</div>
+          <Link className="team-score__team" to={`/lag/${t.teams[0].id}`}>
+            {t.teams[0].name}
+          </Link>
           <div className="team-score__num" aria-label={`Ställning ${t.score[0]} mot ${t.score[1]}`}>
             {t.score[0]}–{t.score[1]}
           </div>
-          <div className="team-score__team">{t.teams[1].name}</div>
+          <Link className="team-score__team" to={`/lag/${t.teams[1].id}`}>
+            {t.teams[1].name}
+          </Link>
           <p className="team-score__sub">
             {played} av {t.matches.length} matcher spelade
           </p>

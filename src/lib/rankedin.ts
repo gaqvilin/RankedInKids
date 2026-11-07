@@ -456,6 +456,10 @@ export function appPathFromRankedinUrl(input: string): string | null {
   const s = input.trim();
   const team = s.match(/team\/matchresults\/(\d+)/i);
   if (team) return `/lagmatch/${team[1]}`;
+  const teamHome = s.match(/team\/homepage\/(\d+)/i);
+  if (teamHome) return `/lag/${teamHome[1]}`;
+  const league = s.match(/teamleague\/(\d+)/i);
+  if (league) return `/liga/${league[1]}`;
   const tour = s.match(/tournament\/(\d+)/i);
   if (tour) return `/tavling/${tour[1]}`;
   const player = s.match(/R\d{9}/i);

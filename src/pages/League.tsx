@@ -1,0 +1,63 @@
+import { useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { AppHeader, ErrorBox, ExternalLink, Loading, Page, Section } from '../components/ui';
+import { fmtDay } from '../lib/format';
+import { getLeague, type Pool } from '../lib/leagues';
+import { rinUrl } from '../lib/rankedin';
+import { useAsync } from '../lib/useAsync';
+
+export default function League() {
+  const { id = '' } = useParams();
+  const league = useAsync(() => getLeague(Number(id)), [id]);
+  const [filter, setFilter] = useState('');
+
+  const regions = useMemo(() => {
+    const groups = new Map<string, Pool[]>();
+    for (const p of league.data?.pools || []) {
+      if (filter && !p.name.toLowerCase().includes(filter.toLowerCase())) continue;
+      const key = p.region || 'Divisioner';
+      groups.set(key, [...(groups.get(key) || []), p]);
+    }
+    return [...groups.entries()];
+  }, [league.data, filter]);
+
+  return (
+    <>
+      <AppHeader back="history" title="Lagserie" />
+      <Page>
+        {league.error && <ErrorBox error={league.error} onRetry={() => league.reload()} />}
+        {!league.data && !league.error && <Loading />}
+        {league.data && (
+          <>
+            <div className="event-head">
+              <p className="muted small">
+                {fmtDay(league.data.startDate)} – {fmtDay(league.data.endDate)}
+                {league.data.teamsCount ? ` · ${league.data.teamsCount} lag` : ''}
+              </p>
+              <h1>{league.data.name}</h1>
+              <ExternalLink href={rinUrl(`/sv/teamleague/${league.data.id}`)}>Öppna i Rankedin</ExternalLink>
+            </div>
+            {league.data.pools.length > 8 && (
+              <input className="input" type="search" placeholder="Filtrera, t.ex. Sydväst eller Div 2" value={filter} onChange={(e) => setFilter(e.target.value)} />
+            )}
+            {regions.map(([region, pools]) => (
+              <Section key={region} title={region}>
+                <ul className="card-list">
+                  {pools.map((p) => (
+                    <li key={p.id}>
+                      <Link to={`/division/${p.id}?liga=${league.data!.id}`} className="event-row">
+                        <span className="event-row__main">
+                          <strong>{p.division}</strong>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            ))}
+          </>
+        )}
+      </Page>
+    </>
+  );
+}

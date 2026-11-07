@@ -36,3 +36,28 @@ export function removePlayer(rankedinId: string): SavedPlayer[] {
 export function isSaved(rankedinId: string): boolean {
   return getSavedPlayers().some((p) => p.rankedinId === rankedinId);
 }
+
+// ---------- Saved teams (team leagues such as SPL / Klubbligan) ----------
+export type SavedTeam = { id: number; name: string; league: string };
+
+const TEAM_KEY = 'padelkids.teams.v1';
+
+export function getSavedTeams(): SavedTeam[] {
+  try {
+    const raw = localStorage.getItem(TEAM_KEY);
+    return raw ? (JSON.parse(raw) as SavedTeam[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function toggleTeam(t: SavedTeam): SavedTeam[] {
+  const list = getSavedTeams();
+  const next = list.some((x) => x.id === t.id) ? list.filter((x) => x.id !== t.id) : [t, ...list].slice(0, 10);
+  try {
+    localStorage.setItem(TEAM_KEY, JSON.stringify(next));
+  } catch {
+    /* storage unavailable */
+  }
+  return next;
+}

@@ -44,3 +44,16 @@ describe('appPathFromRankedinUrl', () => {
     expect(appPathFromRankedinUrl('Aron')).toBeNull();
   });
 });
+
+import { splitPoolName } from '../src/lib/leagues';
+
+describe('league links and pools', () => {
+  it('maps league and team links', () => {
+    expect(appPathFromRankedinUrl('https://www.rankedin.com/sv/teamleague/946/spl-swedish-padel-league-herrar-2026-27')).toBe('/liga/946');
+    expect(appPathFromRankedinUrl('https://www.rankedin.com/sv/team/homepage/3203515')).toBe('/lag/3203515');
+  });
+  it('splits pool names into region and division', () => {
+    expect(splitPoolName('R6 Sydväst - Div 1 Sydväst')).toEqual({ region: 'R6 Sydväst', division: 'Div 1 Sydväst' });
+    expect(splitPoolName('Gul-södra')).toEqual({ region: '', division: 'Gul-södra' });
+  });
+});

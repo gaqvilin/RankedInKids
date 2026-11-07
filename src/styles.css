@@ -854,6 +854,13 @@ tr.is-mine td,
 .team-score__team {
   font-weight: 700;
   font-size: 15px;
+  color: var(--text);
+  text-decoration: none;
+}
+a.fixture {
+  display: block;
+  color: var(--text);
+  text-decoration: none;
 }
 .team-score__num {
   font-size: 34px;
