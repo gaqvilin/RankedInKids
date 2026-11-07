@@ -7,13 +7,14 @@ import { fmtDay, relativeDays } from '../lib/format';
 import { buildAgenda, loadOverview } from '../lib/overview';
 import { Agenda } from '../components/Agenda';
 import { appPathFromRankedinUrl, getUpcomingMatches, searchPlayers, type PlayerHit } from '../lib/rankedin';
+import { useKnownPlayers } from '../lib/known';
 import { getSavedPlayers, removePlayer, type SavedPlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 import { LeagueTeamCard } from './Player';
 
 /** The most important things for one saved child, without clicking further. */
-function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove: () => void }) {
+function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove?: () => void }) {
   const { version } = useSession();
   const first = p.name.split(' ')[0];
   const matches = useAsync(() => getUpcomingMatches(p.id), [p.id, version]);
@@ -32,9 +33,13 @@ function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove: () => void }
             {p.name}
           </Go>
         </h2>
-        <button className="link-btn small muted" onClick={onRemove}>
-          Ta bort
-        </button>
+        {onRemove ? (
+          <button className="link-btn small muted" onClick={onRemove}>
+            Ta bort
+          </button>
+        ) : (
+          <span className="small muted">Inloggad</span>
+        )}
       </div>
 
       {missing.map((e) => (
@@ -92,6 +97,8 @@ function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove: () => void }
 
 export default function Home() {
   const [saved, setSaved] = useState<SavedPlayer[]>(getSavedPlayers);
+  const known = useKnownPlayers();
+  const shown = [...saved, ...known.filter((k) => !saved.some((s) => s.rankedinId === k.rankedinId))];
   const [term, setTerm] = useState('');
   const [hits, setHits] = useState<PlayerHit[] | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -131,12 +138,13 @@ export default function Home() {
           <h1>Översikt</h1>
         </div>
 
-        {saved.map((p) => (
-          <PlayerSummary key={p.rankedinId} p={p} onRemove={() => setSaved(removePlayer(p.rankedinId))} />
-        ))}
+        {shown.map((p) => {
+          const isSaved = saved.some((s) => s.rankedinId === p.rankedinId);
+          return <PlayerSummary key={p.rankedinId} p={p} onRemove={isSaved ? () => setSaved(removePlayer(p.rankedinId)) : undefined} />;
+        })}
 
-        <Section title={saved.length ? 'Lägg till spelare' : 'Hitta ditt barn'}>
-          {saved.length === 0 && <p className="muted">Sök på namn och spara spelaren, så samlas allt viktigt här.</p>}
+        <Section title={shown.length ? 'Lägg till spelare' : 'Hitta ditt barn'}>
+          {shown.length === 0 && <p className="muted">Sök på namn och spara spelaren, så samlas allt viktigt här.</p>}
           <input
             className="input"
             type="search"

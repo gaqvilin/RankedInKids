@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, type LinkProps } from 'react-router-dom';
 import { CURRENT_VERSION, hasUnseenRelease } from '../lib/releases';
-import { getSavedPlayers, getSavedTeams } from '../lib/storage';
+import { useKnownPlayers } from '../lib/known';
+import { getSavedTeams } from '../lib/storage';
 import { useSession } from '../session';
 
 /** Where "back" goes, carried in router state by <Go>. */
@@ -47,11 +48,9 @@ function ReleasesLink({ className }: { className: string }) {
   );
 }
 
-/** Admin appears only when someone is logged in. */
-function useNav() {
-  const { user } = useSession();
-  return user.loggedIn ? [...NAV.slice(0, 3), ADMIN_NAV, NAV[3]] : NAV;
-}
+/** What you look at: always first. Tools and settings live at the bottom. */
+const MAIN_NAV = NAV.slice(0, 3);
+const ACCOUNT_NAV = NAV[3];
 
 function Icon({ d }: { d: string }) {
   return (
@@ -63,8 +62,7 @@ function Icon({ d }: { d: string }) {
 
 function Sidebar() {
   const { user } = useSession();
-  const nav = useNav();
-  const players = getSavedPlayers();
+  const players = useKnownPlayers();
   const teams = getSavedTeams();
   return (
     <aside className="sidebar" aria-label="Huvudmeny">
@@ -73,7 +71,7 @@ function Sidebar() {
         <span className="brand__sub">Data från Rankedin</span>
       </Link>
       <nav className="sidebar__nav">
-        {nav.map((n) => (
+        {MAIN_NAV.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `sidebar__link ${isActive ? 'is-active' : ''}`}>
             <Icon d={n.icon} />
             {n.label}
@@ -101,27 +99,31 @@ function Sidebar() {
         </div>
       )}
       <div className="sidebar__foot">
+        <nav className="sidebar__nav" aria-label="Verktyg">
+          {user.loggedIn && (
+            <NavLink to={ADMIN_NAV.to} className={({ isActive }) => `sidebar__link ${isActive ? 'is-active' : ''}`}>
+              <Icon d={ADMIN_NAV.icon} />
+              {ADMIN_NAV.label}
+            </NavLink>
+          )}
+          <NavLink to={ACCOUNT_NAV.to} className={({ isActive }) => `sidebar__link ${isActive ? 'is-active' : ''}`}>
+            <Icon d={ACCOUNT_NAV.icon} />
+            <span>
+              {user.loggedIn ? user.name : 'Logga in'}
+              {user.loggedIn && user.accounts.length > 1 && <span className="muted small"> +{user.accounts.length - 1}</span>}
+            </span>
+          </NavLink>
+        </nav>
         <ReleasesLink className="sidebar__releases small" />
-        {user.loggedIn ? (
-          <Link to="/konto" className="sidebar__account">
-            <span className="muted small block">Inloggad som</span>
-            {user.name}
-            {user.accounts.length > 1 && <span className="muted small"> +{user.accounts.length - 1}</span>}
-          </Link>
-        ) : (
-          <Link to="/konto" className="sidebar__account">
-            Logga in med Rankedin
-          </Link>
-        )}
       </div>
     </aside>
   );
 }
 
 function TabBar() {
-  const nav = useNav();
+  const nav = [...MAIN_NAV, ACCOUNT_NAV];
   return (
-    <nav className="tabbar" aria-label="Huvudmeny" style={{ gridTemplateColumns: `repeat(${nav.length}, 1fr)` }}>
+    <nav className="tabbar" aria-label="Huvudmeny">
       {nav.map((n) => (
         <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `tabbar__link ${isActive ? 'is-active' : ''}`}>
           <Icon d={n.icon} />

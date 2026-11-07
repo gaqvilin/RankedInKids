@@ -296,3 +296,27 @@ export async function getLeagueHeader(id: number): Promise<{ id: number; name: s
   const h = await rin<{ Id: number; Name: string; StartDate: string; EndDate: string; EventState: number }>(`TeamLeague/GetHeaderAsync?id=${id}&language=sv`);
   return { id: h.Id, name: h.Name.trim(), startDate: h.StartDate, endDate: h.EndDate, active: h.EventState === 3 };
 }
+
+export type MyLeagueTeam = {
+  leagueId: number;
+  player: { id: number; name: string };
+  teamId: number;
+  teamName: string;
+  division: string;
+};
+
+/** Which of the given players play in which of the given leagues, and for which team. */
+export async function findMyTeams(leagueIds: number[], players: { id: number; name: string }[]): Promise<MyLeagueTeam[]> {
+  const pairs = leagueIds.flatMap((leagueId) => players.map((player) => ({ leagueId, player })));
+  const found = await Promise.all(
+    pairs.map(async ({ leagueId, player }) => {
+      try {
+        const teams = await getPlayerTeams(leagueId, player.id);
+        return teams.map((t) => ({ leagueId, player, teamId: t.teamId, teamName: t.name, division: t.division }));
+      } catch {
+        return [];
+      }
+    }),
+  );
+  return found.flat();
+}

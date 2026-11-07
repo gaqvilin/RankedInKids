@@ -230,6 +230,10 @@ h3 {
 }
 .sidebar__foot {
   margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 4px;
 }
 .sidebar__account {
   display: block;
@@ -1324,7 +1328,7 @@ a.match:hover {
 }
 .sidebar__releases {
   display: block;
-  padding: 8px;
+  padding: 6px 8px;
 }
 @media (min-width: 960px) {
   .app-footer {

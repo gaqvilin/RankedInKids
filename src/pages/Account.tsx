@@ -88,6 +88,25 @@ export default function Account() {
           </Section>
         )}
 
+        {accounts.length > 0 && (
+          <Section title="Verktyg">
+            <div className="list">
+              <Link to="/admin" className="item">
+                <span className="item__main">
+                  <strong>Admin</strong>
+                  <span className="muted small block">Klubbar och event du administrerar i Rankedin</span>
+                </span>
+              </Link>
+              <Link to="/nyheter" className="item">
+                <span className="item__main">
+                  <strong>Nyheter</strong>
+                  <span className="muted small block">Vad som är nytt i PadelAdmin</span>
+                </span>
+              </Link>
+            </div>
+          </Section>
+        )}
+
         {showForm && (
           <Section title={accounts.length ? 'Lägg till ett Rankedin-konto' : 'Logga in med Rankedin'}>
             <p className="muted">

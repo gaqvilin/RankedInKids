@@ -5,6 +5,16 @@ export type Release = { version: string; date: string; title: string; items: str
 
 export const RELEASES: Release[] = [
   {
+    version: '0.7',
+    date: '2026-11-07',
+    title: 'Min Klubbliga och tydligare meny',
+    items: [
+      'Klubbligan visar "Min Klubbliga" överst: era lag med placering och nästa match, och markerar serierna ni spelar i.',
+      'Konton du är inloggad med räknas som dina spelare automatiskt, du behöver inte spara dem.',
+      'Menyn: det du tittar på överst, Admin och Konton längst ner. Nyheter finns i botten.',
+    ],
+  },
+  {
     version: '0.6',
     date: '2026-11-07',
     title: 'Schema, klubbsida och admin',
