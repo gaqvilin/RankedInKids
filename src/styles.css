@@ -1311,3 +1311,49 @@ a.match:hover {
 .report-toggle {
   margin: 8px 0 0;
 }
+
+/* ---------- Release notes ---------- */
+.app-footer {
+  padding: 16px;
+  text-align: center;
+  border-top: 1px solid var(--line);
+}
+.app-footer a,
+.sidebar__releases {
+  color: var(--text);
+}
+.sidebar__releases {
+  display: block;
+  padding: 8px;
+}
+@media (min-width: 960px) {
+  .app-footer {
+    display: none;
+  }
+}
+.new-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--error);
+  margin-left: 5px;
+  vertical-align: 2px;
+}
+.release {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.release h2 {
+  font-size: 18px;
+}
+.release p {
+  margin: 4px 0 8px;
+}
+.release ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.release li {
+  margin: 4px 0;
+}

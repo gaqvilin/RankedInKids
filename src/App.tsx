@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import League from './pages/League';
 import Player from './pages/Player';
 import Referee from './pages/Referee';
+import Releases from './pages/Releases';
 import Team from './pages/Team';
 import TeamMatch from './pages/TeamMatch';
 import Tournament from './pages/Tournament';
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/doma/:code" element={<Referee />} />
         <Route path="/konto" element={<Account />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/nyheter" element={<Releases />} />
         <Route path="*" element={<Home />} />
       </Routes>
       </AppShell>

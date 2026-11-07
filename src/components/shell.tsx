@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, type LinkProps } from 'react-router-dom';
+import { CURRENT_VERSION, hasUnseenRelease } from '../lib/releases';
 import { getSavedPlayers, getSavedTeams } from '../lib/storage';
 import { useSession } from '../session';
 
@@ -24,6 +25,27 @@ const NAV: NavItem[] = [
   { to: '/konto', label: 'Konton', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0' },
 ];
 const ADMIN_NAV: NavItem = { to: '/admin', label: 'Admin', icon: 'M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z' };
+
+/** True until the user has opened the release notes for the current version. */
+function useUnseenRelease() {
+  const [unseen, setUnseen] = useState(hasUnseenRelease);
+  useEffect(() => {
+    const onSeen = () => setUnseen(false);
+    window.addEventListener('releases-seen', onSeen);
+    return () => window.removeEventListener('releases-seen', onSeen);
+  }, []);
+  return unseen;
+}
+
+function ReleasesLink({ className }: { className: string }) {
+  const unseen = useUnseenRelease();
+  return (
+    <Link to="/nyheter" className={className}>
+      Nyheter{unseen && <span className="new-dot" aria-label="nytt" />}
+      <span className="muted"> · version {CURRENT_VERSION}</span>
+    </Link>
+  );
+}
 
 /** Admin appears only when someone is logged in. */
 function useNav() {
@@ -79,6 +101,7 @@ function Sidebar() {
         </div>
       )}
       <div className="sidebar__foot">
+        <ReleasesLink className="sidebar__releases small" />
         {user.loggedIn ? (
           <Link to="/konto" className="sidebar__account">
             <span className="muted small block">Inloggad som</span>
@@ -113,7 +136,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="shell">
       <Sidebar />
-      <div className="shell__main">{children}</div>
+      <div className="shell__main">
+        {children}
+        <footer className="app-footer">
+          <ReleasesLink className="small" />
+        </footer>
+      </div>
       <TabBar />
     </div>
   );

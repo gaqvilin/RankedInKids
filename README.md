@@ -30,3 +30,6 @@ npm test
 npm run build
 ```
 I en miljö med HTTP-proxy behöver Node `NODE_USE_ENV_PROXY=1` för att `fetch` ska gå via proxyn.
+
+## Release notes
+Användarnas "Nyheter" finns i `src/lib/releases.ts`. Lägg till en ny post överst vid varje release (kort, på svenska, för användare). Ny version visar en röd punkt vid länken tills användaren har öppnat sidan.
