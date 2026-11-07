@@ -20,7 +20,7 @@ En enklare app för padelspelare, föräldrar och lagledare ovanpå Rankedins da
   - `submit-result.ts` – `Match/GetChallengeResultAsync` + `Match/SubmitResultAsync`.
   - `lineup.ts` – sparar laguppställning; hämtar först aktuell uppställning med kaptenens session och behåller motståndarens spelare.
 - Live-domare anropar `live.rankedin.com/api/v1/Referee` direkt från webbläsaren (öppen CORS).
-- Research: [Rankedin API](docs/research/rankedin-api.md), [Juniorpadel i Sverige](docs/research/juniorpadel-sverige.md).
+- Research: [Rankedin API](docs/research/rankedin-api.md), [Juniorpadel i Sverige](docs/research/juniorpadel-sverige.md)., [SPL](docs/research/spl.md).
 
 ## Utveckling
 ```bash
