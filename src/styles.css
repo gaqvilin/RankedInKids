@@ -1497,3 +1497,22 @@ a.match:hover {
 .player-round p {
   margin: 6px 0;
 }
+
+/* Sidebar: two-line items */
+.sidebar__link--two {
+  display: grid;
+  gap: 0;
+  line-height: 1.3;
+}
+.sidebar__meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+.sidebar__clip {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar {
+  gap: 16px;
+}

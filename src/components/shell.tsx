@@ -3,7 +3,10 @@ import { Link, NavLink, useLocation, type LinkProps } from 'react-router-dom';
 import { onLoadingChange } from '../lib/api';
 import { CURRENT_VERSION, hasUnseenRelease } from '../lib/releases';
 import { useKnownPlayers } from '../lib/known';
+import { useMine } from '../lib/mine';
 import { getSavedTeams } from '../lib/storage';
+
+const shortDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' });
 import { useSession } from '../session';
 
 /** Where "back" goes, carried in router state by <Go>. */
@@ -64,7 +67,8 @@ function Icon({ d }: { d: string }) {
 function Sidebar() {
   const { user } = useSession();
   const players = useKnownPlayers();
-  const teams = getSavedTeams();
+  const mine = useMine();
+  const myTeams = mine.data?.teams ?? getSavedTeams().map((t) => ({ ...t, nextDate: null as string | null }));
   return (
     <aside className="sidebar" aria-label="Huvudmeny">
       <Link to="/" className="brand">
@@ -89,12 +93,34 @@ function Sidebar() {
           ))}
         </div>
       )}
-      {teams.length > 0 && (
+      {myTeams.length > 0 && (
         <div className="sidebar__group">
           <p className="sidebar__heading">Mina lag</p>
-          {teams.map((t) => (
-            <NavLink key={t.id} to={`/lag/${t.id}`} className={({ isActive }) => `sidebar__link sidebar__link--sub ${isActive ? 'is-active' : ''}`}>
-              {t.name}
+          {myTeams.map((t) => (
+            <NavLink key={t.id} to={`/lag/${t.id}`} className={({ isActive }) => `sidebar__link sidebar__link--sub sidebar__link--two ${isActive ? 'is-active' : ''}`}>
+              <span>{t.name}</span>
+              {t.nextDate && <span className="sidebar__meta">Nästa {shortDay(t.nextDate)}</span>}
+            </NavLink>
+          ))}
+        </div>
+      )}
+      {(mine.data?.clubs.length ?? 0) > 0 && (
+        <div className="sidebar__group">
+          <p className="sidebar__heading">{mine.data!.clubs.length > 1 ? 'Klubbar' : 'Klubb'}</p>
+          {mine.data!.clubs.map((c) => (
+            <NavLink key={c.id} to={`/klubb/${c.id}`} className={({ isActive }) => `sidebar__link sidebar__link--sub ${isActive ? 'is-active' : ''}`}>
+              {c.name}
+            </NavLink>
+          ))}
+        </div>
+      )}
+      {(mine.data?.upcoming.length ?? 0) > 0 && (
+        <div className="sidebar__group">
+          <p className="sidebar__heading">På gång</p>
+          {mine.data!.upcoming.map((u) => (
+            <NavLink key={u.to} to={u.to} className={({ isActive }) => `sidebar__link sidebar__link--sub sidebar__link--two ${isActive ? 'is-active' : ''}`}>
+              <span className="sidebar__meta">{shortDay(u.date)}</span>
+              <span className="sidebar__clip">{u.label}</span>
             </NavLink>
           ))}
         </div>
