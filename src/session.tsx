@@ -1,35 +1,71 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { getSession, login as apiLogin, logout as apiLogout, type SessionUser } from './lib/api';
+import {
+  getSession,
+  login as apiLogin,
+  logout as apiLogout,
+  logoutAll as apiLogoutAll,
+  switchAccount as apiSwitch,
+  type SessionUser,
+} from './lib/api';
 
 type Ctx = {
+  /** Active account, plus all accounts logged in on this device in user.accounts. */
   user: SessionUser;
   ready: boolean;
+  /** Changes whenever the active account changes; use it as a data dependency. */
+  version: number;
   login: (u: string, p: string) => Promise<void>;
-  logout: () => Promise<void>;
+  switchAccount: (playerId: number) => Promise<void>;
+  logout: (playerId?: number) => Promise<void>;
+  logoutAll: () => Promise<void>;
 };
 
 const SessionContext = createContext<Ctx | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<SessionUser>({ loggedIn: false });
+  const [user, setUser] = useState<SessionUser>({ loggedIn: false, accounts: [] });
   const [ready, setReady] = useState(false);
+  const [version, setVersion] = useState(0);
+
+  const refresh = useCallback(async () => {
+    setUser(await getSession());
+    setReady(true);
+    setVersion((v) => v + 1);
+  }, []);
 
   useEffect(() => {
-    getSession().then((u) => {
-      setUser(u);
-      setReady(true);
-    });
-  }, []);
+    refresh();
+  }, [refresh]);
 
-  const login = useCallback(async (u: string, p: string) => {
-    setUser(await apiLogin(u, p));
-  }, []);
-  const logout = useCallback(async () => {
-    await apiLogout();
-    setUser({ loggedIn: false });
-  }, []);
+  const login = useCallback(
+    async (u: string, p: string) => {
+      await apiLogin(u, p);
+      await refresh();
+    },
+    [refresh],
+  );
+  const switchAccount = useCallback(
+    async (playerId: number) => {
+      await apiSwitch(playerId);
+      await refresh();
+    },
+    [refresh],
+  );
+  const logout = useCallback(
+    async (playerId?: number) => {
+      await apiLogout(playerId);
+      await refresh();
+    },
+    [refresh],
+  );
+  const logoutAll = useCallback(async () => {
+    await apiLogoutAll();
+    await refresh();
+  }, [refresh]);
 
-  return <SessionContext.Provider value={{ user, ready, login, logout }}>{children}</SessionContext.Provider>;
+  return (
+    <SessionContext.Provider value={{ user, ready, version, login, switchAccount, logout, logoutAll }}>{children}</SessionContext.Provider>
+  );
 }
 
 export function useSession(): Ctx {

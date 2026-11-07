@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { appearances, isSinglesMatchType, validateLineup } from '../../api/_lib/lineup';
 import { saveLineup } from '../lib/api';
 import type { LineupPlayer, TeamMatch } from '../lib/rankedin';
+import { AccountSwitcher } from './AccountSwitcher';
 
 type Props = {
   teamMatch: TeamMatch;
@@ -60,6 +61,7 @@ export function LineupSheet({ teamMatch, side, onClose, onSaved }: Props) {
         <div className="sheet__grip" aria-hidden="true" />
         <h2>Laguppställning</h2>
         <p className="muted small">{teamMatch.teams[idx].name}</p>
+        <AccountSwitcher label="Sparas som" />
 
         {roster.length === 0 ? (
           <p className="notice notice--warn">Rankedin visar inga spelare för laget. Kontrollera att du är inloggad som lagkapten.</p>

@@ -28,19 +28,28 @@ export function clearCache() {
   cache.clear();
 }
 
-export type SessionUser = { loggedIn: true; playerId: number; rankedinId: string; name: string } | { loggedIn: false };
+export type Account = { playerId: number; rankedinId: string; name: string };
+
+/** The active account (if any) plus every Rankedin account logged in on this device. */
+export type SessionUser =
+  | ({ loggedIn: true; accounts: Account[] } & Account)
+  | { loggedIn: false; accounts: Account[] };
+
+const LOGGED_OUT: SessionUser = { loggedIn: false, accounts: [] };
 
 export async function getSession(): Promise<SessionUser> {
   try {
     const res = await fetch('/api/session', { credentials: 'same-origin' });
-    if (!res.ok) return { loggedIn: false };
-    return (await res.json()) as SessionUser;
+    if (!res.ok) return LOGGED_OUT;
+    const data = (await res.json()) as SessionUser;
+    return { ...data, accounts: data.accounts ?? [] } as SessionUser;
   } catch {
-    return { loggedIn: false };
+    return LOGGED_OUT;
   }
 }
 
-export async function login(userName: string, password: string): Promise<SessionUser> {
+/** Logs in one more account (others stay logged in) and makes it active. */
+export async function login(userName: string, password: string): Promise<void> {
   const res = await fetch('/api/login', {
     method: 'POST',
     credentials: 'same-origin',
@@ -56,13 +65,22 @@ export async function login(userName: string, password: string): Promise<Session
     );
   }
   clearCache();
-  return data as SessionUser;
 }
 
-export async function logout(): Promise<void> {
-  await fetch('/api/session', { method: 'POST', credentials: 'same-origin' });
+async function sessionAction(body: { action: string; playerId?: number }): Promise<void> {
+  const res = await fetch('/api/session', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new ApiError('Kunde inte byta konto.', res.status);
   clearCache();
 }
+
+export const switchAccount = (playerId: number) => sessionAction({ action: 'switch', playerId });
+export const logout = (playerId?: number) => sessionAction({ action: 'logout', playerId });
+export const logoutAll = () => sessionAction({ action: 'logout-all' });
 
 export async function saveLineup(
   teamMatchId: number,

@@ -35,6 +35,7 @@ export function AppHeader({ title, back }: { title?: string; back?: string }) {
         {title && <h1 className="app-header__title">{title}</h1>}
         <Link to="/konto" className="account-chip" aria-label="Konto">
           {user.loggedIn ? initials(user.name) : 'Logga in'}
+          {user.accounts.length > 1 && <span className="account-chip__more">+{user.accounts.length - 1}</span>}
         </Link>
       </div>
     </header>

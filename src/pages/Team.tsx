@@ -8,12 +8,14 @@ import { getStandings, getTeam, getTeamFixtures } from '../lib/leagues';
 import { rinUrl } from '../lib/rankedin';
 import { getSavedTeams, toggleTeam } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
+import { useSession } from '../session';
 
 export default function Team() {
   const { teamId = '' } = useParams();
   const tid = Number(teamId);
   const team = useAsync(() => getTeam(tid), [tid]);
-  const fixtures = useAsync((fresh) => getTeamFixtures(tid, fresh), [tid]);
+  const { version } = useSession();
+  const fixtures = useAsync((fresh) => getTeamFixtures(tid, fresh), [tid, version]);
   const poolId = team.data?.poolId;
   const standings = useAsync(() => (poolId ? getStandings(poolId) : Promise.resolve([])), [poolId]);
   const [saved, setSaved] = useState(() => getSavedTeams().some((t) => t.id === tid));

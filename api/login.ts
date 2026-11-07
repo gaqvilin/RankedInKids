@@ -1,14 +1,16 @@
 // POST /api/login { userName, password } -> logs in to Rankedin and keeps the
-// Rankedin session in an HttpOnly cookie on our own domain. The password is
-// never stored.
+// Rankedin session in an HttpOnly cookie on our own domain (one per account,
+// several accounts can be logged in at once). The password is never stored.
 import {
   RIN_API,
+  accountCookieHeader,
+  activeCookieHeader,
+  clearSessionCookieHeader,
   cookiesFromResponse,
   fetchLayout,
   json,
   publicUser,
   rinHeaders,
-  sessionCookieHeader,
 } from './_lib/rankedin.js';
 
 export async function POST(request: Request): Promise<Response> {
@@ -40,7 +42,12 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const layout = await fetchLayout(cookie);
-  if (!layout?.IsAuthenticated) return json({ error: 'invalid_credentials' }, 401);
+  if (!layout?.IsAuthenticated || !layout.CurrentPlayerId) return json({ error: 'invalid_credentials' }, 401);
 
-  return json(publicUser(layout), 200, { 'Set-Cookie': sessionCookieHeader(cookie) });
+  // Adds this account next to any others already logged in on this device, and makes it active.
+  return json(publicUser(layout), 200, {}, [
+    accountCookieHeader(layout.CurrentPlayerId, cookie),
+    activeCookieHeader(layout.CurrentPlayerId),
+    clearSessionCookieHeader(),
+  ]);
 }

@@ -6,13 +6,15 @@ import { ResultSheet } from '../components/ResultSheet';
 import { AppHeader, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { getTeamMatch, rinUrl, type TournamentMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
+import { useSession } from '../session';
 
 export default function TeamMatch() {
   const { id = '' } = useParams();
   const teamMatchId = Number(id);
   const [params] = useSearchParams();
   const playerId = Number(params.get('spelare')) || null;
-  const tm = useAsync((fresh) => getTeamMatch(teamMatchId, fresh), [teamMatchId]);
+  const { version } = useSession();
+  const tm = useAsync((fresh) => getTeamMatch(teamMatchId, fresh), [teamMatchId, version]);
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
   const [lineupSide, setLineupSide] = useState<'first' | 'second' | null>(null);
 

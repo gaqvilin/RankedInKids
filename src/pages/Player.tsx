@@ -18,6 +18,7 @@ import {
 import { getPlayerTeams } from '../lib/leagues';
 import { isSaved, removePlayer, savePlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
+import { useSession } from '../session';
 
 type Entry = {
   event: PlayerEvent;
@@ -60,7 +61,8 @@ export default function Player() {
   const { rid = '' } = useParams();
   const profile = useAsync(() => getProfile(rid), [rid]);
   const playerId = profile.data?.id;
-  const matches = useAsync((fresh) => (playerId ? getUpcomingMatches(playerId, fresh) : Promise.resolve([])), [playerId]);
+  const { version } = useSession();
+  const matches = useAsync((fresh) => (playerId ? getUpcomingMatches(playerId, fresh) : Promise.resolve([])), [playerId, version]);
   const events = useAsync(() => (playerId ? getPlayerEvents(playerId) : Promise.resolve([])), [playerId]);
   const entries = useAsync(
     () => (playerId && events.data ? loadEntries(playerId, events.data) : Promise.resolve([])),

@@ -5,6 +5,7 @@ import { StandingsTable } from '../components/StandingsTable';
 import { AppHeader, Empty, ErrorBox, Loading, Page, RefreshButton, Section } from '../components/ui';
 import { getLeague, getPoolFixtures, getStandings, type Fixture } from '../lib/leagues';
 import { useAsync } from '../lib/useAsync';
+import { useSession } from '../session';
 
 function byRound(fixtures: Fixture[]): [string, Fixture[]][] {
   const groups = new Map<string, Fixture[]>();
@@ -23,7 +24,8 @@ export default function Division() {
   const pid = Number(poolId);
   const league = useAsync(() => (leagueId ? getLeague(leagueId) : Promise.resolve(null)), [leagueId]);
   const standings = useAsync((fresh) => getStandings(pid, fresh), [pid]);
-  const fixtures = useAsync((fresh) => getPoolFixtures(pid, fresh), [pid]);
+  const { version } = useSession();
+  const fixtures = useAsync((fresh) => getPoolFixtures(pid, fresh), [pid, version]);
   const [tab, setTab] = useState<'tabell' | 'matcher'>('tabell');
 
   const pool = league.data?.pools.find((p) => p.id === pid);

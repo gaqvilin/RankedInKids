@@ -4,6 +4,7 @@ import { submitResult } from '../lib/api';
 import { summarizeSets, type SetScore } from '../../api/_lib/result';
 import type { Side } from '../lib/rankedin';
 import { useSession } from '../session';
+import { AccountSwitcher } from './AccountSwitcher';
 
 type Props = {
   challengeId: number;
@@ -70,6 +71,7 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
           </>
         ) : (
           <>
+            <AccountSwitcher label="Rapporteras som" />
             <div className="presets">
               {PRESETS.map((p) => (
                 <button

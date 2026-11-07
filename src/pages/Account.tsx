@@ -1,15 +1,18 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AppHeader, Notice, Page, Section } from '../components/ui';
 import { useSession } from '../session';
 
 export default function Account() {
-  const { user, login, logout } = useSession();
+  const { user, login, logout, logoutAll, switchAccount } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState<string | null>(null);
+  const accounts = user.accounts;
+  const showForm = accounts.length === 0 || adding;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -18,7 +21,9 @@ export default function Account() {
     try {
       await login(email, password);
       setPassword('');
-      navigate(-1);
+      setEmail('');
+      setAdding(false);
+      setAdded('Kontot är tillagt och aktivt.');
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -28,21 +33,64 @@ export default function Account() {
 
   return (
     <>
-      <AppHeader back="history" title="Konto" />
+      <AppHeader back="history" title="Konton" />
       <Page>
-        {user.loggedIn ? (
-          <Section title="Inloggad">
-            <p>
-              Du är inloggad i Rankedin som <strong>{user.name}</strong>.
+        {accounts.length > 0 && (
+          <Section title="Inloggade Rankedin-konton">
+            <ul className="card-list">
+              {accounts.map((a) => {
+                const active = user.loggedIn && user.playerId === a.playerId;
+                return (
+                  <li key={a.playerId} className="player-row">
+                    <Link to={`/spelare/${a.rankedinId}`} className="player-row__link">
+                      <span className="avatar" aria-hidden="true">
+                        {a.name[0]}
+                      </span>
+                      <span>
+                        <strong>{a.name}</strong>
+                        {active && <span className="pill">Aktivt</span>}
+                        <span className="muted small block">{a.rankedinId}</span>
+                      </span>
+                    </Link>
+                    <span className="row gap account-actions">
+                      {!active && (
+                        <button className="btn btn--small" onClick={() => switchAccount(a.playerId)}>
+                          Använd
+                        </button>
+                      )}
+                      <button className="btn btn--ghost btn--small" onClick={() => logout(a.playerId)} aria-label={`Logga ut ${a.name}`}>
+                        Logga ut
+                      </button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            {added && <Notice tone="ok">{added}</Notice>}
+            <p className="muted small">
+              Det aktiva kontot används när du rapporterar resultat eller sätter uppställning. Du kan byta direkt i de vyerna också.
             </p>
-            <button className="btn" onClick={() => logout()}>
-              Logga ut
-            </button>
+            {!adding && (
+              <div className="row gap">
+                <button className="btn btn--primary" onClick={() => setAdding(true)}>
+                  + Lägg till konto
+                </button>
+                {accounts.length > 1 && (
+                  <button className="btn btn--ghost" onClick={() => logoutAll()}>
+                    Logga ut alla
+                  </button>
+                )}
+              </div>
+            )}
           </Section>
-        ) : (
-          <Section title="Logga in med Rankedin">
+        )}
+
+        {showForm && (
+          <Section title={accounts.length ? 'Lägg till ett Rankedin-konto' : 'Logga in med Rankedin'}>
             <p className="muted">
-              Behövs bara för att rapportera slutresultat. Att se matcher och döma live med domarkod fungerar utan inloggning.
+              {accounts.length
+                ? 'T.ex. ditt barns konto. Båda kontona är inloggade samtidigt.'
+                : 'Behövs bara för att rapportera resultat och sätta uppställning. Du kan lägga till flera konton, t.ex. ditt eget och ditt barns.'}
             </p>
             <form className="stack" onSubmit={onSubmit}>
               <label className="field">
@@ -64,6 +112,11 @@ export default function Account() {
               <button className="btn btn--primary btn--block" disabled={busy}>
                 {busy ? 'Loggar in…' : 'Logga in'}
               </button>
+              {accounts.length > 0 && (
+                <button type="button" className="btn btn--ghost btn--block" onClick={() => setAdding(false)}>
+                  Avbryt
+                </button>
+              )}
             </form>
             <Notice tone="info">
               Lösenordet skickas vidare till Rankedin och sparas inte. Appen behåller bara inloggningen (som en cookie) på den här enheten.
