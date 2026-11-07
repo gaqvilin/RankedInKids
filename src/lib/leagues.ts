@@ -144,7 +144,8 @@ function parseDate(value: string | null | undefined): string | null {
 }
 
 function toFixture(f: RawFixture): Fixture {
-  const played = !!f.showResults && (f.team1.result > 0 || f.team2.result > 0 || f.team1.isWinner || f.team2.isWinner);
+  // showResults is Rankedin's own "has a result" flag; it also covers drawn team matches (e.g. 3–3).
+  const played = !!f.showResults;
   const where = [f.details?.locationName || f.location, f.details?.city].filter(Boolean).join(', ');
   return {
     teamMatchId: f.matchId,
@@ -161,12 +162,43 @@ function toFixture(f: RawFixture): Fixture {
 
 export async function getPoolFixtures(poolId: number, fresh = false): Promise<Fixture[]> {
   const raw = await rin<{ matches: RawFixture[] }>(`TeamLeague/GetMatchesForPoolAsync?poolId=${poolId}&language=sv`, { fresh });
-  return (raw.matches || []).map(toFixture);
+  return fillMissingScores((raw.matches || []).map(toFixture), fresh);
 }
 
 export async function getTeamFixtures(teamId: number, fresh = false): Promise<Fixture[]> {
   const raw = await rin<{ matches: RawFixture[] }>(`TeamLeague/GetTeamMatchesAsync?teamId=${teamId}&language=sv`, { fresh });
-  return (raw.matches || []).map(toFixture);
+  return fillMissingScores((raw.matches || []).map(toFixture), fresh);
+}
+
+/**
+ * Some leagues (e.g. Klubbligan) send result 0–0 in fixture lists even for
+ * played matches. The team match's own standings hold the real score: the
+ * number of individual matches each team won.
+ */
+async function fillMissingScores(fixtures: Fixture[], fresh: boolean): Promise<Fixture[]> {
+  const missing = fixtures.filter((f) => f.played && f.home.result === 0 && f.away.result === 0);
+  const queue = [...missing];
+  const worker = async () => {
+    for (let f = queue.shift(); f; f = queue.shift()) {
+      try {
+        const st = await rin<{ scoresViewModels: { participantUrl: string; gamesWon: number }[] }>(
+          `TeamLeague/TeamLeagueTeamMatchStandingsAsync?teamMatchId=${f.teamMatchId}&language=sv`,
+          { fresh },
+        );
+        const won = (teamId: number) => st.scoresViewModels.find((r) => teamIdFromUrl(r.participantUrl) === teamId)?.gamesWon;
+        const h = won(f.home.id);
+        const a = won(f.away.id);
+        if (h != null && a != null) {
+          f.home = { ...f.home, result: h };
+          f.away = { ...f.away, result: a };
+        }
+      } catch {
+        /* keep 0–0 rather than failing the list */
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(4, queue.length) }, worker));
+  return fixtures;
 }
 
 export type TeamPlayer = { id: number; name: string; rankedinId: string; hasLicense: boolean; rating: number | null; isCaptain: boolean };
