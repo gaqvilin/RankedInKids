@@ -7,8 +7,9 @@ export const RELEASES: Release[] = [
   {
     version: '0.10',
     date: '2026-11-08',
-    title: 'Fylligare meny och rättningar',
+    title: 'Hjälpsida, fylligare meny och rättningar',
     items: [
+      'Ny hjälpsida som förklarar tanken med PadelAdmin och hur allt fungerar, med vanliga frågor. Länk längst ner.',
       'Menyn visar dina lag med nästa speldag, din klubb och vad som är på gång (tävlingar och speldagar) med direktlänkar.',
       'Speldagen visar anläggningen för hela sammandraget, och spelare som inte är uttagna visas som "Ej uttagna".',
       '"Resultat saknas" visas inte längre inför en speldag som inte har varit.',

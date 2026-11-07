@@ -45,10 +45,14 @@ function useUnseenRelease() {
 function ReleasesLink({ className }: { className: string }) {
   const unseen = useUnseenRelease();
   return (
-    <Link to="/nyheter" className={className}>
-      Nyheter{unseen && <span className="new-dot" aria-label="nytt" />}
+    <span className={className}>
+      <Link to="/hjalp">Hjälp</Link>
+      <span className="muted"> · </span>
+      <Link to="/nyheter">
+        Nyheter{unseen && <span className="new-dot" aria-label="nytt" />}
+      </Link>
       <span className="muted"> · version {CURRENT_VERSION}</span>
-    </Link>
+    </span>
   );
 }
 

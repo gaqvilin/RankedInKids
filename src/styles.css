@@ -1516,3 +1516,37 @@ a.match:hover {
 .sidebar {
   gap: 16px;
 }
+
+/* ---------- Help ---------- */
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.help-section {
+  padding: 18px 0 6px;
+  scroll-margin-top: 60px;
+}
+.help-section h2 {
+  font-size: 19px;
+  margin-bottom: 8px;
+}
+.help-section p,
+.help-section li {
+  max-width: 68ch;
+}
+.help-section ol,
+.help-section ul {
+  padding-left: 20px;
+}
+.help-section li {
+  margin: 6px 0;
+}
+.app-footer a,
+.sidebar__releases a {
+  color: var(--text);
+}

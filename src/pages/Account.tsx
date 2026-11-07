@@ -97,6 +97,12 @@ export default function Account() {
                   <span className="muted small block">Klubbar och event du administrerar i Rankedin</span>
                 </span>
               </Link>
+              <Link to="/hjalp" className="item">
+                <span className="item__main">
+                  <strong>Hjälp</strong>
+                  <span className="muted small block">Hur PadelAdmin fungerar</span>
+                </span>
+              </Link>
               <Link to="/nyheter" className="item">
                 <span className="item__main">
                   <strong>Nyheter</strong>
