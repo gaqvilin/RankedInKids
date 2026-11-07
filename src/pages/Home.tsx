@@ -4,8 +4,8 @@ import { MatchCard } from '../components/MatchCard';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Notice, Page, Section } from '../components/ui';
 import { fmtDay, relativeDays } from '../lib/format';
-import { buildAgenda, loadOverview } from '../lib/overview';
-import { Agenda } from '../components/Agenda';
+import { loadOverview } from '../lib/overview';
+import { useMine } from '../lib/mine';
 import { appPathFromRankedinUrl, getUpcomingMatches, searchPlayers, type PlayerHit } from '../lib/rankedin';
 import { useKnownPlayers } from '../lib/known';
 import { getSavedPlayers, removePlayer, type SavedPlayer } from '../lib/storage';
@@ -23,7 +23,6 @@ function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove?: () => void 
   const next = matches.data?.[0];
   const missing = o?.entries.filter((e) => e.missingPartner) ?? [];
   const activeTeams = o?.leagueTeams.filter((t) => t.active) ?? [];
-  const agenda = o ? buildAgenda(o.entries, o.leagueTeams) : [];
 
   return (
     <section className="summary">
@@ -48,49 +47,38 @@ function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove?: () => void 
         </Notice>
       ))}
 
-      <div className="columns">
-        <div>
-          {next && (
-            <>
-              <p className="list-label">Nästa lottade match</p>
-              <MatchCard
-                sides={next.sides}
-                sets={next.sets}
-                played={next.sets.length > 0}
-                date={next.date}
-                court={next.court}
-                showDay
-                label={next.eventName}
-                highlightIds={[p.id]}
-                refereeCode={next.refereeCode}
-                teamMatchPath={next.teamMatchId ? `/lagmatch/${next.teamMatchId}?spelare=${p.id}` : undefined}
-                from="Översikt"
-              />
-            </>
-          )}
-          <p className="list-label">Kommande</p>
-          {!o && <Loading />}
-          {o && agenda.length === 0 && <Empty>Inget inbokat just nu.</Empty>}
-          {agenda.length > 0 && <Agenda items={agenda} playerId={p.id} from="Översikt" limit={4} />}
+      {next && (
+        <>
+          <p className="list-label">Nästa lottade match</p>
+          <MatchCard
+            sides={next.sides}
+            sets={next.sets}
+            played={next.sets.length > 0}
+            date={next.date}
+            court={next.court}
+            showDay
+            label={next.eventName}
+            highlightIds={[p.id]}
+            refereeCode={next.refereeCode}
+            teamMatchPath={next.teamMatchId ? `/lagmatch/${next.teamMatchId}?spelare=${p.id}` : undefined}
+            from="Översikt"
+          />
+        </>
+      )}
+      {!o && <Loading />}
+      {activeTeams.length > 0 && (
+        <div className="list">
+          {activeTeams.map((t) => (
+            <LeagueTeamCard key={t.leagueId} t={t} from="Översikt" />
+          ))}
         </div>
-        <div>
-          <p className="list-label">Lag</p>
-          {!o && <Loading />}
-          {o && activeTeams.length === 0 && <Empty>Inget lag i en pågående serie.</Empty>}
-          {activeTeams.length > 0 && (
-            <div className="list">
-              {activeTeams.map((t) => (
-                <LeagueTeamCard key={t.leagueId} t={t} from="Översikt" />
-              ))}
-            </div>
-          )}
-          <p className="small">
-            <Go to={`/spelare/${p.rankedinId}`} from="Översikt">
-              Allt om {first} →
-            </Go>
-          </p>
-        </div>
-      </div>
+      )}
+      {o && !next && activeTeams.length === 0 && o.entries.length === 0 && <p className="muted small">Inget på gång just nu.</p>}
+      <p className="small">
+        <Go to={`/spelare/${p.rankedinId}`} from="Översikt">
+          Allt om {first} →
+        </Go>
+      </p>
     </section>
   );
 }
@@ -98,6 +86,7 @@ function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove?: () => void 
 export default function Home() {
   const [saved, setSaved] = useState<SavedPlayer[]>(getSavedPlayers);
   const known = useKnownPlayers();
+  const mine = useMine();
   const shown = [...saved, ...known.filter((k) => !saved.some((s) => s.rankedinId === k.rankedinId))];
   const [term, setTerm] = useState('');
   const [hits, setHits] = useState<PlayerHit[] | null>(null);
@@ -138,10 +127,38 @@ export default function Home() {
           <h1>Översikt</h1>
         </div>
 
-        {shown.map((p) => {
-          const isSaved = saved.some((s) => s.rankedinId === p.rankedinId);
-          return <PlayerSummary key={p.rankedinId} p={p} onRemove={isSaved ? () => setSaved(removePlayer(p.rankedinId)) : undefined} />;
-        })}
+        {shown.length > 0 && (
+          <Section title="På gång">
+            {!mine.data && <Loading />}
+            {mine.data && mine.data.upcoming.length === 0 && <Empty>Inget inbokat just nu.</Empty>}
+            {mine.data && mine.data.upcoming.length > 0 && (
+              <div className="list">
+                {mine.data.upcoming.map((u) => (
+                  <Go key={u.to} to={u.to} from="Översikt" className="item">
+                    <span className="item__date">
+                      {fmtDay(`${u.date}T12:00:00`)}
+                      <span className="muted small">{relativeDays(`${u.date}T12:00:00`)}</span>
+                    </span>
+                    <span className="item__main">
+                      <strong>{u.title}</strong>
+                      <span className={`small block ${/partner saknas/.test(u.detail) ? 'text-warn' : 'muted'}`}>
+                        {u.detail}
+                        {shown.length > 1 ? ` · ${u.who.join(', ')}` : ''}
+                      </span>
+                    </span>
+                  </Go>
+                ))}
+              </div>
+            )}
+          </Section>
+        )}
+
+        <div className="summaries">
+          {shown.map((p) => {
+            const isSaved = saved.some((s) => s.rankedinId === p.rankedinId);
+            return <PlayerSummary key={p.rankedinId} p={p} onRemove={isSaved ? () => setSaved(removePlayer(p.rankedinId)) : undefined} />;
+          })}
+        </div>
 
         <Section title={shown.length ? 'Lägg till spelare' : 'Hitta ditt barn'}>
           {shown.length === 0 && <p className="muted">Sök på namn och spara spelaren, så samlas allt viktigt här.</p>}

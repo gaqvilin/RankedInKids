@@ -1550,3 +1550,20 @@ a.match:hover {
 .sidebar__releases a {
   color: var(--text);
 }
+
+/* Overview: player cards side by side on wide screens */
+.summaries {
+  display: grid;
+  gap: 0 32px;
+}
+@media (min-width: 960px) {
+  .summaries {
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  }
+}
+.summaries .summary .list {
+  margin-top: 8px;
+}
+.text-warn {
+  color: var(--warn);
+}

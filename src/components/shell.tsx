@@ -5,8 +5,6 @@ import { CURRENT_VERSION, hasUnseenRelease } from '../lib/releases';
 import { useKnownPlayers } from '../lib/known';
 import { useMine } from '../lib/mine';
 import { getSavedTeams } from '../lib/storage';
-
-const shortDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' });
 import { useSession } from '../session';
 
 /** Where "back" goes, carried in router state by <Go>. */
@@ -101,9 +99,8 @@ function Sidebar() {
         <div className="sidebar__group">
           <p className="sidebar__heading">Mina lag</p>
           {myTeams.map((t) => (
-            <NavLink key={t.id} to={`/lag/${t.id}`} className={({ isActive }) => `sidebar__link sidebar__link--sub sidebar__link--two ${isActive ? 'is-active' : ''}`}>
-              <span>{t.name}</span>
-              {t.nextDate && <span className="sidebar__meta">Nästa {shortDay(t.nextDate)}</span>}
+            <NavLink key={t.id} to={`/lag/${t.id}`} className={({ isActive }) => `sidebar__link sidebar__link--sub ${isActive ? 'is-active' : ''}`}>
+              {t.name}
             </NavLink>
           ))}
         </div>
@@ -118,17 +115,7 @@ function Sidebar() {
           ))}
         </div>
       )}
-      {(mine.data?.upcoming.length ?? 0) > 0 && (
-        <div className="sidebar__group">
-          <p className="sidebar__heading">På gång</p>
-          {mine.data!.upcoming.map((u) => (
-            <NavLink key={u.to} to={u.to} className={({ isActive }) => `sidebar__link sidebar__link--sub sidebar__link--two ${isActive ? 'is-active' : ''}`}>
-              <span className="sidebar__meta">{shortDay(u.date)}</span>
-              <span className="sidebar__clip">{u.label}</span>
-            </NavLink>
-          ))}
-        </div>
-      )}
+
       <div className="sidebar__foot">
         <nav className="sidebar__nav" aria-label="Verktyg">
           {user.loggedIn && (
