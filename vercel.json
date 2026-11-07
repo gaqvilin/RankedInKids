@@ -6,14 +6,14 @@
   ],
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [
         {
           "type": "host",
           "value": "padelkids.vercel.app"
         }
       ],
-      "destination": "https://padeladmin-app.vercel.app/:path*",
+      "destination": "https://padeladmin-app.vercel.app/$1",
       "permanent": true
     }
   ],
