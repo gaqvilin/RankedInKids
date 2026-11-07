@@ -9,6 +9,7 @@ import League from './pages/League';
 import Player from './pages/Player';
 import Referee from './pages/Referee';
 import Releases from './pages/Releases';
+import Round from './pages/Round';
 import Team from './pages/Team';
 import TeamMatch from './pages/TeamMatch';
 import Tournament from './pages/Tournament';
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/liga/:id" element={<League />} />
         <Route path="/division/:poolId" element={<Division />} />
         <Route path="/lag/:teamId" element={<Team />} />
+        <Route path="/lag/:teamId/omgang/:date" element={<Round />} />
         <Route path="/doma/:code" element={<Referee />} />
         <Route path="/konto" element={<Account />} />
         <Route path="/admin" element={<Admin />} />

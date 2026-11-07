@@ -7,6 +7,7 @@ import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, Refres
 import { fmtDay, fmtTime, hoursUntil, relativeDays } from '../lib/format';
 import { buildAgenda, loadOverview, type LeagueTeamSummary } from '../lib/overview';
 import { Agenda } from '../components/Agenda';
+import { PlayerRound } from '../components/PlayerRound';
 import { getProfile, getUpcomingMatches, rinUrl, type UpcomingMatch } from '../lib/rankedin';
 import { isSaved, removePlayer, savePlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
@@ -169,7 +170,10 @@ export default function Player() {
               {activeTeams.length > 0 && (
                 <div className="list">
                   {activeTeams.map((t) => (
-                    <LeagueTeamCard key={t.leagueId} t={t} from={p.firstName} />
+                    <div key={t.leagueId}>
+                      <LeagueTeamCard t={t} from={p.firstName} />
+                      <PlayerRound team={t} playerId={p.id} rankedinId={p.rankedinId} from={p.firstName} />
+                    </div>
                   ))}
                 </div>
               )}

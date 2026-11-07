@@ -539,3 +539,24 @@ export function appPathFromRankedinUrl(input: string): string | null {
   if (player) return `/spelare/${player[0].toUpperCase()}`;
   return null;
 }
+
+export type TeamMatchInfo = { date: string | null; division: string | null; leagueId: number | null; leagueName: string | null };
+
+/** Date, division and league for a team match (null fields when Rankedin hasn't opened it yet). */
+export async function getTeamMatchInfo(teamMatchId: number): Promise<TeamMatchInfo> {
+  const raw = await rin<{
+    teamLeagueId: number;
+    teamMatchResultsModel: {
+      matchDate: string | null;
+      pool: { divisionName: string | null } | null;
+      eventInfo: { id: number; name: string } | null;
+    } | null;
+  }>(`TeamLeague/GetTeamMatchResultModelAsync?matchId=${teamMatchId}`);
+  const m = raw.teamMatchResultsModel;
+  return {
+    date: m?.matchDate ?? null,
+    division: m?.pool?.divisionName ?? null,
+    leagueId: m?.eventInfo?.id ?? (raw.teamLeagueId || null),
+    leagueName: m?.eventInfo?.name?.trim() ?? null,
+  };
+}

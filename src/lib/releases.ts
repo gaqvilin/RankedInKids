@@ -5,6 +5,19 @@ export type Release = { version: string; date: string; title: string; items: str
 
 export const RELEASES: Release[] = [
   {
+    version: '0.9',
+    date: '2026-11-08',
+    title: 'SPL och lagledare',
+    items: [
+      'SPL är med: fliken heter nu Serier och visar både Klubbligan och SPL, och "Mina lag" hittar era lag i båda.',
+      'Speldagar: en sida per sammandrag med checklista, lagmatcher, uppställning, resultat och vilka som kan spela.',
+      'Tillgänglighet: spelare svarar "Kan / Kanske / Kan inte", lagledare ser alla svar och kan svara åt andra.',
+      'Uppställning i SPL visar seriens regler, varnar för fel rankingordning eller för få spelare och visar sista tid.',
+      'Arrangör: spelschema per bana och färdig kallelse enligt SPF:s mall att kopiera eller mejla.',
+      'Spelarsidan visar nästa speldag, om du är uttagen och i vilken match, och rankingpoäng per division.',
+    ],
+  },
+  {
     version: '0.8',
     date: '2026-11-08',
     title: 'Snabbare',

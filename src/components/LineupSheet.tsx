@@ -3,9 +3,15 @@ import { appearances, isSinglesMatchType, validateLineup } from '../../api/_lib/
 import { saveLineup } from '../lib/api';
 import type { LineupPlayer, TeamMatch } from '../lib/rankedin';
 import { AccountSwitcher } from './AccountSwitcher';
+import { checkSplLineup, lineupDeadline, lineupRules } from '../lib/spl';
+import { fmtTime } from '../lib/format';
 
 type Props = {
   teamMatch: TeamMatch;
+  /** SPL division level (1 = Div 1); null outside SPL, then no rule warnings. */
+  level?: number | null;
+  /** When the first match starts, for the lineup deadline. */
+  firstMatchStart?: string | null;
   side: 'first' | 'second';
   onClose: () => void;
   onSaved: () => void;
@@ -13,7 +19,7 @@ type Props = {
 
 const fmtPoints = (p: number | null) => (p == null ? '' : p >= 100 ? Math.round(p).toString() : p.toFixed(1).replace('.', ','));
 
-export function LineupSheet({ teamMatch, side, onClose, onSaved }: Props) {
+export function LineupSheet({ teamMatch, side, onClose, onSaved, level = null, firstMatchStart = null }: Props) {
   const idx = side === 'first' ? 0 : 1;
   const roster = teamMatch.rosters[idx];
   const per = isSinglesMatchType(teamMatch.matchType) ? 1 : 2;
@@ -25,6 +31,8 @@ export function LineupSheet({ teamMatch, side, onClose, onSaved }: Props) {
   const byId = useMemo(() => new Map(roster.map((p) => [p.id, p])), [roster]);
   const sortedRoster = useMemo(() => [...roster].sort((a, b) => (b.points ?? -1) - (a.points ?? -1) || a.name.localeCompare(b.name, 'sv')), [roster]);
   const counts = appearances(lineup);
+  const deadline = lineupDeadline(firstMatchStart);
+  const splWarnings = checkSplLineup(lineup, new Map(roster.map((p) => [p.id, p.points])), level);
   const changed = lineup.filter((l, i) => l.playerIds.join() !== initial[i].playerIds.join());
   // Pairing rules for every match; roster membership only for what the captain changes.
   const validation =
@@ -62,6 +70,17 @@ export function LineupSheet({ teamMatch, side, onClose, onSaved }: Props) {
         <h2>Laguppställning</h2>
         <p className="muted small">{teamMatch.teams[idx].name}</p>
         <AccountSwitcher label="Sparas som" />
+        {lineupRules(level) && (
+          <p className="notice notice--info small">
+            <strong>SPL div {level}:</strong> {lineupRules(level)!.summary}
+            {deadline && (
+              <>
+                {' '}
+                Uppställningen ska vara inlagd senast <strong>{fmtTime(deadline.toISOString())}</strong> (15 min före första matchen).
+              </>
+            )}
+          </p>
+        )}
 
         {teamMatch.slots.length === 0 ? (
           <p className="notice notice--info">Rankedin har inte skapat matcherna för den här lagmatchen än, så det finns inget att sätta uppställning på.</p>
@@ -111,6 +130,13 @@ export function LineupSheet({ teamMatch, side, onClose, onSaved }: Props) {
               </p>
             )}
             {unlicensed.length > 0 && <p className="notice notice--warn">Licens saknas för {unlicensed.map((p) => p.name).join(', ')}.</p>}
+            {splWarnings.length > 0 && (
+              <div className="notice notice--warn small">
+                {splWarnings.map((w) => (
+                  <p key={w}>{w}</p>
+                ))}
+              </div>
+            )}
             {validation && <p className="field-error">{validation}</p>}
             {error && <p className="field-error">{error}</p>}
             <p className="muted small">Kontrollera seriens regler för hur paren ska rangordnas. Siffran inom parentes är spelarens rankingpoäng.</p>

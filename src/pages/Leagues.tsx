@@ -22,14 +22,15 @@ export default function Leagues() {
   const players = useKnownPlayers();
   const savedTeams = getSavedTeams();
   const klubbligan = useAsync(() => currentKlubbligan(), [], 'klubbligan');
-  const spl = useAsync(() => (ADULT_LEAGUES ? currentSplLeagues() : Promise.resolve([])), []);
+  const spl = useAsync(() => (ADULT_LEAGUES ? currentSplLeagues() : Promise.resolve([])), [], 'spl');
   const playerKey = players.map((p) => p.id).join(',');
-  const leagueKey = (klubbligan.data || []).map((l) => l.id).join(',');
+  const allLeagues = [...(klubbligan.data || []), ...(spl.data || [])];
+  const leagueKey = allLeagues.map((l) => l.id).join(',');
 
   const mine = useAsync(async () => {
-    if (!klubbligan.data || players.length === 0) return [];
+    if (!klubbligan.data || !spl.data || players.length === 0) return [];
     const found = await findMyTeams(
-      klubbligan.data.map((l) => l.id),
+      [...klubbligan.data, ...spl.data].map((l) => l.id),
       players.map((p) => ({ id: p.id, name: p.name })),
     );
     // One entry per team, listing every known player on it.
@@ -47,16 +48,16 @@ export default function Leagues() {
 
   return (
     <>
-      <AppHeader title="Klubbligan" />
+      <AppHeader title="Serier" />
       <Page wide>
         <div className="page-title">
-          <h1>Klubbligan</h1>
+          <h1>Serier</h1>
         </div>
 
-        <Section title="Min Klubbliga">
+        <Section title="Mina lag">
           {players.length === 0 && (
             <Empty>
-              <Go to="/" from="Klubbligan">
+              <Go to="/" from="Serier">
                 Spara ditt barn
               </Go>{' '}
               eller logga in med barnets Rankedin-konto, så visas laget här.
@@ -64,20 +65,20 @@ export default function Leagues() {
           )}
           {players.length > 0 && (!klubbligan.data || mine.loading) && !mine.data?.length && <Loading label="Letar efter era lag…" />}
           {mine.data && mine.data.length === 0 && players.length > 0 && klubbligan.data && !mine.loading && (
-            <Empty>{players.map((p) => firstName(p.name)).join(' och ')} spelar inte i någon Klubbliga den här säsongen.</Empty>
+            <Empty>{players.map((p) => firstName(p.name)).join(' och ')} spelar inte i någon serie den här säsongen.</Empty>
           )}
           {mine.data && mine.data.length > 0 && (
             <div className="list">
               {mine.data.map((t) => {
-                const league = klubbligan.data?.find((l) => l.id === t.leagueId);
+                const league = allLeagues.find((l) => l.id === t.leagueId);
                 const next = t.status?.next;
                 const opp = next ? (next.home.id === t.teamId ? next.away : next.home) : null;
                 return (
-                  <Go key={t.teamId} to={`/lag/${t.teamId}`} from="Klubbligan" className="item">
+                  <Go key={t.teamId} to={`/lag/${t.teamId}`} from="Serier" className="item">
                     <span className="item__main">
                       <strong>{t.teamName}</strong>
                       <span className="muted small block">
-                        {league ? shortKlubbliganName(league.name) : ''} · {t.division} · {t.players.join(', ')}
+                        {league ? (/klubbligan/i.test(league.name) ? `Klubbligan ${shortKlubbliganName(league.name)}` : league.name.replace(/^SPL Swedish Padel League\s*/i, 'SPL ')) : ''} · {t.division} · {t.players.join(', ')}
                       </span>
                     </span>
                     {t.status && (
@@ -104,7 +105,7 @@ export default function Leagues() {
               <p className="list-label">Andra sparade lag</p>
               <div className="list">
                 {otherSavedTeams.map((t) => (
-                  <Go key={t.id} to={`/lag/${t.id}`} from="Klubbligan" className="item">
+                  <Go key={t.id} to={`/lag/${t.id}`} from="Serier" className="item">
                     <span className="item__main">
                       <strong>{t.name}</strong>
                       <span className="muted small block">{t.league}</span>
@@ -116,14 +117,14 @@ export default function Leagues() {
           )}
         </Section>
 
-        <Section title="Alla serier den här säsongen">
+        <Section title="Klubbligan den här säsongen">
           {klubbligan.error && <ErrorBox error={klubbligan.error} onRetry={() => klubbligan.reload()} />}
           {!klubbligan.data && klubbligan.loading && <Loading />}
           {klubbligan.data && klubbligan.data.length === 0 && <Empty>Hittade ingen pågående Klubbliga.</Empty>}
           {klubbligan.data && klubbligan.data.length > 0 && (
             <div className="list list--cols">
               {klubbligan.data.map((l) => (
-                <Go key={l.id} to={`/liga/${l.id}`} from="Klubbligan" className="item">
+                <Go key={l.id} to={`/liga/${l.id}`} from="Serier" className="item">
                   <span className="item__main">
                     <strong>{shortKlubbliganName(l.name)}</strong>
                     {myLeagueIds.has(l.id) && <span className="tag">Era lag</span>}
@@ -136,12 +137,13 @@ export default function Leagues() {
         </Section>
 
         {spl.data && spl.data.length > 0 && (
-          <Section title="SPL">
-            <div className="list">
+          <Section title="SPL – Swedish Padel League">
+            <div className="list list--cols">
               {spl.data.map((l) => (
-                <Go key={l.id} to={`/liga/${l.id}`} from="Klubbligan" className="item">
+                <Go key={l.id} to={`/liga/${l.id}`} from="Serier" className="item">
                   <span className="item__main">
-                    <strong>{l.name}</strong>
+                    <strong>{l.name.replace(/^SPL Swedish Padel League\s*/i, '')}</strong>
+                    {myLeagueIds.has(l.id) && <span className="tag">Era lag</span>}
                   </span>
                 </Go>
               ))}

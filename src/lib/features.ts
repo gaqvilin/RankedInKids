@@ -1,3 +1,3 @@
-// Feature switches. Adult leagues (SPL) are built but not launched yet:
-// set VITE_ADULT_LEAGUES=1 in Vercel to show them on the start page.
-export const ADULT_LEAGUES = import.meta.env.VITE_ADULT_LEAGUES === '1';
+// Feature switches. Adult leagues (SPL) are on; set VITE_ADULT_LEAGUES=0 in
+// Vercel to hide them again.
+export const ADULT_LEAGUES = import.meta.env.VITE_ADULT_LEAGUES !== '0';

@@ -24,7 +24,7 @@ export default function League() {
 
   return (
     <>
-      <AppHeader back="/serier" backLabel="Klubbligan" title={league.data?.name ?? 'Serie'} />
+      <AppHeader back="/serier" backLabel="Serier" title={league.data?.name ?? 'Serie'} />
       <Page wide>
         {league.error && <ErrorBox error={league.error} onRetry={() => league.reload()} />}
         {!league.data && !league.error && <Loading />}

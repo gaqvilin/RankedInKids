@@ -7,6 +7,7 @@ import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, Refres
 import { fmtDay, fmtTime, relativeDays } from '../lib/format';
 import { getLeagueHeader, getStandings, getTeam, getTeamFixtures } from '../lib/leagues';
 import { rinUrl } from '../lib/rankedin';
+import { divisionLevel, isSplLeague, rankingPoints } from '../lib/spl';
 import { getSavedTeams, toggleTeam } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
@@ -27,7 +28,7 @@ export default function Team() {
   if (team.error || !team.data) {
     return (
       <>
-        <AppHeader back="/serier" backLabel="Klubbligan" />
+        <AppHeader back="/serier" backLabel="Serier" />
         <Page>{team.error ? <ErrorBox error={team.error} onRetry={() => team.reload()} /> : <Loading />}</Page>
       </>
     );
@@ -42,10 +43,27 @@ export default function Team() {
   const row = standings.data?.find((r) => r.teamId === t.id);
   const unlicensed = t.players.filter((p) => !p.hasLicense);
   const me = t.name;
+  // Team matches on the same day form one round ("sammandrag").
+  const byDay = new Map<string, { date: string; opponents: string[]; played: boolean }>();
+  for (const f of all) {
+    const d = f.date?.slice(0, 10);
+    if (!d) continue;
+    const r = byDay.get(d) ?? { date: d, opponents: [], played: true };
+    r.opponents.push(f.home.id === t.id ? f.away.name : f.home.name);
+    r.played = r.played && f.played;
+    byDay.set(d, r);
+  }
+  const roundsAll = [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
+  const nextRound = roundsAll.find((r) => !r.played)?.date;
+  const lastPlayed = [...roundsAll].reverse().find((r) => r.played);
+  // Upcoming rounds plus the latest played one (for late results).
+  const rounds = roundsAll.filter((r) => !r.played || r === lastPlayed);
+  const splLevel = isSplLeague(t.leagueName) ? divisionLevel(t.division) : null;
+  const points = rankingPoints(splLevel);
 
   return (
     <>
-      <AppHeader back="/serier" backLabel="Klubbligan" title={t.name} />
+      <AppHeader back="/serier" backLabel="Serier" title={t.name} />
       <Page wide>
         <div className="page-title">
           <div>
@@ -57,6 +75,11 @@ export default function Team() {
               {t.division ? ` · ${t.division}` : ''}
             </p>
             {league.data && <p className="muted small">Säsong {fmtRange(league.data.startDate, league.data.endDate)}</p>}
+            {points && (
+              <p className="muted small">
+                Rankingpoäng: {String(points.win).replace('.', ',')} per vinst, {String(points.loss).replace('.', ',')} per förlust
+              </p>
+            )}
           </div>
           <button
             className={`btn btn--small ${saved ? '' : 'btn--primary'}`}
@@ -106,6 +129,26 @@ export default function Team() {
 
         <div className="columns">
           <div>
+            {rounds.length > 0 && (
+              <Section title="Speldagar">
+                <div className="list">
+                  {rounds.map((r) => (
+                    <Go key={r.date} to={`/lag/${t.id}/omgang/${r.date}`} from={me} className="item">
+                      <span className="item__date">
+                        {fmtDay(`${r.date}T12:00:00`)}
+                        <span className="muted small">{relativeDays(`${r.date}T12:00:00`)}</span>
+                      </span>
+                      <span className="item__main">
+                        <strong>{r.played ? 'Spelat' : r.date === nextRound ? 'Nästa sammandrag' : 'Sammandrag'}</strong>
+                        <span className="muted small block">mot {r.opponents.join(' och ')}</span>
+                      </span>
+                      <span className="item__side small muted">Uppställning, tillgänglighet, resultat ›</span>
+                    </Go>
+                  ))}
+                </div>
+              </Section>
+            )}
+
             <Section title="Kommande" action={<RefreshButton onClick={() => fixtures.reload()} loading={fixtures.loading} />}>
               {fixtures.error && <ErrorBox error={fixtures.error} onRetry={() => fixtures.reload()} />}
               {!fixtures.data && fixtures.loading && <Loading />}

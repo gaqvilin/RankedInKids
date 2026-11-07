@@ -5,7 +5,8 @@ import { MatchCard } from '../components/MatchCard';
 import { LineupSheet } from '../components/LineupSheet';
 import { ResultSheet } from '../components/ResultSheet';
 import { AppHeader, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
-import { getTeamMatch, rinUrl, type TournamentMatch } from '../lib/rankedin';
+import { getTeamMatch, getTeamMatchInfo, rinUrl, type TournamentMatch } from '../lib/rankedin';
+import { divisionLevel, isSplLeague } from '../lib/spl';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 
@@ -16,6 +17,8 @@ export default function TeamMatch() {
   const playerId = Number(params.get('spelare')) || null;
   const { version } = useSession();
   const tm = useAsync((fresh) => getTeamMatch(teamMatchId, fresh), [teamMatchId, version]);
+  const info = useAsync(() => getTeamMatchInfo(teamMatchId).catch(() => null), [teamMatchId]);
+  const splLevel = info.data && isSplLeague(info.data.leagueName) ? divisionLevel(info.data.division) : null;
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
   const [lineupSide, setLineupSide] = useState<'first' | 'second' | null>(null);
 
@@ -31,7 +34,7 @@ export default function TeamMatch() {
   if (tm.error) {
     return (
       <>
-        <AppHeader back="/serier" backLabel="Klubbligan" title="Lagmatch" />
+        <AppHeader back="/serier" backLabel="Serier" title="Lagmatch" />
         <Page>
           <ErrorBox error={tm.error} onRetry={() => tm.reload()} />
         </Page>
@@ -41,7 +44,7 @@ export default function TeamMatch() {
   if (!tm.data) {
     return (
       <>
-        <AppHeader back="/serier" backLabel="Klubbligan" title="Lagmatch" />
+        <AppHeader back="/serier" backLabel="Serier" title="Lagmatch" />
         <Page>
           <Loading />
         </Page>
@@ -53,7 +56,7 @@ export default function TeamMatch() {
   const played = t.matches.filter((m) => m.played).length;
   return (
     <>
-      <AppHeader back="/serier" backLabel="Klubbligan" title="Lagmatch" />
+      <AppHeader back="/serier" backLabel="Serier" title="Lagmatch" />
       <Page>
         <div className="team-score">
           <Go className="team-score__team" to={`/lag/${t.teams[0].id}`} from="Lagmatch">
@@ -137,6 +140,8 @@ export default function TeamMatch() {
 
       {lineupSide && (
         <LineupSheet
+          level={splLevel}
+          firstMatchStart={info.data?.date ?? null}
           teamMatch={t}
           side={lineupSide}
           onClose={() => setLineupSide(null)}

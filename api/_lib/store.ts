@@ -1,7 +1,8 @@
 // Small JSON document store for data Rankedin doesn't have (availability,
-// later notes etc.). Production: private Vercel Blob store. Local dev and
-// tests: in memory. Swap the implementation here to move to a real database.
+// later notes etc.). Production: Neon Postgres (table "docs"). Fallbacks:
+// private Vercel Blob store, then in-memory for local dev and tests.
 import { get, list, put } from '@vercel/blob';
+import { neon } from '@neondatabase/serverless';
 
 export interface DocStore {
   getJson<T>(key: string): Promise<T | null>;
@@ -54,6 +55,35 @@ class BlobStore implements DocStore {
   }
 }
 
+/** Runs a parameterised SQL query and returns rows. */
+export type SqlQuery = (text: string, params: unknown[]) => Promise<Record<string, unknown>[]>;
+
+/** Postgres: one table docs(key text primary key, value jsonb, updated_at timestamptz). */
+export class SqlStore implements DocStore {
+  constructor(private query: SqlQuery) {}
+
+  async getJson<T>(key: string): Promise<T | null> {
+    safeKey(key);
+    const rows = await this.query('SELECT value FROM docs WHERE key = $1', [key]);
+    return rows[0] ? (rows[0].value as T) : null;
+  }
+
+  async putJson(key: string, value: unknown): Promise<void> {
+    safeKey(key);
+    await this.query(
+      'INSERT INTO docs (key, value, updated_at) VALUES ($1, $2::jsonb, now()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()',
+      [key, JSON.stringify(value)],
+    );
+  }
+
+  async listJson<T>(prefix: string): Promise<{ key: string; value: T }[]> {
+    if (!/^[A-Za-z0-9/_-]*$/.test(prefix)) throw new Error(`invalid prefix: ${prefix}`);
+    // Prefix contains no LIKE wildcards (validated above), so a plain LIKE is safe.
+    const rows = await this.query('SELECT key, value FROM docs WHERE key LIKE $1 ORDER BY key', [`${prefix}%`]);
+    return rows.map((r) => ({ key: String(r.key), value: r.value as T }));
+  }
+}
+
 export class MemoryStore implements DocStore {
   private docs = new Map<string, string>();
   async getJson<T>(key: string): Promise<T | null> {
@@ -73,7 +103,16 @@ export class MemoryStore implements DocStore {
 let instance: DocStore | null = null;
 
 export function getStore(): DocStore {
-  if (!instance) instance = process.env.BLOB_READ_WRITE_TOKEN ? new BlobStore() : new MemoryStore();
+  if (!instance) {
+    if (process.env.DATABASE_URL) {
+      const sql = neon(process.env.DATABASE_URL);
+      instance = new SqlStore((text, params) => sql.query(text, params) as Promise<Record<string, unknown>[]>);
+    } else if (process.env.BLOB_READ_WRITE_TOKEN) {
+      instance = new BlobStore();
+    } else {
+      instance = new MemoryStore();
+    }
+  }
   return instance;
 }
 
