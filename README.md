@@ -33,3 +33,11 @@ I en miljö med HTTP-proxy behöver Node `NODE_USE_ENV_PROXY=1` för att `fetch`
 
 ## Release notes
 Användarnas "Nyheter" finns i `src/lib/releases.ts`. Lägg till en ny post överst vid varje release (kort, på svenska, för användare). Ny version visar en röd punkt vid länken tills användaren har öppnat sidan.
+
+## Data utöver Rankedin
+Sådant Rankedin inte har (t.ex. tillgänglighet per speldag) lagras via `api/_lib/store.ts`:
+- **Neon Postgres** (projekt `padel-admin`, tabell `docs(key, value jsonb, updated_at)`) när `DATABASE_URL` finns. Appen ansluter med rollen `padeladmin_app` (read_write, ingen admin).
+- Annars Vercel Blob (`BLOB_READ_WRITE_TOKEN`), annars minne (lokalt/tester).
+- `GET /api/health` visar vilken lagring som används och om den svarar.
+
+Behörighet: varje skrivning verifierar inloggningen mot Rankedin (`api/_lib/identity.ts`). Spelare svarar för sig själva, lagledare (Rankedins "initiator") för hela laget.
