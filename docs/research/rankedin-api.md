@@ -103,6 +103,25 @@ Ranking 35, Player 23, Search 17, Rating 14, Match 10, Americano 7, Calendar 1 �
 - [6564200/MixRanker](https://github.com/6564200/MixRanker) – Python, live-scoreboards.
 - [dotsandcoms/4mpadel](https://github.com/dotsandcoms/4mpadel) – Sydafrikanskt förbund; synkar även *till* Rankedin via inloggad session.
 
+## Skriva data (resultat, anmälan)
+
+Tekniskt finns allt i API:t, men det kräver inloggad användare (`POST /Account/LogInAsync` med
+`userName`/`password` → cookie `rin-auth`). Det finns ingen OAuth eller "logga in med Rankedin".
+
+| Vad | Endpoint | Vem får (styrs av Rankedin) |
+|---|---|---|
+| Rapportera matchresultat | `POST /Match/SubmitResultAsync` (`participant1Games`, `participant2Games` …) | Spelare om arrangören tillåter det, annars admin/domare |
+| Bekräfta motståndarens resultat | fält `awaitingResultConfirmation`, `POST /ClubLeague/ConfirmClubLeagueResultAsync` | Motståndaren |
+| Domarkod per match | `ProfileMatchInfoModel.refereeCode` | Den som har koden |
+| Lagliga | `TeamLeagueMatchRowModel.showPlayerEnterResultButton` | Lagkapten/spelare |
+| Anmälan dubbel | `POST /Tournament/JoinDoubleAsync` (`tournamentClassId`, `tournamentId`, `partnerId`) | Inloggad spelare |
+| Privat match | `PrivateMatchCreateRequest` | Inloggad spelare |
+
+Begränsningar:
+- Appen kan aldrig göra mer än användaren själv får göra på rankedin.com.
+- Vi måste hantera användarnas Rankedin-lösenord – säkerhets-, GDPR- (barn!) och villkorsrisk.
+- I stor skala är detta inte hållbart utan ett avtal med Rankedin (OAuth/partner-API).
+
 ## Rekommendation för arkitektur
 1. **Egen tunn backend/proxy** (t.ex. serverless) mot `api.rankedin.com/v1` med cache (minuter för schema/resultat, timmar för ranking) – skyddar mot rate limits och API-ändringar.
 2. **Read-only i v1.** Anmälan/licens länkar vi till Rankedin (deep link) tills vi vet att Rankedin accepterar skrivning från tredje part.
