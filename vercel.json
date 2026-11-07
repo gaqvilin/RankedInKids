@@ -2,6 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "rewrites": [
-    { "source": "/((?!api/|assets/|icon|manifest).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/|assets/|icon|manifest).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "regions": [
+    "arn1"
   ]
 }
