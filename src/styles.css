@@ -873,3 +873,17 @@ a.fixture {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* Lineup editor */
+.lineup-match {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px 12px;
+  margin: 10px 0;
+  display: grid;
+  gap: 8px;
+}
+.lineup-match legend {
+  font-weight: 700;
+  padding: 0 4px;
+}

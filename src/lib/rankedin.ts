@@ -368,11 +368,20 @@ export function rinUrl(path: string): string {
 
 // ---------- Team league matches (e.g. Klubbligan) ----------
 
+export type LineupPlayer = { id: number; name: string; rankedinId: string | null; hasLicense: boolean; rating: number | null; points: number | null };
+
 export type TeamMatch = {
   id: number;
   eventId: number;
   finished: boolean;
   teams: [{ id: number; name: string }, { id: number; name: string }];
+  /** Whether the logged-in user may set each team's lineup (team captain/admin). */
+  canLineup: [boolean, boolean];
+  /** Players available for each team's lineup (only visible to captains). */
+  rosters: [LineupPlayer[], LineupPlayer[]];
+  matchType: number;
+  /** Current player ids per individual match, 0 = not set. */
+  slots: { challengeId: number; first: number[]; second: number[] }[];
   /** Individual matches won by each team. */
   score: [number, number];
   matches: TournamentMatch[];
@@ -403,9 +412,7 @@ export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<
         };
       }[]
     >(`TeamLeague/GetTeamLeagueTeamsMatchesAsync?teamMatchId=${teamMatchId}&language=sv`, { fresh }),
-    rin<{ firstTeam: { id: number; name: string }; secondTeam: { id: number; name: string } }>(
-      `TeamLeague/GetTeamsLineupsAsync?teamMatchId=${teamMatchId}&language=sv`,
-    ),
+    rin<Record<'firstTeam' | 'secondTeam', RawLineupTeam>>(`TeamLeague/GetTeamsLineupsAsync?teamMatchId=${teamMatchId}&language=sv`, { fresh }),
     rin<{ scoresViewModels: { participantName: string; participantUrl: string }[] }>(
       `TeamLeague/TeamLeagueTeamMatchStandingsAsync?teamMatchId=${teamMatchId}&language=sv`,
     ).catch(() => ({ scoresViewModels: [] })),
@@ -416,6 +423,16 @@ export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<
     standings.scoresViewModels.find((s) => s.participantUrl?.endsWith(`/${team.id}`))?.participantName || team.name;
 
   const block = rawMatches[0]?.matches;
+  const matchType = (rawMatches[0] as unknown as { settings?: { matchType: number } })?.settings?.matchType ?? 3;
+  const roster = (t: RawLineupTeam): LineupPlayer[] =>
+    (t.players || []).map((p) => ({
+      id: p.playerId,
+      name: `${p.firstName} ${p.lastName}`.trim(),
+      rankedinId: p.playerRankedinId,
+      hasLicense: p.hasLicense,
+      rating: p.ratingBegin,
+      points: p.rankingTypePoints?.length ? Math.max(...p.rankingTypePoints.map((r) => r.points)) : null,
+    }));
   const side = (s: RawTLSide, won: boolean): Side => ({
     names: s ? [s.name, s.player2Name].filter((n): n is string => !!n) : [],
     ids: s ? [s.player1Id, s.player2Id].filter((n): n is number => !!n) : [],
@@ -448,8 +465,31 @@ export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<
     ],
     score: [matches.filter((m) => m.sides[0].isWinner).length, matches.filter((m) => m.sides[1].isWinner).length],
     matches,
+    canLineup: [!!lineups.firstTeam.canLineupTeam, !!lineups.secondTeam.canLineupTeam],
+    rosters: [roster(lineups.firstTeam), roster(lineups.secondTeam)],
+    matchType,
+    slots: (block?.matches || []).map((m) => ({
+      challengeId: m.id,
+      first: [m.challenger?.player1Id || 0, m.challenger?.player2Id || 0],
+      second: [m.challenged?.player1Id || 0, m.challenged?.player2Id || 0],
+    })),
   };
 }
+
+type RawLineupTeam = {
+  id: number;
+  name: string;
+  canLineupTeam: boolean;
+  players: {
+    playerId: number;
+    firstName: string;
+    lastName: string;
+    playerRankedinId: string | null;
+    hasLicense: boolean;
+    ratingBegin: number | null;
+    rankingTypePoints?: { rankingType: number; points: number }[] | null;
+  }[];
+};
 
 /** Turns a pasted rankedin.com link into an in-app path, if we have a view for it. */
 export function appPathFromRankedinUrl(input: string): string | null {

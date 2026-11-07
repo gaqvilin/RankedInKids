@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
+import { LineupSheet } from '../components/LineupSheet';
 import { ResultSheet } from '../components/ResultSheet';
-import { AppHeader, ErrorBox, ExternalLink, Loading, Page, RefreshButton, Section } from '../components/ui';
+import { AppHeader, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { getTeamMatch, rinUrl, type TournamentMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
 
@@ -13,6 +14,7 @@ export default function TeamMatch() {
   const playerId = Number(params.get('spelare')) || null;
   const tm = useAsync((fresh) => getTeamMatch(teamMatchId, fresh), [teamMatchId]);
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
+  const [lineupSide, setLineupSide] = useState<'first' | 'second' | null>(null);
 
   // Refresh every minute while matches are still being played.
   const ongoing = !!tm.data && tm.data.matches.some((m) => !m.played);
@@ -65,6 +67,25 @@ export default function TeamMatch() {
           </p>
         </div>
 
+        {t.canLineup.some(Boolean) && (
+          <Notice tone="info">
+            <div className="row gap" style={{ justifyContent: 'space-between' }}>
+              <span>
+                Du är lagkapten för <strong>{t.teams[t.canLineup[0] ? 0 : 1].name}</strong>.
+              </span>
+              {t.canLineup.map(
+                (can, i) =>
+                  can && (
+                    <button key={i} className="btn btn--primary btn--small" onClick={() => setLineupSide(i === 0 ? 'first' : 'second')}>
+                      {t.slots.some((s) => (i === 0 ? s.first : s.second).some((id) => id > 0)) ? 'Ändra uppställning' : 'Sätt uppställning'}
+                      {t.canLineup[0] && t.canLineup[1] ? ` (${t.teams[i].name})` : ''}
+                    </button>
+                  ),
+              )}
+            </div>
+          </Notice>
+        )}
+
         <Section title="Matcher" action={<RefreshButton onClick={() => tm.reload()} loading={tm.loading} />}>
           {t.matches.map((m, i) => (
             <MatchCard
@@ -87,6 +108,18 @@ export default function TeamMatch() {
           <ExternalLink href={rinUrl(`/sv/team/matchresults/${t.id}`)}>Öppna i Rankedin</ExternalLink>
         </p>
       </Page>
+
+      {lineupSide && (
+        <LineupSheet
+          teamMatch={t}
+          side={lineupSide}
+          onClose={() => setLineupSide(null)}
+          onSaved={() => {
+            setLineupSide(null);
+            tm.reload();
+          }}
+        />
+      )}
 
       {reporting && (
         <ResultSheet

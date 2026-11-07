@@ -64,6 +64,30 @@ export async function logout(): Promise<void> {
   clearCache();
 }
 
+export async function saveLineup(
+  teamMatchId: number,
+  side: 'first' | 'second',
+  lineups: { challengeId: number; playerIds: number[] }[],
+): Promise<void> {
+  const res = await fetch('/api/lineup', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ teamMatchId, side, lineups }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const messages: Record<string, string> = {
+      not_logged_in: 'Du behöver logga in först.',
+      not_allowed: 'Du kan inte sätta uppställning för det här laget (bara lagkapten).',
+      invalid_lineup: data.message || 'Uppställningen är inte giltig.',
+      rejected: 'Rankedin tog inte emot uppställningen.',
+    };
+    throw new ApiError(messages[data.error] || 'Något gick fel.', res.status, data.error);
+  }
+  clearCache();
+}
+
 export async function submitResult(challengeId: number, sets: [number, number][]): Promise<void> {
   const res = await fetch('/api/submit-result', {
     method: 'POST',
