@@ -4,7 +4,8 @@ import { MatchCard } from '../components/MatchCard';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Notice, Page, Section } from '../components/ui';
 import { fmtDay, relativeDays } from '../lib/format';
-import { loadOverview } from '../lib/overview';
+import { buildAgenda, loadOverview } from '../lib/overview';
+import { Agenda } from '../components/Agenda';
 import { appPathFromRankedinUrl, getUpcomingMatches, searchPlayers, type PlayerHit } from '../lib/rankedin';
 import { getSavedPlayers, removePlayer, type SavedPlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
@@ -21,6 +22,7 @@ function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove: () => void }
   const next = matches.data?.[0];
   const missing = o?.entries.filter((e) => e.missingPartner) ?? [];
   const activeTeams = o?.leagueTeams.filter((t) => t.active) ?? [];
+  const agenda = o ? buildAgenda(o.entries, o.leagueTeams) : [];
 
   return (
     <section className="summary">
@@ -43,47 +45,28 @@ function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove: () => void }
 
       <div className="columns">
         <div>
-          <p className="list-label">Nästa match</p>
-          {!matches.data && <Loading />}
-          {matches.data && !next && <Empty>Inga lottade matcher.</Empty>}
           {next && (
-            <MatchCard
-              sides={next.sides}
-              sets={next.sets}
-              played={next.sets.length > 0}
-              date={next.date}
-              court={next.court}
-              showDay
-              label={next.eventName}
-              highlightIds={[p.id]}
-              refereeCode={next.refereeCode}
-              teamMatchPath={next.teamMatchId ? `/lagmatch/${next.teamMatchId}?spelare=${p.id}` : undefined}
-              from="Översikt"
-            />
+            <>
+              <p className="list-label">Nästa lottade match</p>
+              <MatchCard
+                sides={next.sides}
+                sets={next.sets}
+                played={next.sets.length > 0}
+                date={next.date}
+                court={next.court}
+                showDay
+                label={next.eventName}
+                highlightIds={[p.id]}
+                refereeCode={next.refereeCode}
+                teamMatchPath={next.teamMatchId ? `/lagmatch/${next.teamMatchId}?spelare=${p.id}` : undefined}
+                from="Översikt"
+              />
+            </>
           )}
-
-          <p className="list-label">Tävlingar</p>
+          <p className="list-label">Kommande</p>
           {!o && <Loading />}
-          {o && o.entries.length === 0 && <Empty>Inte anmäld till någon tävling.</Empty>}
-          {o && o.entries.length > 0 && (
-            <div className="list">
-              {o.entries.map((e) => (
-                <Go key={e.event.id} from="Översikt" to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`} className="item">
-                  <span className="item__date">
-                    {fmtDay(e.event.startDate)}
-                    <span className="muted small block">{relativeDays(e.event.startDate)}</span>
-                  </span>
-                  <span className="item__main">
-                    <strong>{e.event.name}</strong>
-                    <span className="small block">
-                      {e.className}
-                      {e.partner ? ` · med ${e.partner}` : ''}
-                    </span>
-                  </span>
-                </Go>
-              ))}
-            </div>
-          )}
+          {o && agenda.length === 0 && <Empty>Inget inbokat just nu.</Empty>}
+          {agenda.length > 0 && <Agenda items={agenda} playerId={p.id} from="Översikt" limit={4} />}
         </div>
         <div>
           <p className="list-label">Lag</p>

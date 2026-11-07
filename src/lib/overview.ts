@@ -34,6 +34,8 @@ export type LeagueTeamSummary = {
   points: number | null;
   next: Fixture | null;
   last: Fixture | null;
+  /** All remaining team matches this season. */
+  upcoming: Fixture[];
 };
 
 /** For upcoming tournaments: which class the player is in, and whether a partner is missing. */
@@ -95,10 +97,12 @@ export async function loadLeagueTeams(playerId: number, events: PlayerEvent[]): 
           points: null,
           next: null,
           last: null,
+          upcoming: [],
         };
         if (dates.active) {
           const [fixtures, info] = await Promise.all([getTeamFixtures(team.teamId), getTeam(team.teamId)]);
-          summary.next = fixtures.find((f) => !f.played) ?? null;
+          summary.upcoming = fixtures.filter((f) => !f.played);
+          summary.next = summary.upcoming[0] ?? null;
           summary.last = [...fixtures].reverse().find((f) => f.played) ?? null;
           const table = await getStandings(info.poolId);
           const row = table.find((r) => r.teamId === team.teamId);
@@ -122,4 +126,18 @@ export async function loadOverview(playerId: number) {
   const [entries, leagueTeams] = await Promise.all([loadEntries(playerId, events), loadLeagueTeams(playerId, events)]);
   const pastTournaments = events.filter((e) => e.kind === 'tournament' && e.state === 4);
   return { events, entries, leagueTeams, pastTournaments };
+}
+
+/** One line in a child's schedule: a tournament or a team match. */
+export type AgendaItem =
+  | { kind: 'tournament'; date: string; entry: Entry }
+  | { kind: 'teammatch'; date: string | null; fixture: Fixture; team: LeagueTeamSummary };
+
+/** Everything coming up for a child, in date order. */
+export function buildAgenda(entries: Entry[], leagueTeams: LeagueTeamSummary[]): AgendaItem[] {
+  const items: AgendaItem[] = [
+    ...entries.map((entry) => ({ kind: 'tournament' as const, date: entry.event.startDate, entry })),
+    ...leagueTeams.flatMap((team) => team.upcoming.map((fixture) => ({ kind: 'teammatch' as const, date: fixture.date, fixture, team }))),
+  ];
+  return items.sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'));
 }

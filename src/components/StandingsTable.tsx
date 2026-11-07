@@ -2,6 +2,7 @@ import { Go } from './shell';
 import type { StandingRow } from '../lib/leagues';
 
 export function StandingsTable({ rows, highlightTeamId, leagueId, from }: { rows: StandingRow[]; highlightTeamId?: number; leagueId?: number; from: string }) {
+  const hasPoints = rows.some((r) => r.points > 0);
   return (
     <>
       <table className="table">
@@ -12,7 +13,7 @@ export function StandingsTable({ rows, highlightTeamId, leagueId, from }: { rows
             <th title="Spelade">S</th>
             <th title="Vunna-förlorade">V–F</th>
             <th title="Matcher vunna-förlorade">Matcher</th>
-            <th title="Poäng">P</th>
+            {hasPoints && <th title="Poäng">P</th>}
           </tr>
         </thead>
         <tbody>
@@ -35,14 +36,16 @@ export function StandingsTable({ rows, highlightTeamId, leagueId, from }: { rows
               <td>
                 {r.matchesWon}–{r.matchesLost}
               </td>
-              <td>
-                <strong>{r.points}</strong>
-              </td>
+              {hasPoints && (
+                <td>
+                  <strong>{r.points}</strong>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="muted small">Matcher = vunna och förlorade dubbelmatcher. P = tabellpoäng.</p>
+      <p className="muted small">Matcher = vunna och förlorade dubbelmatcher{hasPoints ? '. P = tabellpoäng' : ''}.</p>
     </>
   );
 }

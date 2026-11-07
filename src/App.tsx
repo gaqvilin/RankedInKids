@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router-dom';
 import Account from './pages/Account';
+import Admin from './pages/Admin';
 import Calendar from './pages/Calendar';
+import Club from './pages/Club';
 import Division from './pages/Division';
 import Home from './pages/Home';
 import League from './pages/League';
@@ -24,11 +26,13 @@ export default function App() {
         <Route path="/tavlingar" element={<Calendar />} />
         <Route path="/lagmatch/:id" element={<TeamMatch />} />
         <Route path="/serier" element={<Leagues />} />
+        <Route path="/klubb/:id" element={<Club />} />
         <Route path="/liga/:id" element={<League />} />
         <Route path="/division/:poolId" element={<Division />} />
         <Route path="/lag/:teamId" element={<Team />} />
         <Route path="/doma/:code" element={<Referee />} />
         <Route path="/konto" element={<Account />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<Home />} />
       </Routes>
       </AppShell>

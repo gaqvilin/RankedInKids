@@ -1,13 +1,26 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
+  "regions": [
+    "arn1"
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "padelkids.vercel.app"
+        }
+      ],
+      "destination": "https://padeladmin-app.vercel.app/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/|assets/|icon|manifest).*)",
       "destination": "/index.html"
     }
-  ],
-  "regions": [
-    "arn1"
   ]
 }

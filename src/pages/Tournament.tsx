@@ -21,6 +21,7 @@ export default function Tournament() {
   const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version]);
   const [onlyMine, setOnlyMine] = useState(!!playerId);
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
+  const [onlyToReport, setOnlyToReport] = useState(false);
 
   const myClass = useMemo(() => {
     if (!playerId || !matches.data) return null;
@@ -76,6 +77,8 @@ export default function Tournament() {
   const all = matches.data || [];
   const mine = playerId ? all.filter((m) => m.sides.some((s) => s.ids.includes(playerId))) : [];
   const showMine = onlyMine && mine.length > 0;
+  const reportable = all.filter((m) => m.canEnterResult && !m.played);
+  const filtered = onlyToReport ? all.filter((m) => m.canEnterResult && !m.played) : all;
   const highlight = playerId ? [playerId] : [];
   const nextMine = mine.find((m) => !m.played);
 
@@ -137,6 +140,12 @@ export default function Tournament() {
 
         {matches.error && <ErrorBox error={matches.error} onRetry={() => matches.reload()} />}
         {!matches.data && matches.loading && <Loading />}
+        {(reportable.length > 0 || onlyToReport) && !showMine && (
+          <label className="toolbar__check report-toggle">
+            <input type="checkbox" checked={onlyToReport} onChange={(e) => setOnlyToReport(e.target.checked)} /> Bara matcher att rapportera (
+            {reportable.length} kvar)
+          </label>
+        )}
 
         {showMine ? (
           <Section title="Mina matcher" action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
@@ -162,7 +171,7 @@ export default function Tournament() {
             <ClassBlock
               key={c.id}
               title={showAll ? c.name : null}
-              matches={all.filter((m) => m.className === c.name)}
+              matches={filtered.filter((m) => m.className === c.name)}
               pairs={pairs.data?.get(c.name)}
               pairsLoading={pairs.loading}
               highlight={highlight}

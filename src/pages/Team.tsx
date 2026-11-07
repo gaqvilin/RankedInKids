@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { FixtureCard } from '../components/FixtureCard';
+import { FixtureRow } from '../components/FixtureRow';
 import { Go } from '../components/shell';
 import { StandingsTable } from '../components/StandingsTable';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
@@ -77,10 +77,12 @@ export default function Team() {
                 <span className="stats__value">{row.position}</span>
                 <span className="stats__label">plats av {standings.data?.length}</span>
               </div>
-              <div>
-                <span className="stats__value">{row.points}</span>
-                <span className="stats__label">poäng</span>
-              </div>
+              {(standings.data ?? []).some((r) => r.points > 0) && (
+                <div>
+                  <span className="stats__value">{row.points}</span>
+                  <span className="stats__label">poäng</span>
+                </div>
+              )}
               <div>
                 <span className="stats__value">
                   {row.wins}–{row.losses}
@@ -108,15 +110,21 @@ export default function Team() {
               {fixtures.error && <ErrorBox error={fixtures.error} onRetry={() => fixtures.reload()} />}
               {!fixtures.data && fixtures.loading && <Loading />}
               {fixtures.data && upcoming.length === 0 && <Empty>Inga fler matcher den här säsongen.</Empty>}
-              {upcoming.map((f) => (
-                <FixtureCard key={f.teamMatchId} f={f} highlightTeamId={t.id} from={me} />
-              ))}
+              {upcoming.length > 0 && (
+                <div className="list">
+                  {upcoming.map((f) => (
+                    <FixtureRow key={f.teamMatchId} f={f} teamId={t.id} from={me} />
+                  ))}
+                </div>
+              )}
             </Section>
             {played.length > 0 && (
               <Section title="Spelade">
-                {played.map((f) => (
-                  <FixtureCard key={f.teamMatchId} f={f} highlightTeamId={t.id} from={me} />
-                ))}
+                <div className="list">
+                  {played.map((f) => (
+                    <FixtureRow key={f.teamMatchId} f={f} teamId={t.id} from={me} />
+                  ))}
+                </div>
               </Section>
             )}
           </div>
@@ -133,7 +141,8 @@ export default function Team() {
                 <StandingsTable rows={standings.data} highlightTeamId={t.id} leagueId={t.leagueId} from={me} />
               </Section>
             )}
-            <Section title={`Spelare (${t.players.length})`}>
+            <details className="fold">
+              <summary>Spelare ({t.players.length})</summary>
               <div className="list">
                 {t.players.map((p) => (
                   <Go key={p.id} to={`/spelare/${p.rankedinId}`} from={me} className="item">
@@ -145,7 +154,7 @@ export default function Team() {
                   </Go>
                 ))}
               </div>
-            </Section>
+            </details>
             <p className="small">
               <ExternalLink href={rinUrl(`/sv/team/homepage/${t.id}`)}>Laget på Rankedin</ExternalLink>
             </p>

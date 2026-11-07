@@ -71,3 +71,18 @@ describe('Klubbligan names', () => {
     expect(shortKlubbliganName('Klubbligan Öst 13-16 och 16-19 år HT 26')).toBe('Öst 13–16 och 16–19 år');
   });
 });
+
+describe('club links', () => {
+  it('maps organisation links to the club page', () => {
+    expect(appPathFromRankedinUrl('https://www.rankedin.com/sv/organisation/1436/varberg-padelklubb')).toBe('/klubb/1436');
+  });
+});
+
+describe('club read paths', () => {
+  it('allows only the public club endpoints', () => {
+    expect(isAllowedReadPath('Organization/GetOrganizationInfoAsync?organisationId=1')).toBe(true);
+    expect(isAllowedReadPath('Organization/GetMembersAsync?id=1')).toBe(true);
+    expect(isAllowedReadPath('Organization/DownloadClubMembersList?OrganizationId=1')).toBe(false);
+    expect(isAllowedReadPath('Organization/GetOpenApiKeyAsync?OrganisationId=1')).toBe(false);
+  });
+});

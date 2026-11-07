@@ -52,7 +52,7 @@ export function AppHeader({ title, back, backLabel }: { title?: string; back?: s
   }
 
   return (
-    <header className="app-header">
+    <header className={`app-header ${!from && !back ? 'app-header--root' : ''}`}>
       <div className="app-header__inner">
         {backEl}
         <Link to="/konto" className="account-chip" aria-label="Konton">

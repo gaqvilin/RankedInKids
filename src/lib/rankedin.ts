@@ -22,6 +22,7 @@ export type Profile = {
   name: string;
   firstName: string;
   club: string | null;
+  clubId: number | null;
   age: string | null;
   form: string[];
   doublesThisYear: string;
@@ -37,6 +38,7 @@ export async function getProfile(rankedinId: string): Promise<Profile> {
       FirstName: string;
       LastName: string;
       HomeClubName: string | null;
+      HomeClubUrl: string | null;
       Age: string | null;
       Form: string[] | null;
       ImageThumbnailUrl: string | null;
@@ -50,6 +52,7 @@ export async function getProfile(rankedinId: string): Promise<Profile> {
     name: `${h.FirstName} ${h.LastName}`.trim(),
     firstName: h.FirstName,
     club: h.HomeClubName,
+    clubId: Number(h.HomeClubUrl?.match(/organisation\/(\d+)/)?.[1]) || null,
     age: h.Age,
     form: h.Form || [],
     doublesThisYear: raw.Statistics?.WinLossDoublesCurrentYear || '0-0',
@@ -320,16 +323,40 @@ export async function getTournamentMatches(tournamentId: number, fresh = false):
 
 // ---------- Calendar ----------
 
+export type CalendarLevel = 'Step In' | 'Level Up' | 'SPT Future' | 'USM' | 'Övrigt';
+
 export type CalendarEvent = {
   id: number;
   name: string;
   startDate: string;
   endDate: string;
   address: string | null;
-  organisation: string | null;
+  /** Best guess of the town, from the address ("Härdgatan 7, 432 32 Varberg, Sverige" → "Varberg"). */
+  town: string | null;
+  level: CalendarLevel;
   sanctioned: boolean;
-  posterUrl: string | null;
 };
+
+export function levelFromName(name: string): CalendarLevel {
+  const n = name.toLowerCase();
+  if (/spt\s*future/.test(n)) return 'SPT Future';
+  if (/\busm\b|ungdoms-?sm/.test(n)) return 'USM';
+  if (/level\s*up/.test(n)) return 'Level Up';
+  if (/step\s*-?\s*in/.test(n)) return 'Step In';
+  return 'Övrigt';
+}
+
+export function townFromAddress(address: string | null): string | null {
+  if (!address) return null;
+  const parts = address
+    .split(',')
+    .map((p) => p.trim())
+    .filter((p) => p && !/^(sverige|sweden)$/i.test(p));
+  const withZip = parts.find((p) => /^\d{3}\s?\d{2}\s+\S/.test(p));
+  if (withZip) return withZip.replace(/^\d{3}\s?\d{2}\s+/, '');
+  const last = parts[parts.length - 1];
+  return last && !/\d/.test(last) ? last : null;
+}
 
 export async function getJuniorCalendar(opts: { lat?: number; lng?: number; radiusKm?: number } = {}): Promise<CalendarEvent[]> {
   const geo =
@@ -343,21 +370,23 @@ export async function getJuniorCalendar(opts: { lat?: number; lng?: number; radi
       EndDate: string;
       Address: string | null;
       OrganisationName: string | null;
-      PosterUrl: string | null;
     }[]
-  >(`Calendar/GetEventsAsync?Country=${COUNTRY_SWEDEN}&Sport=${SPORT_PADEL}&CalendarAgeGroups=1&From=0&Take=60${geo}`);
+  >(`Calendar/GetEventsAsync?Country=${COUNTRY_SWEDEN}&Sport=${SPORT_PADEL}&CalendarAgeGroups=1&CalendarDateFilter=1&From=0&Take=100${geo}`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   return (raw || [])
-    .filter((e) => e.Type === 4)
+    .filter((e) => e.Type === 4 && new Date(e.EndDate || e.StartDate) >= today)
     .map((e) => ({
       id: e.EventId,
-      name: e.EventName,
+      name: e.EventName.trim(),
       startDate: e.StartDate,
       endDate: e.EndDate,
       address: e.Address,
-      organisation: e.OrganisationName,
+      town: townFromAddress(e.Address),
+      level: levelFromName(e.EventName),
       sanctioned: /SPF/i.test(e.OrganisationName || ''),
-      posterUrl: e.PosterUrl && !e.PosterUrl.includes('rin_logo') ? e.PosterUrl : null,
-    }));
+    }))
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
 
 export function rinUrl(path: string): string {
@@ -499,6 +528,8 @@ export function appPathFromRankedinUrl(input: string): string | null {
   if (team) return `/lagmatch/${team[1]}`;
   const teamHome = s.match(/team\/homepage\/(\d+)/i);
   if (teamHome) return `/lag/${teamHome[1]}`;
+  const club = s.match(/organi[sz]ation\/(\d+)/i);
+  if (club) return `/klubb/${club[1]}`;
   const league = s.match(/teamleague\/(\d+)/i);
   if (league) return `/liga/${league[1]}`;
   const tour = s.match(/tournament\/(\d+)/i);

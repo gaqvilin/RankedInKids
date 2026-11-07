@@ -5,7 +5,8 @@ import { ResultSheet } from '../components/ResultSheet';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDay, fmtTime, hoursUntil, relativeDays } from '../lib/format';
-import { loadOverview, type LeagueTeamSummary } from '../lib/overview';
+import { buildAgenda, loadOverview, type LeagueTeamSummary } from '../lib/overview';
+import { Agenda } from '../components/Agenda';
 import { getProfile, getUpcomingMatches, rinUrl, type UpcomingMatch } from '../lib/rankedin';
 import { isSaved, removePlayer, savePlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
@@ -81,6 +82,7 @@ export default function Player() {
     setSaved(!saved);
   };
   const activeTeams = o?.leagueTeams.filter((t) => t.active) ?? [];
+  const agenda = o ? buildAgenda(o.entries, o.leagueTeams) : [];
   const pastTeams = o?.leagueTeams.filter((t) => !t.active) ?? [];
 
   return (
@@ -91,7 +93,15 @@ export default function Player() {
           <div>
             <h1>{p.name}</h1>
             <p className="muted">
-              {[p.club, p.age && `${p.age} år`, `dubbel i år ${p.doublesThisYear}`].filter(Boolean).join(' · ')}
+              {p.club &&
+                (p.clubId ? (
+                  <Go to={`/klubb/${p.clubId}`} from={p.firstName}>
+                    {p.club}
+                  </Go>
+                ) : (
+                  p.club
+                ))}
+              {[p.club ? '' : null, p.age && `${p.age} år`, `dubbel i år ${p.doublesThisYear}`].filter((x) => x !== null).join(' · ')}
             </p>
           </div>
           <button className={`btn btn--small ${saved ? '' : 'btn--primary'}`} onClick={toggleSave} aria-pressed={saved}>
@@ -119,60 +129,36 @@ export default function Player() {
 
         <div className="columns">
           <div>
-            <Section title="Kommande matcher" action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
-              {matches.error && <ErrorBox error={matches.error} onRetry={() => matches.reload()} />}
-              {!matches.data && matches.loading && <Loading />}
-              {matches.data && matches.data.length === 0 && <Empty>Inga lottade matcher just nu.</Empty>}
-              {matches.data?.map((m) => (
-                <MatchCard
-                  key={m.challengeId}
-                  sides={m.sides}
-                  sets={m.sets}
-                  played={m.sets.length > 0}
-                  date={m.date}
-                  court={m.court}
-                  showDay
-                  label={m.teamNames ? `${m.eventName} · ${m.teamNames.join(' – ')}` : m.eventName}
-                  highlightIds={[p.id]}
-                  refereeCode={m.refereeCode}
-                  canEnterResult={m.canEnterResult}
-                  awaitingConfirmation={m.awaitingConfirmation}
-                  onEnterResult={() => setReporting(m)}
-                  teamMatchPath={m.teamMatchId ? `/lagmatch/${m.teamMatchId}?spelare=${p.id}` : undefined}
-                  from={p.firstName}
-                />
-              ))}
-            </Section>
+            {matches.data && matches.data.length > 0 && (
+              <Section title="Lottade matcher" action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
+                {matches.data.map((m) => (
+                  <MatchCard
+                    key={m.challengeId}
+                    sides={m.sides}
+                    sets={m.sets}
+                    played={m.sets.length > 0}
+                    date={m.date}
+                    court={m.court}
+                    showDay
+                    label={m.teamNames ? `${m.eventName} · ${m.teamNames.join(' – ')}` : m.eventName}
+                    highlightIds={[p.id]}
+                    refereeCode={m.refereeCode}
+                    canEnterResult={m.canEnterResult}
+                    awaitingConfirmation={m.awaitingConfirmation}
+                    onEnterResult={() => setReporting(m)}
+                    teamMatchPath={m.teamMatchId ? `/lagmatch/${m.teamMatchId}?spelare=${p.id}` : undefined}
+                    from={p.firstName}
+                  />
+                ))}
+              </Section>
+            )}
+            {matches.error && <ErrorBox error={matches.error} onRetry={() => matches.reload()} />}
 
-            <Section title="Anmäld till">
+            <Section title="Schema">
               {!o && overview.loading && <Loading />}
-              {o && o.entries.length === 0 && <Empty>Inga kommande tävlingar.</Empty>}
-              {o && o.entries.length > 0 && (
-                <div className="list">
-                  {o.entries.map((e) => (
-                    <Go
-                      key={e.event.id}
-                      from={p.firstName}
-                      to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`}
-                      className="item"
-                    >
-                      <span className="item__date">
-                        {fmtDay(e.event.startDate)}
-                        <span className="muted small block">{relativeDays(e.event.startDate)}</span>
-                      </span>
-                      <span className="item__main">
-                        <strong>{e.event.name}</strong>
-                        <span className="small block">
-                          {e.className ?? 'Klass okänd'}
-                          {e.partner ? ` · med ${e.partner}` : ''}
-                          {e.missingPartner && <span className="tag tag--warn">Partner saknas</span>}
-                        </span>
-                        {e.signInOpen && e.closeSignInDate && <span className="muted small block">Anmälan stänger {fmtDay(e.closeSignInDate)}</span>}
-                      </span>
-                    </Go>
-                  ))}
-                </div>
-              )}
+              {o && agenda.length === 0 && <Empty>Inget inbokat just nu.</Empty>}
+              {agenda.length > 0 && <Agenda items={agenda} playerId={p.id} from={p.firstName} />}
+              <p className="muted small">Tävlingar och lagmatcher. Tider och banor syns när arrangören har lottat.</p>
             </Section>
           </div>
 
@@ -188,19 +174,20 @@ export default function Player() {
                 </div>
               )}
               {pastTeams.length > 0 && (
-                <>
-                  <p className="list-label">Tidigare säsonger</p>
+                <details className="fold">
+                  <summary>Tidigare säsonger ({pastTeams.length})</summary>
                   <div className="list">
                     {pastTeams.map((t) => (
                       <LeagueTeamCard key={t.leagueId} t={t} from={p.firstName} />
                     ))}
                   </div>
-                </>
+                </details>
               )}
             </Section>
 
             {o && o.pastTournaments.length > 0 && (
-              <Section title="Tidigare tävlingar">
+              <details className="fold">
+                <summary>Tidigare tävlingar ({o.pastTournaments.length})</summary>
                 <div className="list">
                   {o.pastTournaments.map((e) => (
                     <Go key={e.id} from={p.firstName} to={`/tavling/${e.id}?spelare=${p.id}`} className="item">
@@ -209,7 +196,7 @@ export default function Player() {
                     </Go>
                   ))}
                 </div>
-              </Section>
+              </details>
             )}
 
             <p className="small">

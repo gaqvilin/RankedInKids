@@ -1,28 +1,90 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Go } from '../components/shell';
-import { AppHeader, Empty, ErrorBox, Loading, Page, Section } from '../components/ui';
+import { AppHeader, Empty, ErrorBox, Loading, Page } from '../components/ui';
+import { CITIES, findCity } from '../lib/cities';
 import { fmtDay, relativeDays } from '../lib/format';
-import { getJuniorCalendar } from '../lib/rankedin';
+import { getJuniorCalendar, type CalendarLevel } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
 
-type Geo = { lat: number; lng: number } | null;
+type Place = { label: string; lat: number; lng: number } | null;
 
-const LEVELS = ['Alla', 'Step In', 'Level Up', 'SPT Future', 'USM'];
+const LEVELS: ('Alla' | CalendarLevel)[] = ['Alla', 'Step In', 'Level Up', 'SPT Future', 'USM', 'Övrigt'];
+const RADII = [25, 50, 100, 200];
+const PLACE_KEY = 'padeladmin.calendar.place';
+
+function loadPlace(): Place {
+  try {
+    const raw = localStorage.getItem(PLACE_KEY);
+    return raw ? (JSON.parse(raw) as Place) : null;
+  } catch {
+    return null;
+  }
+}
+function storePlace(p: Place) {
+  try {
+    if (p) localStorage.setItem(PLACE_KEY, JSON.stringify(p));
+    else localStorage.removeItem(PLACE_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+}
 
 export default function Calendar() {
-  const [geo, setGeo] = useState<Geo>(null);
+  const [place, setPlaceState] = useState<Place>(loadPlace);
+  const [cityInput, setCityInput] = useState(place?.label ?? '');
   const [radius, setRadius] = useState(100);
-  const [level, setLevel] = useState('Alla');
-  const [geoError, setGeoError] = useState<string | null>(null);
-  const events = useAsync(() => getJuniorCalendar(geo ? { ...geo, radiusKm: radius } : {}), [geo, radius]);
+  const [level, setLevel] = useState<'Alla' | CalendarLevel>('Alla');
+  const [onlySanctioned, setOnlySanctioned] = useState(false);
+  const [geoMsg, setGeoMsg] = useState<string | null>(null);
 
-  const list = (events.data || []).filter((e) => level === 'Alla' || e.name.toLowerCase().includes(level.toLowerCase()));
+  const setPlace = (p: Place) => {
+    setPlaceState(p);
+    storePlace(p);
+  };
+  const events = useAsync(() => getJuniorCalendar(place ? { lat: place.lat, lng: place.lng, radiusKm: radius } : {}), [place?.lat, place?.lng, radius]);
+
+  const list = useMemo(
+    () => (events.data || []).filter((e) => (level === 'Alla' || e.level === level) && (!onlySanctioned || e.sanctioned)),
+    [events.data, level, onlySanctioned],
+  );
+
+  function applyCity(value: string) {
+    setCityInput(value);
+    const c = findCity(value);
+    if (c && c.name.toLowerCase() === value.trim().toLowerCase()) {
+      setPlace({ label: c.name, lat: c.lat, lng: c.lng });
+      setGeoMsg(null);
+    }
+  }
+
+  function submitCity(e: React.FormEvent) {
+    e.preventDefault();
+    if (!cityInput.trim()) {
+      setPlace(null);
+      return;
+    }
+    const c = findCity(cityInput);
+    if (c) {
+      setCityInput(c.name);
+      setPlace({ label: c.name, lat: c.lat, lng: c.lng });
+      setGeoMsg(null);
+    } else {
+      setGeoMsg(`Hittar inte "${cityInput}". Välj en ort i listan.`);
+    }
+  }
 
   function useMyPosition() {
-    setGeoError(null);
-    navigator.geolocation?.getCurrentPosition(
-      (pos) => setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setGeoError('Kunde inte hämta din position.'),
+    setGeoMsg(null);
+    if (!navigator.geolocation) {
+      setGeoMsg('Din webbläsare kan inte dela position. Skriv en ort i stället.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPlace({ label: 'Min position', lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setCityInput('Min position');
+      },
+      () => setGeoMsg('Kunde inte hämta din position (kolla platsbehörighet). Skriv en ort i stället.'),
       { maximumAge: 600_000, timeout: 10_000 },
     );
   }
@@ -34,59 +96,106 @@ export default function Calendar() {
         <div className="page-title">
           <h1>Juniortävlingar</h1>
         </div>
-        <div className="chips">
-          {LEVELS.map((l) => (
-            <button key={l} className={`chip ${level === l ? 'chip--on' : ''}`} onClick={() => setLevel(l)}>
-              {l}
+
+        <div className="toolbar">
+          <form className="toolbar__group" onSubmit={submitCity}>
+            <label className="toolbar__label" htmlFor="city">
+              Nära
+            </label>
+            <input
+              id="city"
+              className="input input--inline toolbar__city"
+              list="cities"
+              placeholder="Ort, t.ex. Varberg"
+              value={cityInput}
+              onChange={(e) => applyCity(e.target.value)}
+              autoComplete="off"
+            />
+            <datalist id="cities">
+              {CITIES.map((c) => (
+                <option key={c.name} value={c.name} />
+              ))}
+            </datalist>
+            <select className="input input--inline" value={radius} onChange={(e) => setRadius(Number(e.target.value))} aria-label="Avstånd" disabled={!place}>
+              {RADII.map((r) => (
+                <option key={r} value={r}>
+                  {r} km
+                </option>
+              ))}
+            </select>
+            <button type="button" className="btn btn--small btn--ghost" onClick={useMyPosition}>
+              Min position
             </button>
-          ))}
-        </div>
-        <div className="row gap">
-          {geo ? (
-            <>
-              <select className="input input--auto" value={radius} onChange={(e) => setRadius(Number(e.target.value))} aria-label="Avstånd">
-                {[25, 50, 100, 200, 500].map((r) => (
-                  <option key={r} value={r}>
-                    Inom {r} km
-                  </option>
-                ))}
-              </select>
-              <button className="btn btn--ghost btn--small" onClick={() => setGeo(null)}>
+            {place && (
+              <button
+                type="button"
+                className="btn btn--small btn--ghost"
+                onClick={() => {
+                  setPlace(null);
+                  setCityInput('');
+                }}
+              >
                 Hela Sverige
               </button>
-            </>
-          ) : (
-            <button className="btn btn--small" onClick={useMyPosition}>
-              Nära mig
-            </button>
-          )}
-        </div>
-        {geoError && <p className="field-error">{geoError}</p>}
-
-        <Section title="Kommande">
-          {events.loading && !events.data && <Loading />}
-          {events.error && <ErrorBox error={events.error} onRetry={() => events.reload()} />}
-          {events.data && list.length === 0 && <Empty>Inga tävlingar hittades.</Empty>}
-          <ul className="card-list">
-            {list.map((e) => (
-              <li key={e.id}>
-                <Go to={`/tavling/${e.id}`} from="Tävlingar" className="event-row">
-                  <span className="event-row__date">
-                    <strong>{fmtDay(e.startDate)}</strong>
-                    <span className="muted small">{relativeDays(e.startDate)}</span>
-                  </span>
-                  <span className="event-row__main">
-                    <strong>{e.name}</strong>
-                    <span className="muted small block">
-                      {e.address}
-                      {e.sanctioned ? ' · Sanktionerad' : ''}
-                    </span>
-                  </span>
-                </Go>
-              </li>
+            )}
+          </form>
+          <div className="toolbar__group">
+            {LEVELS.map((l) => (
+              <button key={l} className={`chip ${level === l ? 'chip--on' : ''}`} onClick={() => setLevel(l)}>
+                {l}
+              </button>
             ))}
-          </ul>
-        </Section>
+            <label className="toolbar__check">
+              <input type="checkbox" checked={onlySanctioned} onChange={(e) => setOnlySanctioned(e.target.checked)} /> Bara sanktionerade
+            </label>
+          </div>
+        </div>
+        {geoMsg && <p className="field-error">{geoMsg}</p>}
+
+        <p className="muted small">
+          {events.data ? `${list.length} kommande tävlingar` : ''}
+          {place ? ` inom ${radius} km från ${place.label}` : ' i hela Sverige'}
+        </p>
+
+        {events.loading && !events.data && <Loading />}
+        {events.error && <ErrorBox error={events.error} onRetry={() => events.reload()} />}
+        {events.data && list.length === 0 && <Empty>Inga tävlingar matchar. Prova ett större avstånd eller en annan nivå.</Empty>}
+
+        {list.length > 0 && (
+          <table className="table table--rows">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Tävling</th>
+                <th>Nivå</th>
+                <th>Ort</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((e) => (
+                <tr key={e.id}>
+                  <td className="nowrap">
+                    <strong>{fmtDay(e.startDate)}</strong>
+                    <span className="muted small block">{relativeDays(e.startDate)}</span>
+                  </td>
+                  <td>
+                    <Go to={`/tavling/${e.id}`} from="Tävlingar" className="row-link">
+                      {e.name}
+                    </Go>
+                    <span className="muted small block only-narrow">
+                      {[e.town, e.level !== 'Övrigt' ? e.level : null].filter(Boolean).join(' · ')}
+                    </span>
+                  </td>
+                  <td className="only-wide">
+                    {e.level}
+                    {e.sanctioned && <span className="muted small block">Sanktionerad</span>}
+                  </td>
+                  <td className="only-wide">{e.town ?? <span className="muted">–</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Page>
     </>
   );

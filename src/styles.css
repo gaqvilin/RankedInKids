@@ -1115,3 +1115,199 @@ a.match:hover {
   background: var(--surface);
   color: var(--text);
 }
+
+/* ---------- Simplicity helpers ---------- */
+.fold {
+  margin: 18px 0;
+}
+.fold > summary {
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 15px;
+  padding: 6px 0;
+  list-style: none;
+}
+.fold > summary::-webkit-details-marker {
+  display: none;
+}
+.fold > summary::before {
+  content: '+ ';
+  color: var(--muted);
+}
+.fold[open] > summary::before {
+  content: '− ';
+}
+.fold > .list {
+  margin-top: 8px;
+}
+.fixture-row {
+  align-items: center;
+}
+.fixture-row__result {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  min-width: 40px;
+  text-align: right;
+}
+.fixture-row__result--V {
+  color: var(--win);
+}
+@media (max-width: 559px) {
+  /* Side info drops below the main text on narrow screens. */
+  .item {
+    flex-wrap: wrap;
+  }
+  .item__side {
+    text-align: left;
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .item__date {
+    min-width: 64px;
+  }
+  .fixture-row {
+    flex-wrap: nowrap;
+  }
+  .page-title h1 {
+    font-size: 23px;
+  }
+}
+
+/* ---------- Toolbar & row tables ---------- */
+.toolbar {
+  display: grid;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin: 12px 0;
+}
+.toolbar__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.toolbar__label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-right: 2px;
+}
+.toolbar__city {
+  width: 180px;
+}
+.toolbar__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  margin-left: 6px;
+}
+.toolbar .chips,
+.toolbar .chip {
+  margin: 0;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.table--rows td {
+  vertical-align: top;
+  padding: 10px 12px;
+}
+.table--rows th {
+  padding: 8px 12px;
+}
+.table--rows tbody tr:hover td {
+  background: var(--subtle);
+}
+.row-link {
+  color: var(--text);
+  font-weight: 600;
+}
+.only-narrow {
+  display: none;
+}
+@media (max-width: 719px) {
+  .only-wide {
+    display: none;
+  }
+  .only-narrow {
+    display: block;
+  }
+  .table--rows thead {
+    display: none;
+  }
+  .table--rows td {
+    padding: 10px;
+  }
+  .toolbar__city {
+    flex: 1 1 140px;
+  }
+}
+
+/* ---------- Use the width on desktop ---------- */
+.item__date,
+.event-row__date {
+  display: grid;
+  align-content: start;
+}
+@media (min-width: 960px) {
+  .page {
+    margin: 0;
+    padding: 28px 40px 40px;
+    max-width: 880px;
+  }
+  .page--wide {
+    max-width: 1320px;
+  }
+  .app-header__inner {
+    max-width: none;
+    padding: 8px 40px;
+  }
+  /* Top-level pages have nothing to go back to on desktop: drop the empty bar. */
+  .app-header--root {
+    display: none;
+  }
+}
+
+/* ---------- Club ---------- */
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 15px;
+}
+.facts dt {
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.group + .group {
+  margin-top: 6px;
+}
+.fold .input {
+  margin: 8px 0;
+}
+@media (min-width: 720px) {
+  .list--cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .list--cols > * {
+    border-right: 1px solid var(--line);
+  }
+  .list--cols > *:nth-child(2n) {
+    border-right: 0;
+  }
+  .list--cols > *:nth-last-child(2):nth-child(odd) {
+    border-bottom: 0;
+  }
+}
+
+.report-toggle {
+  margin: 8px 0 0;
+}
