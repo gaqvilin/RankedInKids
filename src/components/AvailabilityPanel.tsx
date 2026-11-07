@@ -22,7 +22,7 @@ export function AvailabilityPanel({ teamId, date, players, from }: { teamId: num
         <Go to="/konto" from={from}>
           Logga in
         </Go>{' '}
-        med ett Rankedin-konto i laget för att svara och se vilka som kan spela {fmtDay(date)}.
+        med ett Rankedin-konto i laget för att svara och se vilka som kan spela {fmtDay(date).replace(/\.$/, '')}.
       </p>
     );
   }

@@ -34,7 +34,7 @@ export function MatchCard(p: Props) {
       <div className="match__body">
         {p.sides.map((s, i) => (
           <div key={i} className={`match__side ${s.isWinner ? 'is-winner' : ''} ${mine(s) ? 'is-mine' : ''}`}>
-            <span className="match__names">{s.names.length ? s.names.join(' / ') : 'Ej klart'}</span>
+            <span className="match__names">{s.names.length ? s.names.join(' / ') : 'Ej uttagna'}</span>
             <span className="match__sets">
               {p.sets.map((set, j) => (
                 <span key={j} className={set[i] > set[1 - i] ? 'set set--won' : 'set'}>

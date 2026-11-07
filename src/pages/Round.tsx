@@ -73,8 +73,13 @@ export default function Round() {
   const sideOf = (m: DayMatch) => (m.tm.teams[0].id === tid ? 0 : 1);
   const lineupSet = (m: DayMatch, side: 0 | 1) => m.tm.slots.length > 0 && m.tm.slots.every((s) => (side === 0 ? s.first : s.second).filter((id) => id > 0).length >= 2);
   const unlicensed = t.players.filter((p) => !p.hasLicense);
-  const resultsMissing = matches.reduce((n, m) => n + m.tm.matches.filter((x) => !x.played).length, 0);
-  const hosting = matches.some((m) => m.fixture.home.id === tid);
+  const isPastOrToday = date <= new Date().toLocaleDateString('sv-SE');
+  const resultsMissing = isPastOrToday ? matches.reduce((n, m) => n + m.tm.matches.filter((x) => !x.played).length, 0) : 0;
+  // In SPL the whole division plays at one venue per day; Rankedin puts the
+  // venue on one of the day's fixtures.
+  const venue = (poolDay.data ?? []).map((f) => f.location).find(Boolean) ?? matches.map((m) => m.fixture.location).find(Boolean) ?? null;
+  const norm = (x: string | null | undefined) => (x ?? '').toLowerCase().replace(/[^a-zåäö0-9]/g, '');
+  const hosting = !!venue && !!t.club && (norm(venue).includes(norm(t.club)) || norm(t.club).includes(norm(venue)));
 
   return (
     <>
@@ -85,7 +90,7 @@ export default function Round() {
             <h1>{title}</h1>
             <p className="muted">
               {t.name} · {t.division}
-              {matches[0]?.fixture.location ? ` · ${matches[0].fixture.location}` : ''} · {relativeDays(`${date}T12:00:00`)}
+              {venue ? ` · ${venue}` : ''} · {relativeDays(`${date}T12:00:00`)}
             </p>
           </div>
           <RefreshButton onClick={() => day.reload()} loading={day.loading} />
@@ -117,9 +122,13 @@ export default function Round() {
               <li className={unlicensed.length ? 'todo' : 'ok'}>
                 {unlicensed.length ? `Licens saknas: ${unlicensed.map((p) => p.name).join(', ')}` : 'Alla i truppen har licens'}
               </li>
-              <li className={resultsMissing ? 'todo' : 'ok'}>
-                {resultsMissing ? `${resultsMissing} resultat saknas – vinnande lag rapporterar löpande` : 'Alla resultat inlagda'}
-              </li>
+              {isPastOrToday ? (
+                <li className={resultsMissing ? 'todo' : 'ok'}>
+                  {resultsMissing ? `${resultsMissing} resultat saknas – vinnande lag rapporterar löpande` : 'Alla resultat inlagda'}
+                </li>
+              ) : (
+                <li className="info">Resultat rapporteras löpande under speldagen av vinnande lag.</li>
+              )}
               {points && (
                 <li className="info">
                   Rankingpoäng i {t.division}: {String(points.win).replace('.', ',')} per vinst, {String(points.loss).replace('.', ',')} per förlust.
@@ -181,13 +190,14 @@ export default function Round() {
             </Section>
             {spl && (hosting || (poolDay.data?.length ?? 0) > 0) && (
               <details className="fold" open={hosting}>
-                <summary>Arrangör: kallelse och spelschema</summary>
+                <summary>{hosting ? 'Ni arrangerar: kallelse och spelschema' : 'Arrangör: kallelse och spelschema'}</summary>
                 <HostTools
-                  hostClub={t.club ?? t.name}
+                  hostClub={venue ?? t.club ?? t.name}
                   division={t.division ?? ''}
                   date={date}
                   freeThirdMatch={level != null && level >= 2}
-                  fixtures={(poolDay.data ?? []).filter((f) => !matches[0]?.fixture.location || f.location === matches[0].fixture.location)}
+                  venue={venue}
+                  fixtures={poolDay.data ?? []}
                 />
               </details>
             )}
@@ -224,7 +234,21 @@ export default function Round() {
   );
 }
 
-function HostTools({ hostClub, division, date, freeThirdMatch, fixtures }: { hostClub: string; division: string; date: string; freeThirdMatch: boolean; fixtures: Fixture[] }) {
+function HostTools({
+  hostClub,
+  division,
+  date,
+  freeThirdMatch,
+  fixtures,
+  venue,
+}: {
+  hostClub: string;
+  division: string;
+  date: string;
+  freeThirdMatch: boolean;
+  fixtures: Fixture[];
+  venue: string | null;
+}) {
   const [courts, setCourts] = useState(4);
   const [start, setStart] = useState('10:00');
   const [slot, setSlot] = useState(75);
@@ -236,7 +260,7 @@ function HostTools({ hostClub, division, date, freeThirdMatch, fixtures }: { hos
     hostClub,
     division,
     dateLabel: new Date(`${date}T12:00:00`).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
-    venue: fixtures[0]?.location ?? '',
+    venue: venue ?? '',
     contact,
     startTime: start,
     teamMatches,

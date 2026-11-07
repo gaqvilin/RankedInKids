@@ -464,11 +464,12 @@ export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<
       rating: p.ratingBegin,
       points: p.rankingTypePoints?.length ? Math.max(...p.rankingTypePoints.map((r) => r.points)) : null,
     }));
-  const side = (s: RawTLSide, won: boolean): Side => ({
-    names: s ? [s.name, s.player2Name].filter((n): n is string => !!n) : [],
-    ids: s ? [s.player1Id, s.player2Id].filter((n): n is number => !!n) : [],
-    isWinner: won,
-  });
+  // Rankedin names unset lineup slots "Pending" (id 0); keep only real players.
+  const side = (s: RawTLSide, won: boolean): Side => {
+    const slots: [string | null, number | null][] = s ? [[s.name, s.player1Id], [s.player2Name, s.player2Id]] : [];
+    const real = slots.filter((x): x is [string, number] => !!x[0] && !!x[1]);
+    return { names: real.map((x) => x[0]), ids: real.map((x) => x[1]), isWinner: won };
+  };
   const matches: TournamentMatch[] = (block?.matches || []).map((m) => {
     const r = m.matchResult;
     const played = !!r?.isPlayed;
