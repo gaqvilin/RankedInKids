@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { MatchCard } from '../components/MatchCard';
+import { PairingPanel } from '../components/PairingPanel';
 import { PlayerHitRow } from '../components/PlayerHitRow';
+import { getAdminEvents } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
@@ -24,14 +26,18 @@ const TABS: { id: Tab; label: string }[] = [
 export default function Organizer() {
   const { id = '' } = useParams();
   const tid = Number(id);
-  const { version } = useSession();
+  const { version, user } = useSession();
+  const isOrganiser = useAsync(
+    () => (user.loggedIn ? getAdminEvents().then((es) => es.some((e) => e.id === tid)).catch(() => false) : Promise.resolve(false)),
+    [user.loggedIn, version, tid],
+  );
   const [params, setParams] = useSearchParams();
   const header = useAsync(() => getTournament(tid), [tid]);
   const classes = useAsync(() => getClasses(tid), [tid]);
   const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version]);
   const classKey = (classes.data ?? []).map((c) => c.id).join(',');
   const pairs = useAsync(
-    async () => new Map(await Promise.all((classes.data ?? []).map(async (c) => [c.name, await getClassPairs(tid, c.id)] as const))),
+    async (fresh) => new Map(await Promise.all((classes.data ?? []).map(async (c) => [c.name, await getClassPairs(tid, c.id, fresh)] as const))),
     [tid, classKey],
   );
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
@@ -115,6 +121,26 @@ export default function Organizer() {
           ))}
         </div>
 
+        {tab === 'partner' && isOrganiser.data && (classes.data?.length ?? 0) > 0 && (
+          <Section title="Para ihop och dela på par">
+            <p className="small muted">Ändringarna görs direkt i Rankedin, precis som i arrangörsvyn där. Fungerar fram till att klassen är lottad.</p>
+            {classes.data!.map((c) => {
+              const singles = pairs.data?.get(c.name)?.filter((p) => p.missingPartner).length ?? 0;
+              return (
+                <details key={c.id} className="fold" open={singles > 1}>
+                  <summary>
+                    {c.name}
+                    {singles > 0 && <span className="muted small"> · {singles} utan partner</span>}
+                  </summary>
+                  <PairingPanel tournamentId={tid} classId={c.id} className={c.name} onChanged={() => pairs.reload()} />
+                </details>
+              );
+            })}
+          </Section>
+        )}
+        {tab === 'partner' && user.loggedIn && isOrganiser.data === false && (
+          <Notice>Ditt aktiva konto är inte arrangör för tävlingen. Byt konto under Konton för att para ihop spelare här.</Notice>
+        )}
         {tab === 'partner' && (
           <PartnerTab
             loading={pairs.loading && !pairs.data}

@@ -249,11 +249,12 @@ export type Pair = {
   seed: string;
 };
 
-export async function getClassPairs(tournamentId: number, classId: number): Promise<Pair[]> {
+/** fresh: skip every cache (organiser just changed pairs). */
+export async function getClassPairs(tournamentId: number, classId: number, fresh = false): Promise<Pair[]> {
   type RP = { Id: number; Name: string; RankedinId: string | null; HasValidLicense: boolean } | null;
   const raw = await rin<{
     Participants: { Participant: { FirstPlayer: RP; SecondPlayer: RP; Seed: string } }[];
-  }>(`Tournament/GetPlayersForClassAsync?tournamentId=${tournamentId}&tournamentClassId=${classId}&language=sv`);
+  }>(`Tournament/GetPlayersForClassAsync?tournamentId=${tournamentId}&tournamentClassId=${classId}&language=sv`, fresh ? { fresh: true, auth: true } : {});
   return (raw.Participants || []).map(({ Participant: p }) => {
     const players = [p.FirstPlayer, p.SecondPlayer]
       .filter((x): x is NonNullable<RP> => !!x && x.Id > 0)

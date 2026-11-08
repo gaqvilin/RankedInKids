@@ -28,7 +28,7 @@ export function setActiveAccount(playerId: number) {
   cache.clear();
   pending.clear();
 }
-const accountHeaders = (): Record<string, string> => (activeAccountId ? { 'x-rk-account': String(activeAccountId) } : {});
+export const accountHeaders = (): Record<string, string> => (activeAccountId ? { 'x-rk-account': String(activeAccountId) } : {});
 
 /** At most this many Rankedin requests at once; Rankedin rate limits bursts. */
 const MAX_PARALLEL = 6;
