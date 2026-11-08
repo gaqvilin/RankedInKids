@@ -28,6 +28,8 @@ describe('findCity', () => {
     expect(findCity('VARBERG')?.name).toBe('Varberg');
     expect(findCity('Göte')?.name).toBe('Göteborg');
     expect(findCity('Atlantis')).toBeNull();
+    expect(findCity('gnosjo')?.name).toBe('Gnosjö');
+    expect(findCity('Smålandsstenar')).not.toBeNull();
   });
 });
 
