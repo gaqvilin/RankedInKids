@@ -63,8 +63,16 @@ export function isSameOriginJson(request: Request): boolean {
   const site = request.headers.get('sec-fetch-site');
   if (site && site !== 'same-origin' && site !== 'none') return false;
   const origin = request.headers.get('origin');
-  if (origin && origin !== new URL(request.url).origin) return false;
-  return true;
+  if (!origin) return true;
+  let originHost: string;
+  try {
+    originHost = new URL(origin).host;
+  } catch {
+    return false;
+  }
+  // Behind proxies request.url may not carry the public host; accept the forwarded one too.
+  const hosts = [new URL(request.url).host, request.headers.get('x-forwarded-host'), request.headers.get('host')].filter(Boolean);
+  return hosts.includes(originHost);
 }
 
 function parseCookies(request: Request): Map<string, string> {

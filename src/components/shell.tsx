@@ -1,3 +1,4 @@
+import { FeedbackSheet } from './FeedbackSheet';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, type LinkProps } from 'react-router-dom';
 import { onLoadingChange } from '../lib/api';
@@ -42,8 +43,14 @@ function useUnseenRelease() {
 
 function ReleasesLink({ className }: { className: string }) {
   const unseen = useUnseenRelease();
+  const [feedback, setFeedback] = useState(false);
   return (
     <span className={className}>
+      <button type="button" className="link-button" onClick={() => setFeedback(true)}>
+        Ge feedback
+      </button>
+      {feedback && <FeedbackSheet onClose={() => setFeedback(false)} />}
+      <span className="muted"> · </span>
       <Link to="/hjalp">Hjälp</Link>
       <span className="muted"> · </span>
       <Link to="/nyheter">

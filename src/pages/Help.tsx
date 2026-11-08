@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { FeedbackSheet } from '../components/FeedbackSheet';
 import { Link } from 'react-router-dom';
 import { AppHeader, Page } from '../components/ui';
 
@@ -180,6 +181,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
 ];
 
 export default function Help() {
+  const [feedback, setFeedback] = useState(false);
   return (
     <>
       <AppHeader back="/" backLabel="Översikt" title="Hjälp" />
@@ -212,6 +214,14 @@ export default function Help() {
               <p>{f.a}</p>
             </details>
           ))}
+        </section>
+        <section className="help-section">
+          <h2>Saknar du något?</h2>
+          <p>Berätta vad som krånglar eller vad du vill ha – vi läser allt.</p>
+          <button className="btn btn--primary" onClick={() => setFeedback(true)}>
+            Ge feedback
+          </button>
+          {feedback && <FeedbackSheet onClose={() => setFeedback(false)} />}
         </section>
         <p className="muted small">
           Se vad som är nytt under <Link to="/nyheter">Nyheter</Link>.

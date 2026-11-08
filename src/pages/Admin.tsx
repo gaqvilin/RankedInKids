@@ -28,6 +28,11 @@ export default function Admin() {
         <div className="page-title">
           <div>
             <h1>Admin</h1>
+            <p className="small">
+              <Go to="/feedback" from="Admin">
+                Feedback från användare ›
+              </Go>
+            </p>
             <p className="muted">Det du administrerar i Rankedin. Öppna ett event här för att rapportera resultat och sätta uppställningar.</p>
           </div>
         </div>

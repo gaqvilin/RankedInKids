@@ -4,6 +4,7 @@ import Admin from './pages/Admin';
 import Calendar from './pages/Calendar';
 import Club from './pages/Club';
 import Division from './pages/Division';
+import Feedback from './pages/Feedback';
 import Help from './pages/Help';
 import Home from './pages/Home';
 import League from './pages/League';
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/nyheter" element={<Releases />} />
         <Route path="/hjalp" element={<Help />} />
+        <Route path="/feedback" element={<Feedback />} />
         <Route path="*" element={<Home />} />
       </Routes>
       </AppShell>

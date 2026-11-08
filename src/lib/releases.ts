@@ -19,6 +19,7 @@ export const RELEASES: Release[] = [
       'Tävlingssidan visar vilka fler i klassen som söker partner när ditt barn saknar en.',
       '"Nästa" visar alla motståndare på speldagen, inte bara den första.',
       'Speldagar har en liten etikett, Spelad eller Kommande, och spelade visar resultatet mot varje lag.',
+      'Ge feedback: knapp längst ner och på hjälpsidan. Allt du skriver sparas och läses.',
       'Rättat: när du byter spelare eller lag syns inte längre den förra sidans information en kort stund.',
     ],
   },
