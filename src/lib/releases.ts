@@ -9,6 +9,8 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Enklare feedback: bara en ruta att skriva i. Rutorna öppnas nu alltid snyggt ovanpå sidan.',
+      'Mobilen zoomar inte längre in när man trycker i ett fält eller dubbeltrycker.',
       'Knappen Lägg till på hemskärmen (under Konton och längst ner på Översikt) installerar PadelAdmin som en app.',
       'Säkerhet: skydd mot att sidan bäddas in på andra sajter, begränsat antal inloggningsförsök och uppdaterade bibliotek utan kända brister.',
       'Mindre information överallt: tävlingens detaljer är ihopfällda, lagsidan har en enda lista med speldagar, serielistan och reglerna ligger ett tryck bort, och varningar är kortare.',

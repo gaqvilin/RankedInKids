@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useInstall } from '../lib/install';
+import { Sheet } from './Sheet';
 
 /**
  * One button to put PadelAdmin on the home screen. Uses the browser's install
@@ -18,9 +19,7 @@ export function InstallButton({ className = 'btn btn--small' }: { className?: st
         Lägg till på hemskärmen
       </button>
       {help && (
-        <div className="sheet-backdrop" onClick={() => setHelp(false)}>
-          <div className="sheet" role="dialog" aria-modal="true" aria-label="Lägg till på hemskärmen" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet__grip" aria-hidden="true" />
+        <Sheet label="Lägg till på hemskärmen" onClose={() => setHelp(false)}>
             <h2>Lägg till på hemskärmen</h2>
             {platform === 'ios' ? (
               <ol className="install-steps">
@@ -49,8 +48,7 @@ export function InstallButton({ className = 'btn btn--small' }: { className?: st
             <button className="btn btn--primary" onClick={() => setHelp(false)}>
               Klart
             </button>
-          </div>
-        </div>
+        </Sheet>
       )}
     </>
   );

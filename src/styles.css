@@ -1983,3 +1983,31 @@ body.screen-mode .shell__main {
   overflow-x: auto;
   max-width: 100%;
 }
+
+.sheet {
+  text-align: left;
+  font-size: 16px;
+}
+.sheet .textarea,
+.sheet > .input {
+  width: 100%;
+  margin: 8px 0;
+}
+
+/* No zooming on phones: no double-tap zoom, and inputs at 16px so iOS doesn't zoom in on focus. */
+html {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+@media (max-width: 720px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+.sheet .textarea {
+  min-height: 0;
+  height: auto;
+}
