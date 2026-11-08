@@ -32,11 +32,11 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
           <em>Spara som min spelare</em>.
         </li>
         <li>
-          <strong>Logga in</strong> under <Link to="/konto">Konton</Link> med ditt Rankedin-konto om du vill rapportera resultat, sätta uppställning
+          <strong>Logga in</strong> under <em>Meny → Konton</em> med ditt Rankedin-konto om du vill rapportera resultat, sätta uppställning
           eller svara på tillgänglighet. Du kan lägga till flera konton, t.ex. ditt eget och ditt barns.
         </li>
         <li>
-          <strong>Lägg appen på hemskärmen</strong> med knappen <em>Lägg till på hemskärmen</em> under Konton – eller i Safari: Dela → Lägg till
+          <strong>Lägg appen på hemskärmen</strong> med knappen <em>Lägg till på hemskärmen</em> i Menyn – eller i Safari: Dela → Lägg till
           på hemskärmen, i Chrome: menyn → Installera app.
         </li>
       </ol>
@@ -207,7 +207,7 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
 
 const FAQ: { q: string; a: ReactNode }[] = [
   { q: 'Varför ser jag inga matcher för nästa speldag?', a: 'Rankedin skapar de enskilda matcherna först när arrangören öppnar omgången. Tills dess visas speldagen och motståndarna, men inte uppställning eller resultat.' },
-  { q: 'Varför kan jag inte rapportera ett resultat?', a: 'Knappen visas bara när Rankedin tillåter ditt aktiva konto. Kontrollera att du är inloggad med rätt konto (byt under Konton). Inlagda resultat i lagserier kan bara ändras av seriens administratör.' },
+  { q: 'Varför kan jag inte rapportera ett resultat?', a: 'Knappen visas bara när Rankedin tillåter ditt aktiva konto. Kontrollera att du är inloggad med rätt konto (byt i Menyn). Inlagda resultat i lagserier kan bara ändras av seriens administratör.' },
   { q: 'Varför syns inte mitt barn i rankinglistan?', a: 'Barn till och med 12 år får rankingpoäng men visas inte i SPF:s rankinglistor.' },
   { q: 'Sidan visar gammal information.', a: 'Appen visar det du såg senast direkt och hämtar nytt i bakgrunden – en tunn linje överst visar när den laddar. Tryck Uppdatera för att hämta direkt.' },
   { q: 'Mina sparade spelare försvann.', a: 'De sparas i webbläsaren. Byter du enhet, webbläsare eller adress behöver du spara dem igen – eller logga in, så räknas dina konton som dina spelare automatiskt.' },

@@ -1,99 +1,65 @@
-import { InstallButton } from '../components/InstallButton';
 import { PlayerHitRow } from '../components/PlayerHitRow';
 import { usePlayerSearch } from '../lib/usePlayerSearch';
 import { useState } from 'react';
 import { MatchCard } from '../components/MatchCard';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Notice, Page, Section } from '../components/ui';
-import { fmtDay, relativeDays, soon } from '../lib/format';
+import { fmtDay, hoursUntil, relativeDays, soon } from '../lib/format';
 import { loadOverview } from '../lib/overview';
 import { useMine } from '../lib/mine';
 import { getUpcomingMatches } from '../lib/rankedin';
 import { useKnownPlayers } from '../lib/known';
-import { getSavedPlayers, removePlayer, type SavedPlayer } from '../lib/storage';
+import { getSavedPlayers, type SavedPlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
-import { LeagueTeamCard } from './Player';
 
-/** The most important things for one saved child, without clicking further. */
-function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove?: () => void }) {
+/** Only what needs attention for one player: a missing partner, or a drawn match coming up within a week. */
+function PlayerAlerts({ p, showName }: { p: SavedPlayer; showName: boolean }) {
   const { version } = useSession();
-  const first = p.name.split(' ')[0];
   const matches = useAsync(() => getUpcomingMatches(p.id), [p.id, version], `matches.${p.id}`);
   const overview = useAsync(() => loadOverview(p.id), [p.id], `overview.${p.id}`);
-  const o = overview.data;
-  const next = matches.data?.[0];
-  const missing = o?.entries.filter((e) => e.missingPartner) ?? [];
-  const activeTeams = o?.leagueTeams.filter((t) => t.active) ?? [];
-
+  const missing = overview.data?.entries.filter((e) => e.missingPartner) ?? [];
+  const next = matches.data?.find((m) => m.date && hoursUntil(m.date) != null && hoursUntil(m.date)! < 24 * 7);
+  if (!missing.length && !next) return null;
+  const first = p.name.split(' ')[0];
   return (
-    <section className="summary">
-      <div className="summary__head">
-        <h2>
-          <Go to={`/spelare/${p.rankedinId}`} from="Översikt">
-            {p.name}
-          </Go>
-        </h2>
-        {onRemove ? (
-          <button className="link-btn small muted" onClick={onRemove}>
-            Ta bort
-          </button>
-        ) : (
-          <span className="small muted">Inloggad</span>
-        )}
-      </div>
-
+    <>
       {missing.map((e) => (
         <Notice key={e.event.id} tone="error">
-          <strong>Partner saknas</strong> till {e.event.name.split(/\s[\/–-]\s/)[0]} – anmälan stänger {relativeDays(e.closeSignInDate)}.{' '}
+          <strong>{showName ? `${first}: partner saknas` : 'Partner saknas'}</strong> till {e.event.name.split(/\s[\/–-]\s/)[0]} – anmälan stänger{' '}
+          {relativeDays(e.closeSignInDate)}.{' '}
           <Go to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`} from="Översikt">
             Lös det
           </Go>
         </Notice>
       ))}
-
       {next && (
-        <>
-          <p className="list-label">Nästa lottade match</p>
-          <MatchCard
-            sides={next.sides}
-            sets={next.sets}
-            played={next.sets.length > 0}
-            date={next.date}
-            court={next.court}
-            showDay
-            label={next.eventName}
-            highlightIds={[p.id]}
-            refereeCode={next.refereeCode}
-            teamMatchPath={next.teamMatchId ? `/lagmatch/${next.teamMatchId}?spelare=${p.id}` : undefined}
-            from="Översikt"
-          />
-        </>
+        <MatchCard
+          sides={next.sides}
+          sets={next.sets}
+          played={next.sets.length > 0}
+          date={next.date}
+          court={next.court}
+          showDay
+          label={showName ? `${first} · ${next.eventName}` : next.eventName}
+          highlightIds={[p.id]}
+          refereeCode={next.refereeCode}
+          teamMatchPath={next.teamMatchId ? `/lagmatch/${next.teamMatchId}?spelare=${p.id}` : undefined}
+          from="Översikt"
+        />
       )}
-      {!o && <Loading />}
-      {activeTeams.length > 0 && (
-        <div className="list">
-          {activeTeams.map((t) => (
-            <LeagueTeamCard key={t.leagueId} t={t} from="Översikt" hideNext />
-          ))}
-        </div>
-      )}
-      {o && !next && activeTeams.length === 0 && o.entries.length === 0 && <p className="muted small">Inget på gång just nu.</p>}
-      <p className="small">
-        <Go to={`/spelare/${p.rankedinId}`} from="Översikt">
-          Allt om {first} →
-        </Go>
-      </p>
-    </section>
+    </>
   );
 }
 
 export default function Home() {
-  const [saved, setSaved] = useState<SavedPlayer[]>(getSavedPlayers);
+  const [saved] = useState<SavedPlayer[]>(getSavedPlayers);
   const known = useKnownPlayers();
   const mine = useMine();
   const shown = [...saved, ...known.filter((k) => !saved.some((s) => s.rankedinId === k.rankedinId))];
   const { term, setTerm, hits, error, loading } = usePlayerSearch('Översikt', '/');
+  // Name who it's for only when items belong to different players.
+  const multiWho = new Set((mine.data?.upcoming ?? []).flatMap((u) => u.who)).size > 1;
 
 
   return (
@@ -103,6 +69,14 @@ export default function Home() {
         <div className="page-title">
           <h1>Översikt</h1>
         </div>
+
+        {shown.length > 0 && (
+          <div className="stack alerts">
+            {shown.map((p) => (
+              <PlayerAlerts key={p.rankedinId} p={p} showName={shown.length > 1} />
+            ))}
+          </div>
+        )}
 
         {shown.length > 0 && (
           <Section title="På gång">
@@ -120,7 +94,7 @@ export default function Home() {
                       <strong>{u.title}</strong>
                       <span className={`small block ${/partner saknas/.test(u.detail) ? 'text-warn' : 'muted'}`}>
                         {u.detail}
-                        {shown.length > 1 ? ` · ${u.who.join(', ')}` : ''}
+                        {multiWho ? ` · ${u.who.join(', ')}` : ''}
                       </span>
                     </span>
                   </Go>
@@ -130,12 +104,26 @@ export default function Home() {
           </Section>
         )}
 
-        <div className="summaries">
-          {shown.map((p) => {
-            const isSaved = saved.some((s) => s.rankedinId === p.rankedinId);
-            return <PlayerSummary key={p.rankedinId} p={p} onRemove={isSaved ? () => setSaved(removePlayer(p.rankedinId)) : undefined} />;
-          })}
-        </div>
+        {shown.length > 0 && (
+          <Section
+            title="Mina spelare"
+            action={
+              <Go className="btn btn--ghost btn--small" to="/sok" from="Översikt">
+                + Lägg till
+              </Go>
+            }
+          >
+            <div className="list">
+              {shown.map((p) => (
+                <Go key={p.rankedinId} to={`/spelare/${p.rankedinId}`} from="Översikt" className="item">
+                  <span className="item__main">
+                    <strong>{p.name}</strong>
+                  </span>
+                </Go>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {shown.length === 0 ? (
         <Section title="Hitta ditt barn">
@@ -159,16 +147,7 @@ export default function Home() {
             </div>
           )}
         </Section>
-        ) : (
-          <p className="small muted center">
-            Följ fler spelare: <Go to="/sok" from="Översikt">sök spelare</Go> och tryck Spara.
-          </p>
-        )}
-        {shown.length > 0 && (
-          <p className="center">
-            <InstallButton className="btn btn--ghost btn--small" />
-          </p>
-        )}
+        ) : null}
 
       </Page>
     </>

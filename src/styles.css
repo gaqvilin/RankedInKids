@@ -2011,3 +2011,40 @@ html {
   min-height: 0;
   height: auto;
 }
+
+/* ---------- Meny ---------- */
+button.tabbar__link {
+  appearance: none;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.tabbar__icon {
+  position: relative;
+  display: inline-flex;
+}
+.new-dot--icon {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  margin: 0;
+}
+.menu__account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.menu__account .account-line {
+  margin: 0;
+}
+.menu .item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.alerts:empty {
+  display: none;
+}

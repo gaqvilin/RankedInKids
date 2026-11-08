@@ -1,5 +1,8 @@
 import { Logo } from './Logo';
 import { FeedbackSheet } from './FeedbackSheet';
+import { AccountSwitcher } from './AccountSwitcher';
+import { InstallButton } from './InstallButton';
+import { Sheet } from './Sheet';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, type LinkProps } from 'react-router-dom';
 import { onLoadingChange } from '../lib/api';
@@ -26,7 +29,7 @@ type NavItem = { to: string; label: string; icon: string; end?: boolean };
 const NAV: NavItem[] = [
   { to: '/', label: 'Översikt', end: true, icon: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' },
   { to: '/tavlingar', label: 'Tävlingar', icon: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4' },
-  { to: '/serier', label: 'Serier', icon: 'M4 6h16M4 12h16M4 18h10' },
+  { to: '/serier', label: 'Serier', icon: 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14' },
   { to: '/sok', label: 'Sök', icon: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4' },
   { to: '/konto', label: 'Konton', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0' },
 ];
@@ -147,17 +150,76 @@ function Sidebar() {
   );
 }
 
+const MENU_ICON = 'M4 7h16M4 12h16M4 17h16';
+
+/** Four main places plus "Meny" for everything else (account, admin, help, news, feedback, install). */
 function TabBar() {
-  const nav = [...MAIN_NAV, ACCOUNT_NAV];
+  const [open, setOpen] = useState(false);
+  const unseen = useUnseenRelease();
+  const loc = useLocation();
+  useEffect(() => setOpen(false), [loc.pathname]);
   return (
-    <nav className="tabbar" aria-label="Huvudmeny">
-      {nav.map((n) => (
-        <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `tabbar__link ${isActive ? 'is-active' : ''}`}>
-          <Icon d={n.icon} />
-          <span>{n.label}</span>
-        </NavLink>
-      ))}
-    </nav>
+    <>
+      <nav className="tabbar" aria-label="Huvudmeny">
+        {MAIN_NAV.map((n) => (
+          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `tabbar__link ${isActive ? 'is-active' : ''}`}>
+            <Icon d={n.icon} />
+            <span>{n.label}</span>
+          </NavLink>
+        ))}
+        <button type="button" className={`tabbar__link ${open ? 'is-active' : ''}`} onClick={() => setOpen(true)} aria-haspopup="dialog">
+          <span className="tabbar__icon">
+            <Icon d={MENU_ICON} />
+            {unseen && <span className="new-dot new-dot--icon" aria-label="nytt" />}
+          </span>
+          <span>Meny</span>
+        </button>
+      </nav>
+      {open && <MenuSheet onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function MenuSheet({ onClose }: { onClose: () => void }) {
+  const { user } = useSession();
+  const unseen = useUnseenRelease();
+  const [feedback, setFeedback] = useState(false);
+  if (feedback) return <FeedbackSheet onClose={onClose} />;
+  return (
+    <Sheet label="Meny" onClose={onClose}>
+      <div className="menu">
+        {user.loggedIn ? (
+          <div className="menu__account">
+            <span className="muted small">Inloggad som</span>
+            <AccountSwitcher label="" />
+          </div>
+        ) : null}
+        <nav className="list">
+          <Link to="/konto" className="item">
+            <strong>{user.loggedIn ? 'Konton' : 'Logga in med Rankedin'}</strong>
+          </Link>
+          {user.loggedIn && (
+            <Link to="/admin" className="item">
+              <strong>Admin</strong>
+            </Link>
+          )}
+          <Link to="/hjalp" className="item">
+            <strong>Hjälp</strong>
+          </Link>
+          <Link to="/nyheter" className="item">
+            <strong>Nyheter</strong>
+            {unseen && <span className="new-dot" aria-label="nytt" />}
+          </Link>
+          <button type="button" className="item item--button" onClick={() => setFeedback(true)}>
+            <strong>Ge feedback</strong>
+          </button>
+        </nav>
+        <p className="center">
+          <InstallButton />
+        </p>
+        <p className="muted small center">PadelAdmin {CURRENT_VERSION} · data från Rankedin</p>
+      </div>
+    </Sheet>
   );
 }
 
@@ -181,9 +243,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="shell__main">
         {children}
-        <footer className="app-footer">
-          <ReleasesLink className="small" />
-        </footer>
       </div>
       <TabBar />
     </div>

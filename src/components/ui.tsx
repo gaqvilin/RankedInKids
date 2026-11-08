@@ -2,7 +2,6 @@ import { Logo } from './Logo';
 import { useEffect, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { From } from './shell';
-import { useSession } from '../session';
 
 /**
  * Page top bar. The back link shows where it goes: the page we came from
@@ -10,7 +9,6 @@ import { useSession } from '../session';
  * back: a fallback path, or 'history' to go to the previous page.
  */
 export function AppHeader({ title, back, backLabel }: { title?: string; back?: string; backLabel?: string }) {
-  const { user } = useSession();
   const navigate = useNavigate();
   const loc = useLocation();
   const from = (loc.state as { from?: From } | null)?.from;
@@ -56,23 +54,9 @@ export function AppHeader({ title, back, backLabel }: { title?: string; back?: s
     <header className={`app-header ${!from && !back ? 'app-header--root' : ''}`}>
       <div className="app-header__inner">
         {backEl}
-        <Link to="/konto" className="account-chip" aria-label="Konton">
-          {user.loggedIn ? initials(user.name) : 'Logga in'}
-          {user.accounts.length > 1 && <span className="account-chip__more">+{user.accounts.length - 1}</span>}
-        </Link>
       </div>
     </header>
   );
-}
-
-function initials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase();
 }
 
 export function Page({ children, wide }: { children: ReactNode; wide?: boolean }) {

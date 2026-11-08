@@ -9,6 +9,8 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Ny knapp Meny längst ner: konton, admin, hjälp, nyheter, feedback och hemskärm på ett ställe. Sidfoten och kontoknappen uppe till höger är borta.',
+      'Översikt är kortare: först det som behöver göras, sedan På gång och en enkel lista med dina spelare.',
       'Enklare feedback: bara en ruta att skriva i. Rutorna öppnas nu alltid snyggt ovanpå sidan.',
       'Mobilen zoomar inte längre in när man trycker i ett fält eller dubbeltrycker.',
       'Knappen Lägg till på hemskärmen (under Konton och längst ner på Översikt) installerar PadelAdmin som en app.',
