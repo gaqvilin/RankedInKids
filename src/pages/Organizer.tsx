@@ -6,7 +6,7 @@ import { MatchCard } from '../components/MatchCard';
 import { DrawPanel } from '../components/DrawPanel';
 import { PairingPanel } from '../components/PairingPanel';
 import { PlayerHitRow } from '../components/PlayerHitRow';
-import { getAdminEvents } from '../lib/clubs';
+import { isTournamentAdmin } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
@@ -30,7 +30,7 @@ export default function Organizer() {
   const tid = Number(id);
   const { version, user } = useSession();
   const isOrganiser = useAsync(
-    () => (user.loggedIn ? getAdminEvents().then((es) => es.some((e) => e.id === tid)).catch(() => false) : Promise.resolve(false)),
+    () => (user.loggedIn ? isTournamentAdmin(tid) : Promise.resolve(false)),
     [user.loggedIn, version, tid],
   );
   const [params, setParams] = useSearchParams();

@@ -68,7 +68,7 @@ function assertNoDraw(entries: Entry[]) {
   if (entries.some((e) => e.drawCreated)) throw new PairingError('draw_exists', 'Klassen är redan lottad. Ändra par i Rankedin eller ta bort lottningen först.');
 }
 
-/** Pair A (who has an entry without partner) with B (also without partner) in the same class. */
+/** Pair A (entered without partner) with B: another single in the class, or any player not entered yet. */
 export async function pairPlayers(call: Call, tournamentId: number, classId: number, aId: number, bId: number): Promise<Entry[]> {
   if (aId === bId) throw new PairingError('same_player', 'Välj två olika spelare.');
   const before = await loadEntries(call, tournamentId, classId);
@@ -76,7 +76,8 @@ export async function pairPlayers(call: Call, tournamentId: number, classId: num
   const aEntry = before.find((e) => e.player1?.id === aId && !e.player2);
   const bEntry = before.find((e) => e.player1?.id === bId && !e.player2);
   if (!aEntry) throw new PairingError('a_not_single', 'Första spelaren saknas eller har redan en partner.');
-  if (!bEntry) throw new PairingError('b_not_single', 'Andra spelaren saknas eller har redan en partner.');
+  // B may be someone not entered in the class at all (Rankedin's admin "edit double" allows any player).
+  if (!bEntry && before.some((e) => has(e, bId))) throw new PairingError('b_not_single', 'Partnern spelar redan i ett annat par i klassen.');
 
   // 1. Put B on A's entry (Rankedin's "edit double" in the admin player list).
   const upd = await call('POST', 'Tournament/UpdateDoubleAsync', {

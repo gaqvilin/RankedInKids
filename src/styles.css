@@ -1911,3 +1911,17 @@ body.screen-mode .shell__main {
   border-bottom: 1px solid var(--line);
   padding-bottom: 6px;
 }
+
+.item--button {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.outside-partner {
+  margin: 10px 0;
+}

@@ -91,6 +91,22 @@ describe('pairPlayers', () => {
     await expect(pairPlayers(f.call, 99, 7, 5, 6)).rejects.toMatchObject({ code: 'draw_exists' });
     expect(f.calls.filter((c) => c.startsWith('POST'))).toEqual([]);
   });
+  it('adds a player who is not entered in the class as partner', async () => {
+    const f = fakeRankedin([
+      { id: 1, tpid: 11, p1: 5, p2: 0 },
+      { id: 3, tpid: 13, p1: 7, p2: 8 },
+    ]);
+    const after = await pairPlayers(f.call, 99, 7, 5, 42);
+    expect(after.find((e) => e.entryId === 1)?.player2?.id).toBe(42);
+    expect(f.calls).not.toContain('POST Tournament/RemoveParticipantAsync');
+  });
+  it('refuses a partner who already plays in another pair', async () => {
+    const f = fakeRankedin([
+      { id: 1, tpid: 11, p1: 5, p2: 0 },
+      { id: 3, tpid: 13, p1: 7, p2: 8 },
+    ]);
+    await expect(pairPlayers(f.call, 99, 7, 5, 8)).rejects.toMatchObject({ code: 'b_not_single' });
+  });
   it('refuses players that already have a partner', async () => {
     const f = fakeRankedin([
       { id: 1, tpid: 11, p1: 5, p2: 9 },

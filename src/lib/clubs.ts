@@ -132,3 +132,15 @@ export async function getAdminEvents(): Promise<AdminEvent[]> {
   );
   return (raw.payload || []).map((e) => ({ id: e.id, name: e.name.trim(), startDate: e.startDate, state: e.state, link: e.link, adminLink: e.adminLink }));
 }
+
+/**
+ * Is the active account organiser of this tournament? Rankedin's own check
+ * (checklist IsInRole) covers tournament admins and club admins alike; the
+ * list of events the account created is a fallback.
+ */
+export async function isTournamentAdmin(tournamentId: number): Promise<boolean> {
+  const checklist = await rin<{ IsInRole?: boolean; isInRole?: boolean }>(`tournament/GetChecklistAsync?id=${tournamentId}`, { auth: true, fresh: true }).catch(() => null);
+  if (checklist?.IsInRole || checklist?.isInRole) return true;
+  const events = await getAdminEvents().catch(() => []);
+  return events.some((e) => e.id === tournamentId);
+}

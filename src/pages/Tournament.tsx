@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { Go } from '../components/shell';
-import { getAdminEvents } from '../lib/clubs';
+import { isTournamentAdmin } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDay, fmtTime, isSameDay, relativeDays } from '../lib/format';
@@ -22,7 +22,7 @@ export default function Tournament() {
   const details = useAsync(() => getTournamentDetails(tid).catch(() => null), [tid], `tdetails.${tid}`);
   const { version, user } = useSession();
   const isOrganiser = useAsync(
-    () => (user.loggedIn ? getAdminEvents().then((es) => es.some((e) => e.id === tid)).catch(() => false) : Promise.resolve(false)),
+    () => (user.loggedIn ? isTournamentAdmin(tid) : Promise.resolve(false)),
     [user.loggedIn, version, tid],
   );
   const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version]);
