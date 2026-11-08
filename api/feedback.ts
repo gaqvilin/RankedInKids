@@ -8,6 +8,7 @@
 import { json, isSameOriginJson } from './_lib/rankedin.js';
 import { verifiedAccounts } from './_lib/identity.js';
 import { getStore } from './_lib/store.js';
+import { clientIp, storeLimit, tooMany } from './_lib/ratelimit.js';
 
 export type FeedbackKind = 'idea' | 'bug' | 'other';
 export type Feedback = {
@@ -36,6 +37,7 @@ export async function POST(request: Request): Promise<Response> {
     return json({ error: 'bad_request' }, 400);
   }
   if (clip(body.website, 200)) return json({ ok: true }); // honeypot: pretend it worked
+  if (!(await storeLimit('feedback', clientIp(request), 10, 60 * 60))) return tooMany(60 * 60, 'Du har skickat mycket feedback på kort tid – tack! Vänta en stund.');
   const message = clip(body.message, 4000);
   if (message.length < 3) return json({ error: 'empty' }, 400);
   const kind = KINDS.includes(body.kind as FeedbackKind) ? (body.kind as FeedbackKind) : 'other';

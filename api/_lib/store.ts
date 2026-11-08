@@ -9,6 +9,18 @@ export interface DocStore {
   putJson(key: string, value: unknown): Promise<void>;
   /** All documents whose key starts with prefix. */
   listJson<T>(prefix: string): Promise<{ key: string; value: T }[]>;
+  /** Counts one hit in a fixed window and returns the count so far (for rate limits). */
+  hit(key: string, windowSec: number): Promise<number>;
+}
+
+type Counter = { n: number; reset: number };
+/** Non-atomic fallback for stores without a counter primitive (fine for dev and blob). */
+async function hitViaJson(store: Pick<DocStore, 'getJson' | 'putJson'>, key: string, windowSec: number): Promise<number> {
+  const now = Date.now() / 1000;
+  const c = await store.getJson<Counter>(key);
+  const next = !c || c.reset < now ? { n: 1, reset: now + windowSec } : { n: c.n + 1, reset: c.reset };
+  await store.putJson(key, next);
+  return next.n;
 }
 
 const safeKey = (key: string) => {
@@ -17,6 +29,9 @@ const safeKey = (key: string) => {
 };
 
 class BlobStore implements DocStore {
+  hit(key: string, windowSec: number) {
+    return hitViaJson(this, key, windowSec);
+  }
   async getJson<T>(key: string): Promise<T | null> {
     const res = await get(safeKey(key), { access: 'private', useCache: false });
     if (!res) return null;
@@ -62,6 +77,23 @@ export type SqlQuery = (text: string, params: unknown[]) => Promise<Record<strin
 export class SqlStore implements DocStore {
   constructor(private query: SqlQuery) {}
 
+  /** Atomic fixed-window counter in the same docs table: {"n": count, "reset": epoch seconds}. */
+  async hit(key: string, windowSec: number): Promise<number> {
+    safeKey(key);
+    const rows = await this.query(
+      `INSERT INTO docs (key, value, updated_at)
+         VALUES ($1, jsonb_build_object('n', 1, 'reset', extract(epoch from now()) + $2::int), now())
+       ON CONFLICT (key) DO UPDATE SET
+         value = CASE WHEN (docs.value->>'reset')::float < extract(epoch from now())
+                      THEN jsonb_build_object('n', 1, 'reset', extract(epoch from now()) + $2::int)
+                      ELSE jsonb_set(docs.value, '{n}', to_jsonb((docs.value->>'n')::int + 1)) END,
+         updated_at = now()
+       RETURNING (value->>'n')::int AS n`,
+      [key, windowSec],
+    );
+    return Number(rows[0]?.n ?? 1);
+  }
+
   async getJson<T>(key: string): Promise<T | null> {
     safeKey(key);
     const rows = await this.query('SELECT value FROM docs WHERE key = $1', [key]);
@@ -86,6 +118,9 @@ export class SqlStore implements DocStore {
 
 export class MemoryStore implements DocStore {
   private docs = new Map<string, string>();
+  hit(key: string, windowSec: number) {
+    return hitViaJson(this, key, windowSec);
+  }
   async getJson<T>(key: string): Promise<T | null> {
     const v = this.docs.get(safeKey(key));
     return v ? (JSON.parse(v) as T) : null;

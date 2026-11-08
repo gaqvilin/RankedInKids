@@ -15,6 +15,7 @@ import {
   UpstreamError,
   publicUser,
 } from './_lib/rankedin.js';
+import { clientIp, memoryLimit, tooMany } from './_lib/ratelimit.js';
 
 type Account = ReturnType<typeof publicUser>;
 
@@ -66,6 +67,7 @@ export async function GET(request: Request): Promise<Response> {
 
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
+  if (!memoryLimit('write', clientIp(request), 60, 60_000)) return tooMany(60);
   let body: { action?: string; playerId?: number } = {};
   try {
     body = await request.json();

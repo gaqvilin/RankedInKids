@@ -2,10 +2,12 @@
 // Forwards the user's Rankedin session when logged in, so buttons like
 // "enter result" reflect what that user is allowed to do.
 import { getSessionCookie, json, publicCacheControl, readUrl, rinHeaders } from './_lib/rankedin.js';
+import { clientIp, memoryLimit, tooMany } from './_lib/ratelimit.js';
 
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const path = url.searchParams.get('p') || '';
+  if (!memoryLimit('rin', clientIp(request), 600, 60_000)) return tooMany(60);
   const target = readUrl(path);
   if (!target) return json({ error: 'path_not_allowed' }, 400);
 

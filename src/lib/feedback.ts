@@ -20,7 +20,10 @@ export async function sendFeedback(input: { kind: FeedbackKind; message: string;
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...input, page: location.pathname + location.search, version: CURRENT_VERSION }),
   });
-  if (!res.ok) throw new Error(res.status === 400 ? 'Skriv några ord först.' : 'Kunde inte skicka just nu. Försök igen om en stund.');
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(res.status === 400 ? 'Skriv några ord först.' : res.status === 429 && data.message ? data.message : 'Kunde inte skicka just nu. Försök igen om en stund.');
+  }
 }
 
 /** null = not allowed to read. */

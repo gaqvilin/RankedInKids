@@ -4,6 +4,7 @@
 import { RIN_API, getSessionCookie, isSameOriginJson, json, rinHeaders } from './_lib/rankedin.js';
 import type { Call } from './_lib/pairing.js';
 import * as D from './_lib/draws.js';
+import { clientIp, memoryLimit, tooMany } from './_lib/ratelimit.js';
 
 const callWith =
   (session: string): Call =>
@@ -44,6 +45,7 @@ export async function GET(request: Request): Promise<Response> {
 
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
+  if (!memoryLimit('write', clientIp(request), 60, 60_000)) return tooMany(60);
   const session = getSessionCookie(request);
   if (!session) return json({ error: 'not_logged_in' }, 401);
   let b: Record<string, unknown>;

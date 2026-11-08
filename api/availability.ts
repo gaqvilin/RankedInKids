@@ -8,6 +8,7 @@
 import { json, isSameOriginJson } from './_lib/rankedin.js';
 import { fetchTeamRoster, verifiedAccounts } from './_lib/identity.js';
 import { getStore } from './_lib/store.js';
+import { clientIp, memoryLimit, tooMany } from './_lib/ratelimit.js';
 
 export type AvailabilityStatus = 'yes' | 'no' | 'maybe';
 export type AvailabilityEntry = {
@@ -49,6 +50,7 @@ export async function GET(request: Request): Promise<Response> {
 
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
+  if (!memoryLimit('write', clientIp(request), 60, 60_000)) return tooMany(60);
   let body: { teamId?: number; date?: string; playerId?: number; status?: string; comment?: string };
   try {
     body = await request.json();

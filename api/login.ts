@@ -13,6 +13,7 @@ import {
   publicUser,
   rinHeaders,
 } from './_lib/rankedin.js';
+import { clientIp, storeLimit, tooMany } from './_lib/ratelimit.js';
 
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
@@ -25,6 +26,10 @@ export async function POST(request: Request): Promise<Response> {
   const userName = (body.userName || '').trim();
   const password = body.password || '';
   if (!userName || !password) return json({ error: 'missing_credentials' }, 400);
+  // Slow down password guessing through us: per device/IP and per account name.
+  if (!(await storeLimit('login-ip', clientIp(request), 20, 15 * 60)) || !(await storeLimit('login-user', userName, 8, 15 * 60))) {
+    return tooMany(15 * 60, 'För många inloggningsförsök. Vänta en kvart och försök igen.');
+  }
 
   let res: Response;
   try {

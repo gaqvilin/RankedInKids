@@ -3,11 +3,13 @@
 // lineup editor on rankedin.com does (TeamLeague/UpdateTeamLeagueLineupsAsync).
 import { RIN_API, getSessionCookie, json, rinHeaders, isSameOriginJson } from './_lib/rankedin.js';
 import { buildLineupPayload, validateLineup, type CurrentMatch, type LineupChange, type Side } from './_lib/lineup.js';
+import { clientIp, memoryLimit, tooMany } from './_lib/ratelimit.js';
 
 type RawSide = { player1Id: number | null; player2Id: number | null } | null;
 
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
+  if (!memoryLimit('write', clientIp(request), 60, 60_000)) return tooMany(60);
   const session = getSessionCookie(request);
   if (!session) return json({ error: 'not_logged_in' }, 401);
 

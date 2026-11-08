@@ -134,7 +134,7 @@ export async function login(userName: string, password: string): Promise<void> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new ApiError(
-      data.error === 'invalid_credentials' ? 'Fel e-post eller lösenord.' : 'Kunde inte logga in just nu.',
+      data.error === 'invalid_credentials' ? 'Fel e-post eller lösenord.' : data.error === 'rate_limited' ? data.message : 'Kunde inte logga in just nu.',
       res.status,
       data.error,
     );
