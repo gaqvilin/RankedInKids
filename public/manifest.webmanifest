@@ -19,8 +19,18 @@
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "id": "/",
+  "scope": "/",
+  "lang": "sv",
+  "description": "Enklare Rankedin för juniorpadel och lagserier: matcher, tävlingar, speldagar och resultat.",
+  "orientation": "portrait"
 }

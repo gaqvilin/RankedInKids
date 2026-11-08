@@ -1,3 +1,4 @@
+import { InstallButton } from '../components/InstallButton';
 import { PlayerHitRow } from '../components/PlayerHitRow';
 import { usePlayerSearch } from '../lib/usePlayerSearch';
 import { useState } from 'react';
@@ -161,6 +162,11 @@ export default function Home() {
         ) : (
           <p className="small muted center">
             Följ fler spelare: <Go to="/sok" from="Översikt">sök spelare</Go> och tryck Spara.
+          </p>
+        )}
+        {shown.length > 0 && (
+          <p className="center">
+            <InstallButton className="btn btn--ghost btn--small" />
           </p>
         )}
 

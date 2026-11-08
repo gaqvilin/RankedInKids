@@ -1,3 +1,4 @@
+import { InstallButton } from '../components/InstallButton';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppHeader, Notice, Page, Section } from '../components/ui';
@@ -87,6 +88,10 @@ export default function Account() {
             )}
           </Section>
         )}
+
+        <p className="center">
+          <InstallButton />
+        </p>
 
         {accounts.length > 0 && (
           <Section title="Verktyg">

@@ -1960,3 +1960,8 @@ body.screen-mode .shell__main {
 .notice + .btn {
   margin-bottom: 10px;
 }
+
+.install-steps {
+  padding-left: 20px;
+  line-height: 1.6;
+}

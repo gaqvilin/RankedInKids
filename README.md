@@ -11,25 +11,33 @@ PadelAdmin är en **enklare, nedskalad Rankedin**. Varje sida ska klara sig på 
 - Ingen dubblering mellan sektioner på samma sida.
 - Hellre en kort text med en länk ("Lös det") än en förklaring.
 
-## Vad den gör (v1)
-- **Spelare:** sök barnet, spara som "min spelare", se kommande matcher (tid, bana, motståndare) och anmälda tävlingar.
-- **Varningar:** "Partner saknas" med nedräkning till sista anmälningsdag.
-- **Tävling:** klasser, anmälda par (vem söker partner), matcher med resultat, uträknad gruppspelstabell, auto-uppdatering på matchdagen.
-- **Döm live:** poäng för poäng med matchens domarkod (Rankedins live-API, ingen inloggning). Fungerar i Premium-tävlingar (t.ex. Step In).
-- **Laguppställning (lagkaptener):** välj par per match ur truppen, med rankingpoäng, licenskontroll och kontroll av dubbletter. Sparas med `TeamLeague/UpdateTeamLeagueLineupsAsync`.
-- **Lagserier (SPL, Klubbligan):** serie → division (tabell, omgångar) → lag → lagmatch.
-- **Rapportera slutresultat:** logga in med Rankedin-kontot och skicka set-resultat (samma flöde som "Enter result" på rankedin.com). Fungerar bara där Rankedin ger användaren den rätten.
-- **Juniortävlingar:** kalender filtrerad på junior, nivå och "nära mig".
+## Vad den gör
+- **Översikt:** det som är på gång för dina spelare (tävlingar och speldagar), varningar som "partner saknas".
+- **Spelare och sök:** sök vilken spelare som helst, spara "mina spelare", schema, lag, tidigare tävlingar.
+- **Tävlingar:** juniorkalender (nivå, ort/närhet), klasser, anmälda par, matcher, resultat, uträknad tabell, lägg till partner.
+- **Serier (Klubbligan, SPL):** mina lag, speldagar med resultat, lagmatcher, tabell, uppställning för lagledare med seriens regler,
+  tillgänglighet ("Vilka kan spela?"), kallelse och spelschema för arrangerande klubb.
+- **Rapportera resultat och döm live** där Rankedin ger kontot rätt.
+- **Tävlingsledning (arrangör):** para ihop spelare, banor och tider, stäng anmälan, lotta, schemalägg, publicera, banöversikt
+  under dagen, saknade resultat, QR-lappar.
+- **Flera konton** (förälder + barn), feedback, hjälp, nyheter, installera som app (PWA).
 
 ## Arkitektur
-- Vite + React + TypeScript (SPA), hostas på Vercel.
+- Vite + React + TypeScript (SPA), hostas på Vercel (projekt `padeladmin`, region `arn1`, https://padeladmin-app.vercel.app).
 - `api/` är Vercel Functions:
-  - `rin.ts` – läsproxy mot `api.rankedin.com/v1` (vitlistade läs-endpoints, kort edge-cache).
-  - `login.ts` / `session.ts` – loggar in mot Rankedin och sparar Rankedins session i en HttpOnly-cookie på vår domän. Lösenord sparas aldrig.
-  - `submit-result.ts` – `Match/GetChallengeResultAsync` + `Match/SubmitResultAsync`.
-  - `lineup.ts` – sparar laguppställning; hämtar först aktuell uppställning med kaptenens session och behåller motståndarens spelare.
-- Live-domare anropar `live.rankedin.com/api/v1/Referee` direkt från webbläsaren (öppen CORS).
-- Research: [Rankedin API](docs/research/rankedin-api.md), [Juniorpadel i Sverige](docs/research/juniorpadel-sverige.md), [SPL](docs/research/spl.md).
+  - `rin.ts` – läsproxy mot `api.rankedin.com/v1` (vitlistade sökvägar, edge-cache för anonyma läsningar).
+  - `login.ts`, `session.ts` – inloggning mot Rankedin, flera konton per enhet (HttpOnly-cookies). Lösenord sparas aldrig.
+  - `submit-result.ts`, `lineup.ts` – resultat och laguppställning.
+  - `join-partner.ts` – spelaren lägger till partner själv (Rankedins "Lägg till partner").
+  - `pairing.ts`, `draws.ts` – arrangörens ihopparning och lottning/schema/publicering (se `docs/research/rankedin-draw-flow.md`).
+  - `availability.ts`, `feedback.ts` – egen data i Neon. `health.ts` – status.
+  - `_lib/` – Rankedin-hjälpare, identitet, lagring (`store.ts`), rate limits, ren logik som testas.
+- Live-domare anropar `live.rankedin.com/api/v1/Referee` direkt från webbläsaren.
+- Säkerhet: same-origin-krav och rate limits på alla skrivningar, CSP och övriga säkerhetshuvuden i `vercel.json`.
+- Research: [Rankedin API](docs/research/rankedin-api.md), [lottningsflödet](docs/research/rankedin-draw-flow.md),
+  [Juniorpadel i Sverige](docs/research/juniorpadel-sverige.md), [SPL](docs/research/spl.md).
+
+Se också [CLAUDE.md](CLAUDE.md) för principer och regler när man ändrar koden.
 
 ## Utveckling
 ```bash
@@ -38,6 +46,7 @@ npm run dev     # kör även api/-funktionerna lokalt
 npm test
 npm run build
 ```
+Inga miljövariabler behövs lokalt (minneslagring). Se `.env.example` för det som finns.
 I en miljö med HTTP-proxy behöver Node `NODE_USE_ENV_PROXY=1` för att `fetch` ska gå via proxyn.
 
 ## Release notes

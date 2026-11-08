@@ -36,7 +36,8 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
           eller svara på tillgänglighet. Du kan lägga till flera konton, t.ex. ditt eget och ditt barns.
         </li>
         <li>
-          <strong>Lägg appen på hemskärmen</strong>: i Safari Dela → Lägg till på hemskärmen, i Chrome menyn → Installera app.
+          <strong>Lägg appen på hemskärmen</strong> med knappen <em>Lägg till på hemskärmen</em> under Konton – eller i Safari: Dela → Lägg till
+          på hemskärmen, i Chrome: menyn → Installera app.
         </li>
       </ol>
     ),
