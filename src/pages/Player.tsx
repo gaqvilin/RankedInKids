@@ -33,15 +33,16 @@ export function LeagueTeamCard({ t, from, hideNext = false }: { t: LeagueTeamSum
   const lastOpp = last ? (last.home.id === t.teamId ? last.away : last.home) : null;
   // The last speldag as a whole: "Senast lör 7 nov: vann 5–1 mot GLTK, förlorade 1–5 mot Halmstad".
   const lastDay = t.lastDay?.length ? t.lastDay : last ? [last] : [];
+  const tally = lastDay.reduce(
+    (acc, f) => {
+      const [own, opp] = f.home.id === t.teamId ? [f.home, f.away] : [f.away, f.home];
+      const d = (Number(own.result) || 0) - (Number(opp.result) || 0);
+      return d > 0 ? { ...acc, w: acc.w + 1 } : d < 0 ? { ...acc, l: acc.l + 1 } : acc;
+    },
+    { w: 0, l: 0 },
+  );
   const lastSummary = lastDay.length
-    ? `Senast ${fmtDay(lastDay[0].date)}: ${lastDay
-        .map((f) => {
-          const [own, opp] = f.home.id === t.teamId ? [f.home, f.away] : [f.away, f.home];
-          const o = Number(own.result) || 0;
-          const x = Number(opp.result) || 0;
-          return `${o > x ? 'vann' : o < x ? 'förlorade' : 'oavgjort'} ${o}–${x} mot ${opp.name}`;
-        })
-        .join(', ')}`
+    ? `Senast ${fmtDay(lastDay[0].date)}: ${[tally.w ? `${tally.w} vinst${tally.w > 1 ? 'er' : ''}` : null, tally.l ? `${tally.l} förlust${tally.l > 1 ? 'er' : ''}` : null].filter(Boolean).join(', ') || 'oavgjort'}`
     : lastOwn && lastOpp
       ? `Senast ${lastOwn.result}–${lastOpp.result} mot ${lastOpp.name}`
       : null;
@@ -49,10 +50,8 @@ export function LeagueTeamCard({ t, from, hideNext = false }: { t: LeagueTeamSum
     <Go to={`/lag/${t.teamId}`} from={from} className="item">
       <span className="item__main">
         <strong>{t.teamName}</strong>
-        <span className="muted small block">
-          {t.leagueName} · {t.division}
-        </span>
-        <span className="muted small block">{fmtRange(t.startDate, t.endDate)}</span>
+        <span className="muted small block">{t.leagueName.replace(/\s*\b(HT|VT)\s*\d{2}\b.*$/i, '').replace(/^SPL Swedish Padel League\s*/i, 'SPL ')}</span>
+        {!t.active && <span className="muted small block">{fmtRange(t.startDate, t.endDate)}</span>}
       </span>
       {t.active && (
         <span className="item__side small">
@@ -146,18 +145,11 @@ export default function Player() {
             const h = hoursUntil(e.closeSignInDate);
             return (
               <Notice key={e.event.id} tone={h != null && h < 72 ? 'error' : 'warn'}>
-                <strong>Partner saknas</strong> i {e.className}, {e.event.name}.{' '}
-                {e.closeSignInDate && (
-                  <>
-                    Anmälan stänger {fmtDay(e.closeSignInDate)} {fmtTime(e.closeSignInDate)} ({relativeDays(e.closeSignInDate)}). Utan partner kommer{' '}
-                    {p.firstName} inte med i lottningen.{' '}
-                  </>
-                )}
+                <strong>Partner saknas</strong> till {e.event.name.split(/\s[\/–-]\s/)[0]}
+                {e.closeSignInDate ? ` – anmälan stänger ${relativeDays(e.closeSignInDate)} ${fmtTime(e.closeSignInDate)}` : ''}.{' '}
                 <Go to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`} from={p.firstName}>
-                  Se vilka fler som söker partner
+                  Lös det
                 </Go>
-                {' · '}
-                <ExternalLink href={rinUrl(e.event.link)}>Anmäl partner i Rankedin</ExternalLink>
               </Notice>
             );
           })}
@@ -193,7 +185,6 @@ export default function Player() {
               {!o && overview.loading && <Loading />}
               {o && agenda.length === 0 && <Empty>Inget inbokat just nu.</Empty>}
               {agenda.length > 0 && <Agenda items={agenda} playerId={p.id} from={p.firstName} />}
-              <p className="muted small">Tävlingar och lagmatcher. Tider och banor syns när arrangören har lottat.</p>
             </Section>
           </div>
 

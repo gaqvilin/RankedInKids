@@ -5,7 +5,7 @@ import { LineupSheet } from '../components/LineupSheet';
 import { MatchCard } from '../components/MatchCard';
 import { ResultSheet } from '../components/ResultSheet';
 import { Go } from '../components/shell';
-import { AppHeader, Empty, ErrorBox, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
+import { AppHeader, Empty, ErrorBox, Loading, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDay, fmtTime, relativeDays } from '../lib/format';
 import { buildInvitation, buildSchedule, scheduleAsText } from '../lib/host';
 import { getPoolFixtures, getTeam, getTeamFixtures, type Fixture } from '../lib/leagues';

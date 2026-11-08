@@ -44,9 +44,9 @@ function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove?: () => void 
 
       {missing.map((e) => (
         <Notice key={e.event.id} tone="error">
-          <strong>Partner saknas</strong> i {e.className}, {e.event.name}. Anmälan stänger {fmtDay(e.closeSignInDate)} ({relativeDays(e.closeSignInDate)}).{' '}
+          <strong>Partner saknas</strong> till {e.event.name.split(/\s[\/–-]\s/)[0]} – anmälan stänger {relativeDays(e.closeSignInDate)}.{' '}
           <Go to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`} from="Översikt">
-            Se vilka fler som söker partner
+            Lös det
           </Go>
         </Notice>
       ))}
@@ -73,7 +73,7 @@ function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove?: () => void 
       {activeTeams.length > 0 && (
         <div className="list">
           {activeTeams.map((t) => (
-            <LeagueTeamCard key={t.leagueId} t={t} from="Översikt" />
+            <LeagueTeamCard key={t.leagueId} t={t} from="Översikt" hideNext />
           ))}
         </div>
       )}

@@ -54,7 +54,7 @@ export function PlayerRound({ team, playerId, rankedinId, from }: { team: League
         <span className="muted">mot {dayFixtures.map((f) => (f.home.id === team.teamId ? f.away.name : f.home.name)).join(' och ')}</span>
       </p>
       {selection.data && selection.data.length > 0 && <p className="small">Uttagen: {selection.data.join(', ')}.</p>}
-      {selection.data && selection.data.length === 0 && <p className="small muted">Inte uttagen än (uppställningen läggs in av lagledaren).</p>}
+      {selection.data && selection.data.length === 0 && <p className="small muted">Inte uttagen än.</p>}
       {isMe && (
         <div className="row gap small">
           <span>Kan du spela?</span>

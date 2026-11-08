@@ -34,7 +34,6 @@ export function Agenda({ items, playerId, from, limit }: { items: AgendaItem[]; 
         }
         const day = it.date.slice(0, 10);
         const opps = it.fixtures.map((f) => (f.home.id === it.team.teamId ? f.away.name : f.home.name));
-        const round = it.fixtures[0].round;
         return (
           <Go key={`r${it.team.teamId}-${day}`} from={from} to={`/lag/${it.team.teamId}/omgang/${day}`} className="item">
             <span className="item__date">
@@ -47,7 +46,6 @@ export function Agenda({ items, playerId, from, limit }: { items: AgendaItem[]; 
               </strong>
               <span className="small block">
                 Speldag · {it.team.leagueName.replace(/\s*\b(HT|VT)\s*\d{2}\b.*$/i, '')}
-                {round != null ? ` · omgång ${round}` : ''}
               </span>
             </span>
           </Go>

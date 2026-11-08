@@ -125,46 +125,55 @@ export default function Leagues() {
           )}
         </Section>
 
-        <Section title="Klubbligan den här säsongen">
-          {klubbligan.error && <ErrorBox error={klubbligan.error} onRetry={() => klubbligan.reload()} />}
-          {!klubbligan.data && klubbligan.loading && <Loading />}
-          {klubbligan.data && klubbligan.data.length === 0 && <Empty>Hittade ingen pågående Klubbliga.</Empty>}
-          {klubbligan.data && klubbligan.data.length > 0 && (
-            <div className="list list--cols">
-              {klubbligan.data.map((l) => (
-                <Go key={l.id} to={`/liga/${l.id}`} from="Serier" className="item">
-                  <span className="item__main">
-                    <strong>{shortKlubbliganName(l.name)}</strong>
-                    {myLeagueIds.has(l.id) && <span className="tag">Era lag</span>}
-                    {l.startDate && <span className="muted small block">från {fmtDay(parseSearchDate(l.startDate))}</span>}
-                  </span>
-                </Go>
-              ))}
-            </div>
-          )}
-        </Section>
+        {(() => {
+          const lists = (
+            <>
+            <Section title="Klubbligan den här säsongen">
+              {klubbligan.error && <ErrorBox error={klubbligan.error} onRetry={() => klubbligan.reload()} />}
+              {!klubbligan.data && klubbligan.loading && <Loading />}
+              {klubbligan.data && klubbligan.data.length === 0 && <Empty>Hittade ingen pågående Klubbliga.</Empty>}
+              {klubbligan.data && klubbligan.data.length > 0 && (
+                <div className="list list--cols">
+                  {klubbligan.data.map((l) => (
+                    <Go key={l.id} to={`/liga/${l.id}`} from="Serier" className="item">
+                      <span className="item__main">
+                        <strong>{shortKlubbliganName(l.name)}</strong>
+                        {myLeagueIds.has(l.id) && <span className="tag">Era lag</span>}
+                        
+                      </span>
+                    </Go>
+                  ))}
+                </div>
+              )}
+            </Section>
 
-        {spl.data && spl.data.length > 0 && (
-          <Section title="SPL – Swedish Padel League">
-            <div className="list list--cols">
-              {spl.data.map((l) => (
-                <Go key={l.id} to={`/liga/${l.id}`} from="Serier" className="item">
-                  <span className="item__main">
-                    <strong>{l.name.replace(/^SPL Swedish Padel League\s*/i, '')}</strong>
-                    {myLeagueIds.has(l.id) && <span className="tag">Era lag</span>}
-                  </span>
-                </Go>
-              ))}
-            </div>
-          </Section>
-        )}
+            {spl.data && spl.data.length > 0 && (
+              <Section title="SPL – Swedish Padel League">
+                <div className="list list--cols">
+                  {spl.data.map((l) => (
+                    <Go key={l.id} to={`/liga/${l.id}`} from="Serier" className="item">
+                      <span className="item__main">
+                        <strong>{l.name.replace(/^SPL Swedish Padel League\s*/i, '')}</strong>
+                        {myLeagueIds.has(l.id) && <span className="tag">Era lag</span>}
+                      </span>
+                    </Go>
+                  ))}
+                </div>
+              </Section>
+            )}
+            </>
+          );
+          // With teams of your own, the full list of series is one tap away.
+          return (mine.data?.length ?? 0) > 0 ? (
+            <details className="fold">
+              <summary>Alla serier den här säsongen</summary>
+              {lists}
+            </details>
+          ) : (
+            lists
+          );
+        })()}
       </Page>
     </>
   );
-}
-
-/** Search results give "17/10/2026 10:00". */
-function parseSearchDate(v: string): string {
-  const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  return m ? `${m[3]}-${m[2]}-${m[1]}T00:00:00` : v;
 }

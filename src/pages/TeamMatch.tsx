@@ -7,7 +7,6 @@ import { LineupSheet } from '../components/LineupSheet';
 import { ResultSheet } from '../components/ResultSheet';
 import { AppHeader, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { getTeamMatch, getTeamMatchInfo, rinUrl, type TournamentMatch } from '../lib/rankedin';
-import { divisionLevel, isSplLeague } from '../lib/spl';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 

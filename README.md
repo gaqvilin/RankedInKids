@@ -2,6 +2,15 @@
 
 En enklare app för padelspelare, föräldrar och lagledare ovanpå Rankedins data. Först för barn och ungdom (Step In, Klubbligan), därefter vuxna (SPL).
 
+## Designprinciper
+
+PadelAdmin är en **enklare, nedskalad Rankedin**. Varje sida ska klara sig på det man behöver just nu:
+
+- Visa nästa steg och det som kräver handling först. Allt annat ligger ett tryck bort (ihopfällt eller på nästa sida).
+- En rad per sak. Samma sak visas på ett sätt och heter samma sak överallt (t.ex. *speldag*).
+- Ingen dubblering mellan sektioner på samma sida.
+- Hellre en kort text med en länk ("Lös det") än en förklaring.
+
 ## Vad den gör (v1)
 - **Spelare:** sök barnet, spara som "min spelare", se kommande matcher (tid, bana, motståndare) och anmälda tävlingar.
 - **Varningar:** "Partner saknas" med nedräkning till sista anmälningsdag.

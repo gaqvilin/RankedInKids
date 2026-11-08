@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { FixtureRow } from '../components/FixtureRow';
 import { Go } from '../components/shell';
 import { StandingsTable } from '../components/StandingsTable';
 import { seriesKind, seriesRules, showsStandings } from '../lib/rules';
-import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
+import { AppHeader, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDay, fmtTime, relativeDays } from '../lib/format';
 import { getLeagueHeader, getStandings, getTeam, getTeamFixtures } from '../lib/leagues';
 import { rinUrl } from '../lib/rankedin';
@@ -38,7 +37,6 @@ export default function Team() {
   const t = team.data;
   const all = fixtures.data || [];
   const upcoming = all.filter((f) => !f.played);
-  const played = all.filter((f) => f.played).reverse();
   const next = upcoming[0];
   const opponent = next ? (next.home.id === t.id ? next.away : next.home) : null;
   const row = standings.data?.find((r) => r.teamId === t.id);
@@ -58,9 +56,8 @@ export default function Team() {
     byDay.set(d, r);
   }
   const roundsAll = [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
-  const lastPlayed = [...roundsAll].reverse().find((r) => r.played);
-  // Upcoming rounds plus the latest played one (for late results).
-  const rounds = roundsAll.filter((r) => !r.played || r === lastPlayed);
+  // Every speldag of the season: played ones show their results, so no separate match lists are needed.
+  const rounds = roundsAll;
   const splLevel = isSplLeague(t.leagueName) ? divisionLevel(t.division) : null;
   const kind = seriesKind(t.leagueName);
   const hasTable = showsStandings(kind);
@@ -80,12 +77,6 @@ export default function Team() {
               </Go>
               {t.division ? ` · ${t.division}` : ''}
             </p>
-            {league.data && <p className="muted small">Säsong {fmtRange(league.data.startDate, league.data.endDate)}</p>}
-            {points && (
-              <p className="muted small">
-                Rankingpoäng: {String(points.win).replace('.', ',')} per vinst, {String(points.loss).replace('.', ',')} per förlust
-              </p>
-            )}
           </div>
           <button
             className={`btn btn--small ${saved ? '' : 'btn--primary'}`}
@@ -136,8 +127,10 @@ export default function Team() {
 
         <div className="columns">
           <div>
+            {fixtures.error && <ErrorBox error={fixtures.error} onRetry={() => fixtures.reload()} />}
+            {!fixtures.data && fixtures.loading && <Loading />}
             {rounds.length > 0 && (
-              <Section title="Speldagar">
+              <Section title="Speldagar" action={<RefreshButton onClick={() => fixtures.reload()} loading={fixtures.loading} />}>
                 <div className="list">
                   {rounds.map((r) => {
                     return (
@@ -171,42 +164,9 @@ export default function Team() {
               </Section>
             )}
 
-            <Section title="Kommande" action={<RefreshButton onClick={() => fixtures.reload()} loading={fixtures.loading} />}>
-              {fixtures.error && <ErrorBox error={fixtures.error} onRetry={() => fixtures.reload()} />}
-              {!fixtures.data && fixtures.loading && <Loading />}
-              {fixtures.data && upcoming.length === 0 && <Empty>Inga fler matcher den här säsongen.</Empty>}
-              {upcoming.length > 0 && (
-                <div className="list">
-                  {upcoming.map((f) => (
-                    <FixtureRow key={f.teamMatchId} f={f} teamId={t.id} from={me} />
-                  ))}
-                </div>
-              )}
-            </Section>
-            {played.length > 0 && (
-              <Section title="Spelade">
-                <div className="list">
-                  {played.map((f) => (
-                    <FixtureRow key={f.teamMatchId} f={f} teamId={t.id} from={me} />
-                  ))}
-                </div>
-              </Section>
-            )}
           </div>
           <div>
-            {!hasTable && rules && (
-              <Section title="Så spelas serien">
-                <p className="notice notice--info small">I Klubbligans yngsta klasser (10–13 och 10–14 år) förs ingen tabell och det delas inte ut lagpoäng – det är spelglädjen som räknas.</p>
-                <ul className="small">
-                  {[rules.summary, ...rules.notes].map((n) => (
-                    <li key={n}>{n}</li>
-                  ))}
-                </ul>
-              </Section>
-            )}
-            {hasTable && rules && kind !== 'spl' && (
-              <p className="muted small">{rules.notes.join(' ')}</p>
-            )}
+            {!hasTable && <p className="muted small">Ingen tabell förs i den här åldersklassen.</p>}
             {hasTable && standings.data && standings.data.length > 0 && (
               <Section
                 title="Tabell"
@@ -219,6 +179,18 @@ export default function Team() {
                 <StandingsTable rows={standings.data} highlightTeamId={t.id} leagueId={t.leagueId} from={me} />
               </Section>
             )}
+            <details className="fold">
+              <summary>Om serien</summary>
+              <ul className="small">
+                {league.data && <li>Säsong {fmtRange(league.data.startDate, league.data.endDate)}</li>}
+                {points && (
+                  <li>
+                    Rankingpoäng: {String(points.win).replace('.', ',')} per vinst, {String(points.loss).replace('.', ',')} per förlust
+                  </li>
+                )}
+                {rules && [rules.summary, ...rules.notes].map((n) => <li key={n}>{n}</li>)}
+              </ul>
+            </details>
             <details className="fold">
               <summary>Spelare ({t.players.length})</summary>
               <div className="list">

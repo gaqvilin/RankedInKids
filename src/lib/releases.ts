@@ -9,6 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Mindre information överallt: tävlingens detaljer är ihopfällda, lagsidan har en enda lista med speldagar, serielistan och reglerna ligger ett tryck bort, och varningar är kortare.',
       'Spelare som är anmälda utan partner kan själva lägga till en partner – även från en annan klubb – med sitt eget konto, direkt på tävlingssidan.',
       'Rättat: sökning på namn med mellanslag (t.ex. för- och efternamn) fungerade inte.',
       'Ny logga: en padelracket i en enkel form. Syns i menyn, som app-ikon på hemskärmen och i webbläsarfliken.',
