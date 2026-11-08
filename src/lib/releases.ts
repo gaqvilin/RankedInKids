@@ -9,6 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Fyra knappar längst ner: Översikt, Tävlingar, Serier och Meny. Sök ligger som förstoringsglas uppe till höger. Fliken lyser även på sidor under den, t.ex. ett lag.',
       'Ny knapp Meny längst ner: konton, admin, hjälp, nyheter, feedback och hemskärm på ett ställe. Sidfoten och kontoknappen uppe till höger är borta.',
       'Översikt är kortare: först det som behöver göras, sedan På gång och en enkel lista med dina spelare.',
       'Enklare feedback: bara en ruta att skriva i. Rutorna öppnas nu alltid snyggt ovanpå sidan.',

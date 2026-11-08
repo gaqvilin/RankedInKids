@@ -54,6 +54,13 @@ export function AppHeader({ title, back, backLabel }: { title?: string; back?: s
     <header className={`app-header ${!from && !back ? 'app-header--root' : ''}`}>
       <div className="app-header__inner">
         {backEl}
+        {loc.pathname !== '/sok' && (
+          <Link to="/sok" className="header-search" aria-label="Sök spelare">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </Link>
+        )}
       </div>
     </header>
   );

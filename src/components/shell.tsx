@@ -152,6 +152,14 @@ function Sidebar() {
 
 const MENU_ICON = 'M4 7h16M4 12h16M4 17h16';
 
+/** Which tab a page belongs to, so the tab stays lit on pages below it (a team, a tournament…). */
+function section(path: string): string | null {
+  if (/^\/(tavling|doma)/.test(path)) return '/tavlingar';
+  if (/^\/(serier|liga|division|lag|lagmatch)/.test(path)) return '/serier';
+  if (/^\/(spelare|klubb)/.test(path)) return '/';
+  return null;
+}
+
 /** Four main places plus "Meny" for everything else (account, admin, help, news, feedback, install). */
 function TabBar() {
   const [open, setOpen] = useState(false);
@@ -161,8 +169,8 @@ function TabBar() {
   return (
     <>
       <nav className="tabbar" aria-label="Huvudmeny">
-        {MAIN_NAV.map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `tabbar__link ${isActive ? 'is-active' : ''}`}>
+        {MAIN_NAV.filter((n) => n.to !== '/sok').map((n) => (
+          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `tabbar__link ${isActive || section(loc.pathname) === n.to ? 'is-active' : ''}`}>
             <Icon d={n.icon} />
             <span>{n.label}</span>
           </NavLink>
@@ -195,6 +203,9 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
           </div>
         ) : null}
         <nav className="list">
+          <Link to="/sok" className="item">
+            <strong>Sök spelare</strong>
+          </Link>
           <Link to="/konto" className="item">
             <strong>{user.loggedIn ? 'Konton' : 'Logga in med Rankedin'}</strong>
           </Link>

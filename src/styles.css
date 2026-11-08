@@ -128,7 +128,7 @@ h3 {
   right: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   background: var(--surface);
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
@@ -2047,4 +2047,19 @@ button.tabbar__link {
 }
 .alerts:empty {
   display: none;
+}
+
+.header-search {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--text);
+}
+@media (min-width: 960px) {
+  .header-search {
+    display: none; /* Sök is in the sidebar on desktop */
+  }
 }
