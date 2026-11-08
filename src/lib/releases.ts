@@ -18,7 +18,7 @@ export const RELEASES: Release[] = [
       'Snabbare och stabilare när du följer flera spelare – appen skickar färre samtidiga frågor till Rankedin.',
       'Tävlingssidan visar vilka fler i klassen som söker partner när ditt barn saknar en.',
       '"Nästa" visar alla motståndare på speldagen, inte bara den första.',
-      'Speldagar märks tydligt som Spelad, Nästa speldag eller Kommande, och spelade visar resultatet mot varje lag.',
+      'Speldagar har en liten etikett, Spelad eller Kommande, och spelade visar resultatet mot varje lag.',
       'Rättat: när du byter spelare eller lag syns inte längre den förra sidans information en kort stund.',
     ],
   },

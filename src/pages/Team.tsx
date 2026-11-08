@@ -58,7 +58,6 @@ export default function Team() {
     byDay.set(d, r);
   }
   const roundsAll = [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
-  const nextRound = roundsAll.find((r) => !r.played)?.date;
   const lastPlayed = [...roundsAll].reverse().find((r) => r.played);
   // Upcoming rounds plus the latest played one (for late results).
   const rounds = roundsAll.filter((r) => !r.played || r === lastPlayed);
@@ -141,15 +140,14 @@ export default function Team() {
               <Section title="Speldagar">
                 <div className="list">
                   {rounds.map((r) => {
-                    const status = r.played ? 'played' : r.date === nextRound ? 'next' : 'later';
                     return (
-                      <Go key={r.date} to={`/lag/${t.id}/omgang/${r.date}`} from={me} className={`item round-item round-item--${status}`}>
+                      <Go key={r.date} to={`/lag/${t.id}/omgang/${r.date}`} from={me} className="item round-item">
+                        <span className={`status ${r.played ? 'status--played' : ''}`}>{r.played ? 'Spelad' : 'Kommande'}</span>
                         <span className="item__date">
                           {fmtDay(`${r.date}T12:00:00`)}
                           <span className="muted small">{relativeDays(`${r.date}T12:00:00`)}</span>
                         </span>
                         <span className="item__main">
-                          <span className={`status status--${status}`}>{status === 'played' ? '✓ Spelad' : status === 'next' ? 'Nästa speldag' : 'Kommande'}</span>
                           {r.played ? (
                             <span className="block round-results">
                               {r.results.map((x) => (
