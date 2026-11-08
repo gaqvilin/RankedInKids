@@ -36,7 +36,7 @@ export function seriesRules(kind: SeriesKind, division?: string | null): SeriesR
   }
   if (kind === 'klubbligan-young') {
     return {
-      summary: 'Minst 4 spelare. Samma par bör inte spela flera matcher. Spelare som kommit längst spelar match 1. Ingen tabell förs.',
+      summary: 'Minst 4 spelare. Samma par bör inte spela flera matcher. Spelare som kommit längst spelar match 1.',
       waves: [[1, 2], [3, 4], [5, 6]],
       invitationDeadline: 'senast 10 dagar före speldagen',
       notes: ['Coachning är inte tillåten – lagledaren får bara stötta vid behov.', 'Spelarna dömer själva.', 'Arrangören rapporterar resultaten efter lagmatcherna.'],

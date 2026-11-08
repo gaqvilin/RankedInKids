@@ -58,7 +58,7 @@ export default function Division() {
               {!standings.data && standings.loading && <Loading />}
               {standings.data && standings.data.length === 0 && <Empty>Ingen tabell ännu.</Empty>}
               {league.data && !showsStandings(seriesKind(league.data.name)) ? (
-                <p className="notice notice--info small">I Klubbligan 10–13 år förs ingen tabell. Matcherna och resultaten finns här bredvid.</p>
+                <p className="notice notice--info small">I Klubbligans yngsta klasser (10–13 och 10–14 år) förs ingen tabell. Matcherna och resultaten finns här bredvid.</p>
               ) : standings.data && standings.data.length > 0 && (
                 <StandingsTable rows={standings.data} highlightTeamId={highlight} leagueId={leagueId} from={title} />
               )}

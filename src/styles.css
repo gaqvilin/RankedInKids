@@ -648,6 +648,8 @@ a.chip:hover {
 .item__date,
 .event-row__date {
   min-width: 76px;
+  flex: 0 0 auto;
+  width: 88px;
   font-size: 14px;
   font-weight: 600;
 }
@@ -1167,7 +1169,8 @@ a.match:hover {
     flex-basis: 100%;
   }
   .item__date {
-    min-width: 64px;
+    min-width: 0;
+    width: 84px;
   }
   .fixture-row {
     flex-wrap: nowrap;

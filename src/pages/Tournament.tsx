@@ -305,6 +305,20 @@ function ClassBlock(props: {
       <Section title={`Anmälda par${pairs ? ` (${pairs.length})` : ''}`}>
         {props.pairsLoading && !pairs && <Loading />}
         {pairs && pairs.length === 0 && <Empty>Inga anmälda.</Empty>}
+        {pairs && (() => {
+          // Help a player without a partner: who else in this class is looking?
+          const mineLooking = pairs.find((p) => p.missingPartner && isMine(p.players.map((x) => x.id)));
+          const others = pairs.filter((p) => p.missingPartner && p !== mineLooking).flatMap((p) => p.players.map((x) => x.name));
+          if (!mineLooking) return null;
+          return (
+            <p className="notice notice--warn small">
+              <strong>{mineLooking.players[0]?.name.split(' ')[0]} söker partner.</strong>{' '}
+              {others.length
+                ? `Fler i klassen söker också: ${others.join(', ')}. Hör av er till varandra och anmäl er som par i Rankedin.`
+                : 'Ingen annan i klassen söker partner just nu – titta i en närliggande klass eller fråga i klubben.'}
+            </p>
+          );
+        })()}
         {pairs && pairs.length > 0 && (
           <ul className="pairs">
             {pairs.map((pair, i) => (

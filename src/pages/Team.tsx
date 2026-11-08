@@ -178,7 +178,7 @@ export default function Team() {
           <div>
             {!hasTable && rules && (
               <Section title="Så spelas serien">
-                <p className="notice notice--info small">I Klubbligan 10–13 år förs ingen tabell och det delas inte ut lagpoäng – det är spelglädjen som räknas.</p>
+                <p className="notice notice--info small">I Klubbligans yngsta klasser (10–13 och 10–14 år) förs ingen tabell och det delas inte ut lagpoäng – det är spelglädjen som räknas.</p>
                 <ul className="small">
                   {[rules.summary, ...rules.notes].map((n) => (
                     <li key={n}>{n}</li>

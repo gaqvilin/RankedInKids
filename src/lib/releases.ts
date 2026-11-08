@@ -16,6 +16,8 @@ export const RELEASES: Release[] = [
       'Säkrare: inloggningen kan inte längre styras från andra sajter, och ett konto används aldrig i en flik som visar ett annat.',
       'Du loggas inte längre ut om Rankedin har en kort störning.',
       'Snabbare och stabilare när du följer flera spelare – appen skickar färre samtidiga frågor till Rankedin.',
+      'Tävlingssidan visar vilka fler i klassen som söker partner när ditt barn saknar en.',
+      '"Nästa" visar alla motståndare på speldagen, inte bara den första.',
       'Rättat: när du byter spelare eller lag syns inte längre den förra sidans information en kort stund.',
     ],
   },

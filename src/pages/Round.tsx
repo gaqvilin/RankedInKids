@@ -127,10 +127,12 @@ export default function Round() {
               </li>
               {isPastOrToday ? (
                 <li className={resultsMissing ? 'todo' : 'ok'}>
-                  {resultsMissing ? `${resultsMissing} resultat saknas – vinnande lag rapporterar löpande` : 'Alla resultat inlagda'}
+                  {resultsMissing ? `${resultsMissing} resultat saknas – ${kind === 'spl' ? 'vinnande lag rapporterar löpande' : 'rapporteras efter lagmatcherna'}` : 'Alla resultat inlagda'}
                 </li>
               ) : (
-                <li className="info">Resultat rapporteras löpande under speldagen av vinnande lag.</li>
+                <li className="info">
+                  {kind === 'spl' ? 'Resultat rapporteras löpande under speldagen av vinnande lag.' : 'Resultaten rapporteras i Rankedin efter lagmatcherna. Spelarna dömer själva.'}
+                </li>
               )}
               {points && (
                 <li className="info">

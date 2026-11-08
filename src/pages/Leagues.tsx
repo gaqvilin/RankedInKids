@@ -16,7 +16,11 @@ async function teamStatus(teamId: number) {
   const table = await getStandings(team.poolId);
   const row = table.find((r) => r.teamId === teamId);
   const next = fixtures.find((f) => !f.played) ?? null;
-  return { position: row?.position ?? null, size: table.length, next };
+  const day = next?.date?.slice(0, 10);
+  const opponents = day
+    ? [...new Set(fixtures.filter((f) => !f.played && f.date?.slice(0, 10) === day).map((f) => (f.home.id === teamId ? f.away.name : f.home.name)))]
+    : [];
+  return { position: row?.position ?? null, size: table.length, next, opponents };
 }
 
 export default function Leagues() {
@@ -94,7 +98,7 @@ export default function Leagues() {
                         )}
                         {next && opp && (
                           <span className="block muted">
-                            Nästa {fmtDay(next.date)} mot {opp.name}
+                            Nästa {fmtDay(next.date)} mot {t.status.opponents?.length ? t.status.opponents.join(' och ') : opp.name}
                           </span>
                         )}
                       </span>

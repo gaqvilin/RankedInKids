@@ -21,6 +21,11 @@ export function fmtRange(start: string | null, end: string | null): string {
 
 export function LeagueTeamCard({ t, from }: { t: LeagueTeamSummary; from: string }) {
   const opponent = t.next ? (t.next.home.id === t.teamId ? t.next.away : t.next.home) : null;
+  // A speldag often has two team matches: name every opponent that day.
+  const nextDay = t.next?.date?.slice(0, 10);
+  const nextOpponents = nextDay
+    ? [...new Set(t.upcoming.filter((f) => f.date?.slice(0, 10) === nextDay).map((f) => (f.home.id === t.teamId ? f.away.name : f.home.name)))]
+    : [];
   const last = t.last;
   const lastOwn = last ? (last.home.id === t.teamId ? last.home : last.away) : null;
   const lastOpp = last ? (last.home.id === t.teamId ? last.away : last.home) : null;
@@ -48,7 +53,7 @@ export function LeagueTeamCard({ t, from }: { t: LeagueTeamSummary; from: string
           )}
           {opponent && t.next && (
             <span className="block muted">
-              Nästa {fmtDay(t.next.date)} mot {opponent.name}
+              Nästa {fmtDay(t.next.date)} mot {nextOpponents.length ? nextOpponents.join(' och ') : opponent.name}
             </span>
           )}
         </span>
