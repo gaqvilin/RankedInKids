@@ -5,8 +5,13 @@ describe('read allowlist', () => {
   it('allows known reads', () => {
     expect(readUrl('Tournament/GetHeaderAsync?id=1')).toBe('https://api.rankedin.com/v1/Tournament/GetHeaderAsync?id=1');
   });
+  it('allows encoded query values, like names with spaces', () => {
+    expect(readUrl('Search/GetPlayersByNameSimpleAsync?name=Eric%20FalkBoman&take=12')).toBe(
+      'https://api.rankedin.com/v1/Search/GetPlayersByNameSimpleAsync?name=Eric%20FalkBoman&take=12',
+    );
+  });
   it('blocks encoded and plain traversal', () => {
-    for (const p of ['player/%2e%2e/Account/X', 'player/.%2E/.%2e/x', 'player/../Account/X', 'player/..\\Account', 'player\\..\\Account', 'https://evil.com/player/']) {
+    for (const p of ['player/%2e%2e/Account/X', 'player/.%2E/.%2e/x', 'player/%2F..%2FAccount', 'player?x=1#/../Account', 'player/../Account/X', 'player/..\\Account', 'player\\..\\Account', 'https://evil.com/player/']) {
       expect(isAllowedReadPath(p)).toBe(false);
     }
   });

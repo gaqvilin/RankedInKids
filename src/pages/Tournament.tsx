@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
+import { AccountSwitcher } from '../components/AccountSwitcher';
+import { OutsidePartner } from '../components/PairingPanel';
+import { addMyPartner } from '../lib/pairing';
 import { Go } from '../components/shell';
 import { isTournamentAdmin } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
@@ -39,7 +42,7 @@ export default function Tournament() {
   const visibleClasses = (classes.data || []).filter((c) => showAll || c.name === selectedClass);
   const classKey = visibleClasses.map((c) => c.id).join(',');
   const pairs = useAsync(
-    async () => new Map(await Promise.all(visibleClasses.map(async (c) => [c.name, await getClassPairs(tid, c.id)] as const))),
+    async (fresh) => new Map(await Promise.all(visibleClasses.map(async (c) => [c.name, await getClassPairs(tid, c.id, fresh)] as const))),
     [tid, classKey],
   );
 
@@ -228,6 +231,10 @@ export default function Tournament() {
               pairsLoading={pairs.loading}
               highlight={highlight}
               finished={t.state === 4}
+              tournamentId={tid}
+              classId={c.id}
+              signInOpen={t.signInOpen}
+              onPairsChanged={() => pairs.reload()}
               onEnterResult={setReporting}
               action={i === 0 ? <RefreshButton onClick={() => matches.reload()} loading={matches.loading} /> : undefined}
             />
@@ -260,6 +267,10 @@ function ClassBlock(props: {
   pairsLoading: boolean;
   highlight: number[];
   finished: boolean;
+  tournamentId: number;
+  classId: number;
+  signInOpen: boolean;
+  onPairsChanged: () => void;
   onEnterResult: (m: TournamentMatch) => void;
   action?: ReactNode;
 }) {
@@ -329,12 +340,17 @@ function ClassBlock(props: {
           const others = pairs.filter((p) => p.missingPartner && p !== mineLooking).flatMap((p) => p.players.map((x) => x.name));
           if (!mineLooking) return null;
           return (
+            <>
             <p className="notice notice--warn small">
               <strong>{mineLooking.players[0]?.name.split(' ')[0]} söker partner.</strong>{' '}
               {others.length
                 ? `Fler i klassen söker också: ${others.join(', ')}. Hör av er till varandra och anmäl er som par i Rankedin.`
                 : 'Ingen annan i klassen söker partner just nu – titta i en närliggande klass eller fråga i klubben.'}
             </p>
+            {props.signInOpen && mineLooking.players[0] && (
+              <AddPartnerBox tournamentId={props.tournamentId} classId={props.classId} seeker={mineLooking.players[0]} onDone={props.onPairsChanged} />
+            )}
+            </>
           );
         })()}
         {pairs && pairs.length > 0 && (
@@ -358,5 +374,53 @@ function ClassBlock(props: {
     </div>
   ) : (
     body
+  );
+}
+
+/**
+ * The player (logged in on this device) adds a partner themselves – Rankedin's
+ * "Lägg till partner" for someone entered alone. No organiser needed.
+ */
+function AddPartnerBox({ tournamentId, classId, seeker, onDone }: { tournamentId: number; classId: number; seeker: { id: number; name: string; rankedinId: string | null }; onDone: () => void }) {
+  const { user } = useSession();
+  const [msg, setMsg] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const onDevice = user.accounts.some((a) => a.rankedinId === seeker.rankedinId);
+  const active = user.loggedIn && user.rankedinId === seeker.rankedinId;
+  const first = seeker.name.split(' ')[0];
+  if (!onDevice) return null;
+  return (
+    <div className="add-partner">
+      <strong>Lägg till partner åt {first}</strong>
+      {!active ? (
+        <>
+          <p className="small">Det görs med {first}s eget Rankedin-konto. Byt till det kontot:</p>
+          <AccountSwitcher label="Aktivt konto" />
+        </>
+      ) : (
+        <>
+          <p className="small muted">Sök fram partnern. Det funkar även om hen spelar i en annan klubb och inte är anmäld än.</p>
+          <OutsidePartner
+            disabled={busy}
+            exclude={[seeker.id]}
+            onPick={async (h) => {
+              if (!window.confirm(`Lägga till ${h.name} som partner till ${seeker.name}? Ändringen görs direkt i Rankedin.`)) return;
+              setBusy(true);
+              setMsg(null);
+              try {
+                await addMyPartner(tournamentId, classId, h.id);
+                setMsg({ tone: 'ok', text: `${h.name} är tillagd som partner. Rankedin kan be ${h.name.split(' ')[0]} bekräfta – kolla listan nedan.` });
+                onDone();
+              } catch (e) {
+                setMsg({ tone: 'error', text: (e as Error).message });
+              } finally {
+                setBusy(false);
+              }
+            }}
+          />
+        </>
+      )}
+      {msg && <p className={`notice notice--${msg.tone === 'ok' ? 'ok' : 'error'} small`}>{msg.text}</p>}
+    </div>
   );
 }

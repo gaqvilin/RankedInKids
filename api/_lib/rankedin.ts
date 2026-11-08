@@ -40,7 +40,10 @@ export function isAllowedReadPath(path: string): boolean {
  */
 export function readUrl(path: string): string | null {
   const p = path.replace(/^\/+/, '');
-  if (/[%\\]|\.\.|:\/\//.test(p)) return null;
+  // The path part may only hold plain characters (no %-encoding, dots or backslashes,
+  // so nothing can climb out of /v1). The query string is free: it can't change the path.
+  const [pathPart] = p.split('?');
+  if (!/^[A-Za-z0-9/_-]+$/.test(pathPart) || p.includes('#')) return null;
   let url: URL;
   try {
     url = new URL(`${RIN_API}/${p}`);

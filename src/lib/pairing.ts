@@ -41,3 +41,15 @@ async function post(body: Record<string, unknown>) {
 
 export const pairPlayers = (tournamentId: number, classId: number, aId: number, bId: number) => post({ action: 'pair', tournamentId, classId, aId, bId });
 export const unpairPlayers = (tournamentId: number, classId: number, entryId: number) => post({ action: 'unpair', tournamentId, classId, entryId });
+
+/** The logged-in player (entered without partner) adds a partner, like "Lägg till partner" on rankedin.com. */
+export async function addMyPartner(tournamentId: number, classId: number, partnerId: number): Promise<void> {
+  const res = await fetch('/api/join-partner', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', ...accountHeaders() },
+    body: JSON.stringify({ tournamentId, classId, partnerId }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new PairingApiError(data.error ?? 'error', data.message ?? 'Något gick fel.');
+}

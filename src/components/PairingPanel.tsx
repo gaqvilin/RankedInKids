@@ -1,6 +1,6 @@
 // Organiser: pair up players without partner, or split a pair, per class.
 import { useEffect, useState } from 'react';
-import { searchPlayers, type PlayerHit } from '../lib/rankedin';
+import { getProfile, searchPlayers, type PlayerHit } from '../lib/rankedin';
 import { getClassEntries, pairPlayers, unpairPlayers, type PairEntry } from '../lib/pairing';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
@@ -132,7 +132,7 @@ export function PairingPanel({ tournamentId, classId, className, onChanged }: { 
 }
 
 /** Find a partner who is not entered in the class yet. */
-function OutsidePartner({ onPick, exclude, disabled }: { onPick: (h: PlayerHit) => void; exclude: number[]; disabled: boolean }) {
+export function OutsidePartner({ onPick, exclude, disabled }: { onPick: (h: PlayerHit) => void; exclude: number[]; disabled: boolean }) {
   const [term, setTerm] = useState('');
   const [hits, setHits] = useState<PlayerHit[] | null>(null);
   useEffect(() => {
@@ -141,7 +141,7 @@ function OutsidePartner({ onPick, exclude, disabled }: { onPick: (h: PlayerHit) 
     let cancelled = false;
     const t = setTimeout(() => {
       searchPlayers(q)
-        .then((h) => !cancelled && setHits(h.filter((x) => !exclude.includes(x.id))))
+        .then((h) => !cancelled && setHits(h.filter((x) => !exclude.includes(x.id)).slice(0, 6)))
         .catch(() => !cancelled && setHits([]));
     }, 300);
     return () => {
@@ -163,7 +163,7 @@ function OutsidePartner({ onPick, exclude, disabled }: { onPick: (h: PlayerHit) 
             <button key={h.id} className="item item--button" disabled={disabled} onClick={() => onPick(h)}>
               <span className="item__main">
                 <strong>{h.name}</strong>
-                <span className="muted small block">{h.rankedinId}</span>
+                <HitDetails rankedinId={h.rankedinId} />
               </span>
             </button>
           ))}
@@ -171,4 +171,11 @@ function OutsidePartner({ onPick, exclude, disabled }: { onPick: (h: PlayerHit) 
       )}
     </div>
   );
+}
+
+/** Club and age, to tell namesakes apart. */
+function HitDetails({ rankedinId }: { rankedinId: string }) {
+  const p = useAsync(() => getProfile(rankedinId), [rankedinId], `profile.${rankedinId}`);
+  const d = [p.data?.club, p.data?.age ? `${p.data.age} år` : null].filter(Boolean).join(' · ');
+  return <span className="muted small block">{d || rankedinId}</span>;
 }
