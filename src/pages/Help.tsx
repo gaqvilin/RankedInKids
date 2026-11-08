@@ -144,12 +144,17 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
     body: (
       <>
         <p>
-          Lotta, schemalägg och publicera i Rankedin som vanligt. Öppna sedan tävlingen här och tryck <strong>Tävlingsledning</strong> (syns när ditt
-          konto administrerar tävlingen, annars via <em>För arrangören</em>).
+          Öppna tävlingen här och tryck <strong>Tävlingsledning</strong> (syns när ditt konto administrerar tävlingen, annars via{' '}
+          <em>För arrangören</em>). Allt nedan görs direkt i Rankedin – du behöver inte logga in på rankedin.com.
         </p>
         <ul>
           <li>
-            <strong>Före lottning</strong>: vilka som söker partner i varje klass, licenser som saknas och antal par per klass.
+            <strong>Före lottning</strong>: vilka som söker partner i varje klass, para ihop eller dela på par, licenser som saknas och antal
+            par per klass.
+          </li>
+          <li>
+            <strong>Lottning</strong>: lägg till banor och tider, stäng anmälan, lotta varje klass (en grupp där alla möter alla, eller flera
+            grupper), schemalägg och publicera. Allt går att ta bort och göra om tills du publicerar.
           </li>
           <li>
             <strong>Banor</strong>: pågående och nästa match per bana, och vilka banor som ligger efter.

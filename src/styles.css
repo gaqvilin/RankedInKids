@@ -1902,3 +1902,12 @@ body.screen-mode .shell__main {
     display: none !important;
   }
 }
+
+.draw-class__actions {
+  margin-top: 6px;
+}
+.times-row {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+}

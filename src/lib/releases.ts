@@ -12,6 +12,7 @@ export const RELEASES: Release[] = [
       'Ny sida Tävlingsledning för klubben som arrangerar en tävling (knapp på tävlingen och under Admin).',
       'Före lottning: alla som söker partner per klass med klubb och ålder, färdigt meddelande att kopiera, licenser som saknas och antal par per klass.',
       'Para ihop och dela på par direkt i PadelAdmin (för arrangörens konto, fram till lottningen) – ingen inloggning på rankedin.com behövs.',
+      'Lottning i PadelAdmin: lägg till banor och tider, stäng anmälan, lotta (en eller flera grupper), schemalägg och publicera – steg för steg, och allt går att ångra innan publicering.',
       'Under dagen: varje bana med pågående och nästa match, och varning när en bana ligger efter.',
       'Resultat: lista över matcher som borde vara klara men saknar resultat, med snabb inmatning.',
       'QR-kod att dela ut: skriv ut lappar (8 per A4) eller en affisch. Den som skannar ser sina matcher, tider, banor och resultat direkt i mobilen.',

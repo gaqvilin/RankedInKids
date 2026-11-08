@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { MatchCard } from '../components/MatchCard';
+import { DrawPanel } from '../components/DrawPanel';
 import { PairingPanel } from '../components/PairingPanel';
 import { PlayerHitRow } from '../components/PlayerHitRow';
 import { getAdminEvents } from '../lib/clubs';
@@ -15,9 +16,10 @@ import { getClasses, getClassPairs, getTournament, getTournamentMatches, rinUrl,
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 
-type Tab = 'partner' | 'banor' | 'resultat' | 'dela';
+type Tab = 'partner' | 'lottning' | 'banor' | 'resultat' | 'dela';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'partner', label: 'Före lottning' },
+  { id: 'lottning', label: 'Lottning' },
   { id: 'banor', label: 'Banor' },
   { id: 'resultat', label: 'Resultat' },
   { id: 'dela', label: 'QR-kod' },
@@ -153,6 +155,17 @@ export default function Organizer() {
           />
         )}
 
+        {tab === 'lottning' &&
+          (user.loggedIn ? (
+            <DrawPanel
+              tournamentId={tid}
+              onChanged={() => matches.reload()}
+              singles={pairs.data ? new Map([...pairs.data].map(([name, p]) => [name, p.filter((x) => x.missingPartner).length])) : undefined}
+            />
+          ) : (
+            <Notice>Logga in med kontot som administrerar tävlingen för att lotta här.</Notice>
+          ))}
+
         {tab === 'banor' &&
           (!drawn ? (
             <NotDrawn />
@@ -215,7 +228,7 @@ export default function Organizer() {
 }
 
 function NotDrawn() {
-  return <Notice>Inga matcher är publicerade än. Lotta, schemalägg och publicera i Rankedin – då dyker allt upp här.</Notice>;
+  return <Notice>Inga matcher är lottade än. Lotta, schemalägg och publicera under fliken Lottning – då dyker allt upp här.</Notice>;
 }
 
 function CourtCard({ c, onReport }: { c: CourtState; onReport: (m: TournamentMatch) => void }) {
