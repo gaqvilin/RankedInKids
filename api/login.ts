@@ -8,12 +8,14 @@ import {
   clearSessionCookieHeader,
   cookiesFromResponse,
   fetchLayout,
+  isSameOriginJson,
   json,
   publicUser,
   rinHeaders,
 } from './_lib/rankedin.js';
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
   let body: { userName?: string; password?: string };
   try {
     body = await request.json();
@@ -41,7 +43,12 @@ export async function POST(request: Request): Promise<Response> {
     return json({ error: 'invalid_credentials' }, 401);
   }
 
-  const layout = await fetchLayout(cookie);
+  let layout;
+  try {
+    layout = await fetchLayout(cookie);
+  } catch {
+    return json({ error: 'upstream_unreachable' }, 502);
+  }
   if (!layout?.IsAuthenticated || !layout.CurrentPlayerId) return json({ error: 'invalid_credentials' }, 401);
 
   // Adds this account next to any others already logged in on this device, and makes it active.

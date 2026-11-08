@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { FixtureRow } from '../components/FixtureRow';
 import { Go } from '../components/shell';
 import { StandingsTable } from '../components/StandingsTable';
+import { seriesKind, seriesRules, showsStandings } from '../lib/rules';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDay, fmtTime, relativeDays } from '../lib/format';
 import { getLeagueHeader, getStandings, getTeam, getTeamFixtures } from '../lib/leagues';
@@ -59,6 +60,9 @@ export default function Team() {
   // Upcoming rounds plus the latest played one (for late results).
   const rounds = roundsAll.filter((r) => !r.played || r === lastPlayed);
   const splLevel = isSplLeague(t.leagueName) ? divisionLevel(t.division) : null;
+  const kind = seriesKind(t.leagueName);
+  const hasTable = showsStandings(kind);
+  const rules = seriesRules(kind, t.division);
   const points = rankingPoints(splLevel);
 
   return (
@@ -94,7 +98,7 @@ export default function Team() {
         </div>
 
         <div className="stats">
-          {row && (
+          {row && hasTable && (
             <>
               <div>
                 <span className="stats__value">{row.position}</span>
@@ -172,7 +176,20 @@ export default function Team() {
             )}
           </div>
           <div>
-            {standings.data && standings.data.length > 0 && (
+            {!hasTable && rules && (
+              <Section title="Så spelas serien">
+                <p className="notice notice--info small">I Klubbligan 10–13 år förs ingen tabell och det delas inte ut lagpoäng – det är spelglädjen som räknas.</p>
+                <ul className="small">
+                  {[rules.summary, ...rules.notes].map((n) => (
+                    <li key={n}>{n}</li>
+                  ))}
+                </ul>
+              </Section>
+            )}
+            {hasTable && rules && kind !== 'spl' && (
+              <p className="muted small">{rules.notes.join(' ')}</p>
+            )}
+            {hasTable && standings.data && standings.data.length > 0 && (
               <Section
                 title="Tabell"
                 action={

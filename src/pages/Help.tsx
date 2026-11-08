@@ -120,7 +120,8 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
           <li>Div 2–4: minst 4 spelare, rankingordning i match 1–2, fri uppställning i match 3.</li>
           <li>Uppställningen ska vara inlagd 15 minuter före första matchen (match 3 i div 2–4: 5 min efter match 1–2).</li>
         </ul>
-        <p className="muted small">Reglerna bygger på SPF:s bestämmelser för 2024/25 tills nya publiceras.</p>
+        <p>I Klubbligan varnar appen om samma par spelar flera matcher eller om laget har färre än 4 spelare. I 10–13 år förs ingen tabell.</p>
+        <p className="muted small">Reglerna bygger på SPF:s bestämmelser (SPL 2024/25, Klubbligan 2026) tills nya publiceras.</p>
       </>
     ),
   },
@@ -131,7 +132,7 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
       <p>
         På speldagssidan finns <strong>Arrangör: kallelse och spelschema</strong>. Välj antal banor, starttid och matchlängd så görs ett spelschema
         där inget lag spelar två lagmatcher samtidigt. Kallelsen fylls i enligt SPF:s mall och kan kopieras eller öppnas i e-post. Skicka den
-        senast måndag samma vecka.
+        senast måndag samma vecka i SPL och senast 10 dagar före i Klubbligan.
       </p>
     ),
   },

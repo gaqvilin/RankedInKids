@@ -1,12 +1,13 @@
 // POST /api/lineup { teamMatchId, side: 'first'|'second', lineups: [{ challengeId, playerIds }] }
 // Saves a team-league lineup for the logged-in captain, the same way the
 // lineup editor on rankedin.com does (TeamLeague/UpdateTeamLeagueLineupsAsync).
-import { RIN_API, getSessionCookie, json, rinHeaders } from './_lib/rankedin.js';
+import { RIN_API, getSessionCookie, json, rinHeaders, isSameOriginJson } from './_lib/rankedin.js';
 import { buildLineupPayload, validateLineup, type CurrentMatch, type LineupChange, type Side } from './_lib/lineup.js';
 
 type RawSide = { player1Id: number | null; player2Id: number | null } | null;
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
   const session = getSessionCookie(request);
   if (!session) return json({ error: 'not_logged_in' }, 401);
 
@@ -32,20 +33,21 @@ export async function POST(request: Request): Promise<Response> {
     fetch(`${RIN_API}/TeamLeague/GetTeamLeagueTeamsMatchesAsync?teamMatchId=${teamMatchId}&language=sv`, { headers: rinHeaders(session) }),
   ]);
   if (!lineupsRes.ok || !matchesRes.ok) return json({ error: 'upstream_error' }, 502);
-  const lineups = (await lineupsRes.json()) as Record<'firstTeam' | 'secondTeam', { canLineupTeam: boolean; players: { playerId: number; firstName: string; lastName: string }[] }>;
+  const lineups = (await lineupsRes.json().catch(() => ({}))) as Record<'firstTeam' | 'secondTeam', { canLineupTeam: boolean; players: { playerId: number; firstName: string; lastName: string }[] }>;
   const team = side === 'first' ? lineups.firstTeam : lineups.secondTeam;
   if (!team?.canLineupTeam) return json({ error: 'not_allowed' }, 403);
 
-  const blocks = (await matchesRes.json()) as {
-    settings: { matchType: number };
-    matches: { matches: { id: number; challenger: RawSide; challenged: RawSide }[] };
+  const blocks = ((await matchesRes.json().catch(() => null)) ?? []) as {
+    settings?: { matchType: number };
+    matches?: { matches?: { id: number; challenger: RawSide; challenged: RawSide }[] };
   }[];
-  // A team match can hold several blocks (one per match type); find the one with these challenges.
-  const block = blocks.find((b) => b.matches.matches.some((m) => changes.some((c) => c.challengeId === m.id)));
-  if (!block) return json({ error: 'unknown_matches' }, 400);
-  const matchType = block.settings.matchType;
+  const matchesOf = (b: (typeof blocks)[number]) => b?.matches?.matches ?? [];
+  // A team match can hold several blocks (one per match type); every change must be in the same one.
+  const block = Array.isArray(blocks) ? blocks.find((b) => matchesOf(b).some((m) => changes.some((c) => c.challengeId === m.id))) : undefined;
+  if (!block || !changes.every((c) => matchesOf(block).some((m) => m.id === c.challengeId))) return json({ error: 'unknown_matches' }, 400);
+  const matchType = block.settings?.matchType ?? 3;
   const ids = (s: RawSide) => [s?.player1Id || 0, s?.player2Id || 0];
-  const current: CurrentMatch[] = block.matches.matches.map((m) => ({
+  const current: CurrentMatch[] = matchesOf(block).map((m) => ({
     challengeId: m.id,
     firstTeamPlayerIds: ids(m.challenger),
     secondTeamPlayerIds: ids(m.challenged),

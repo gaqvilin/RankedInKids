@@ -18,7 +18,6 @@ export default function TeamMatch() {
   const { version } = useSession();
   const tm = useAsync((fresh) => getTeamMatch(teamMatchId, fresh), [teamMatchId, version]);
   const info = useAsync(() => getTeamMatchInfo(teamMatchId).catch(() => null), [teamMatchId]);
-  const splLevel = info.data && isSplLeague(info.data.leagueName) ? divisionLevel(info.data.division) : null;
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
   const [lineupSide, setLineupSide] = useState<'first' | 'second' | null>(null);
 
@@ -140,7 +139,8 @@ export default function TeamMatch() {
 
       {lineupSide && (
         <LineupSheet
-          level={splLevel}
+          leagueName={info.data?.leagueName ?? null}
+          division={info.data?.division ?? null}
           firstMatchStart={info.data?.date ?? null}
           teamMatch={t}
           side={lineupSide}

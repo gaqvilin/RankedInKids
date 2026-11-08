@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import {
   getSession,
+  setActiveAccount,
   login as apiLogin,
   logout as apiLogout,
   logoutAll as apiLogoutAll,
@@ -28,8 +29,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [version, setVersion] = useState(0);
 
-  const refresh = useCallback(async () => {
-    setUser(await getSession());
+  const refresh = useCallback(async (): Promise<void> => {
+    const next = await getSession();
+    if (!next) {
+      // Rankedin didn't answer: keep the accounts we know and ask again shortly.
+      setReady(true);
+      setTimeout(() => void refresh(), 15_000);
+      return;
+    }
+    setActiveAccount(next.loggedIn ? next.playerId : 0);
+    setUser(next);
     setReady(true);
     setVersion((v) => v + 1);
   }, []);
@@ -41,6 +50,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (u: string, p: string) => {
       await apiLogin(u, p);
+      clearStoredCache();
       await refresh();
     },
     [refresh],
@@ -63,6 +73,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
   const logoutAll = useCallback(async () => {
     await apiLogoutAll();
+    clearStoredCache();
     await refresh();
   }, [refresh]);
 

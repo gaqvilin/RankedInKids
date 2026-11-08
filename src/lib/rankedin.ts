@@ -452,7 +452,12 @@ export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<
   const fullName = (team: { id: number; name: string }) =>
     standings.scoresViewModels.find((s) => s.participantUrl?.endsWith(`/${team.id}`))?.participantName || team.name;
 
-  const block = rawMatches[0]?.matches;
+  // Lineup slots come from the first block (one match type); results and score from every block.
+  const block = rawMatches?.[0]?.matches;
+  const allRaw = (rawMatches ?? []).flatMap((b) => b?.matches?.matches ?? []);
+  const emptyTeam = { id: 0, name: 'Okänt lag', players: [], canLineupTeam: false } as unknown as RawLineupTeam;
+  const firstTeam = lineups?.firstTeam ?? emptyTeam;
+  const secondTeam = lineups?.secondTeam ?? emptyTeam;
   const matchType = (rawMatches[0] as unknown as { settings?: { matchType: number } })?.settings?.matchType ?? 3;
   const licenseRequired = (lineups as unknown as { isLicenseRequired?: boolean }).isLicenseRequired !== false;
   const roster = (t: RawLineupTeam): LineupPlayer[] =>
@@ -470,7 +475,7 @@ export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<
     const real = slots.filter((x): x is [string, number] => !!x[0] && !!x[1]);
     return { names: real.map((x) => x[0]), ids: real.map((x) => x[1]), isWinner: won };
   };
-  const matches: TournamentMatch[] = (block?.matches || []).map((m) => {
+  const matches: TournamentMatch[] = allRaw.map((m) => {
     const r = m.matchResult;
     const played = !!r?.isPlayed;
     return {
@@ -492,13 +497,13 @@ export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<
     eventId: block?.eventId ?? 0,
     finished: !!block?.isEventFinished,
     teams: [
-      { id: lineups.firstTeam.id, name: fullName(lineups.firstTeam) },
-      { id: lineups.secondTeam.id, name: fullName(lineups.secondTeam) },
+      { id: firstTeam.id, name: fullName(firstTeam) },
+      { id: secondTeam.id, name: fullName(secondTeam) },
     ],
     score: [matches.filter((m) => m.sides[0].isWinner).length, matches.filter((m) => m.sides[1].isWinner).length],
     matches,
-    canLineup: [!!lineups.firstTeam.canLineupTeam, !!lineups.secondTeam.canLineupTeam],
-    rosters: [roster(lineups.firstTeam), roster(lineups.secondTeam)],
+    canLineup: [!!firstTeam.canLineupTeam, !!secondTeam.canLineupTeam],
+    rosters: [roster(firstTeam), roster(secondTeam)],
     matchType,
     slots: (block?.matches || []).map((m) => ({
       challengeId: m.id,
@@ -560,4 +565,76 @@ export async function getTeamMatchInfo(teamMatchId: number): Promise<TeamMatchIn
     leagueId: m?.eventInfo?.id ?? (raw.teamLeagueId || null),
     leagueName: m?.eventInfo?.name?.trim() ?? null,
   };
+}
+
+/**
+ * Organiser HTML from Rankedin → plain paragraphs. We never render their HTML
+ * directly; tags are dropped and entities decoded.
+ */
+export function htmlToParagraphs(html: string | null | undefined): string[] {
+  if (!html) return [];
+  const withBreaks = html
+    .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1\s*>/gi, '')
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/\s*(p|div|li|h\d|tr)\s*>/gi, '\n')
+    .replace(/<\s*li[^>]*>/gi, '• ');
+  const noTags = withBreaks.replace(/<[^>]*>/g, '');
+  const decoded = noTags
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
+  return decoded
+    .split('\n')
+    .map((l) => l.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+export type TournamentDetails = {
+  venue: string | null;
+  address: string | null;
+  mapUrl: string | null;
+  organiser: { name: string; rankedinId: string | null } | null;
+  sanctioned: boolean;
+  fees: { className: string; price: number; currency: string }[];
+  regulations: string[];
+};
+
+export async function getTournamentDetails(id: number): Promise<TournamentDetails> {
+  const [info, regs] = await Promise.all([
+    rin<{
+      TournamentSidebarModel: {
+        LocationName: string | null;
+        Address: string | null;
+        Latitude: number | null;
+        Longtitude: number | null;
+        HasFee: boolean;
+        Fees: { Price: number; CurrencyCode: string; ClassName: string }[] | null;
+        Rankings: { Name: string }[] | null;
+        AdminCarouselVm: { AdminsList: { Name: string; Url: string }[] | null } | null;
+      };
+    }>(`Tournament/GetInfoAsync?id=${id}&language=sv`),
+    rin<string | null>(`Tournament/GetRegulationsAsync?id=${id}&language=sv`).catch(() => null),
+  ]);
+  const t = info.TournamentSidebarModel;
+  const admin = t.AdminCarouselVm?.AdminsList?.[0];
+  const address = t.Address ? t.Address.replace(/,\s*Sweden$/i, '').trim() : null;
+  return {
+    venue: t.LocationName,
+    address,
+    mapUrl: t.Latitude && t.Longtitude ? `https://www.google.com/maps/search/?api=1&query=${t.Latitude},${t.Longtitude}` : address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : null,
+    organiser: admin ? { name: admin.Name, rankedinId: admin.Url.match(/R\d{9}/)?.[0] ?? null } : null,
+    sanctioned: (t.Rankings || []).some((r) => /SPF/i.test(r.Name)),
+    fees: t.HasFee ? (t.Fees || []).filter((f) => f.Price > 0).map((f) => ({ className: f.ClassName, price: f.Price, currency: f.CurrencyCode })) : [],
+    regulations: htmlToParagraphs(typeof regs === 'string' ? regs : null),
+  };
+}
+
+/** Series text written by the league organiser (e.g. SPF for SPL/Klubbligan). */
+export async function getLeagueRegulations(id: number): Promise<string[]> {
+  const regs = await rin<string | null>(`TeamLeague/GetRegulationsAsync?id=${id}&language=sv`).catch(() => null);
+  return htmlToParagraphs(typeof regs === 'string' ? regs : null);
 }

@@ -11,6 +11,7 @@ import { buildInvitation, buildSchedule, scheduleAsText } from '../lib/host';
 import { getPoolFixtures, getTeam, getTeamFixtures, type Fixture } from '../lib/leagues';
 import { getTeamMatch, getTeamMatchInfo, type TeamMatch, type TournamentMatch } from '../lib/rankedin';
 import { divisionLevel, isSplLeague, lineupDeadline, rankingPoints } from '../lib/spl';
+import { seriesKind, seriesRules, type SeriesRules } from '../lib/rules';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 
@@ -43,6 +44,8 @@ export default function Round() {
   const t = team.data;
   const spl = t ? isSplLeague(t.leagueName) : false;
   const level = spl ? divisionLevel(t?.division) : null;
+  const kind = seriesKind(t?.leagueName);
+  const rules = seriesRules(kind, t?.division);
   const points = rankingPoints(level);
   const matches = day.data ?? [];
   const firstStart = matches.map((m) => m.startsAt).filter(Boolean).sort()[0] ?? null;
@@ -188,14 +191,15 @@ export default function Round() {
             <Section title="Vilka kan spela?">
               <AvailabilityPanel teamId={tid} date={date} players={t.players} from="Sammandraget" />
             </Section>
-            {spl && (hosting || (poolDay.data?.length ?? 0) > 0) && (
+            {rules && (hosting || (poolDay.data?.length ?? 0) > 0) && (
               <details className="fold" open={hosting}>
                 <summary>{hosting ? 'Ni arrangerar: kallelse och spelschema' : 'Arrangör: kallelse och spelschema'}</summary>
                 <HostTools
                   hostClub={venue ?? t.club ?? t.name}
                   division={t.division ?? ''}
                   date={date}
-                  freeThirdMatch={level != null && level >= 2}
+                  series={spl ? 'spl' : 'klubbligan'}
+                  rules={rules}
                   venue={venue}
                   fixtures={poolDay.data ?? []}
                 />
@@ -221,7 +225,8 @@ export default function Round() {
         <LineupSheet
           teamMatch={lineupFor.tm}
           side={sideOf(lineupFor) === 0 ? 'first' : 'second'}
-          level={level}
+          leagueName={t.leagueName}
+          division={t.division}
           firstMatchStart={lineupFor.startsAt}
           onClose={() => setLineupFor(null)}
           onSaved={() => {
@@ -238,25 +243,30 @@ function HostTools({
   hostClub,
   division,
   date,
-  freeThirdMatch,
+  series,
+  rules,
   fixtures,
   venue,
 }: {
   hostClub: string;
   division: string;
   date: string;
-  freeThirdMatch: boolean;
+  series: 'spl' | 'klubbligan';
+  rules: SeriesRules;
   fixtures: Fixture[];
   venue: string | null;
 }) {
   const [courts, setCourts] = useState(4);
   const [start, setStart] = useState('10:00');
-  const [slot, setSlot] = useState(75);
+  const [slot, setSlot] = useState(series === 'spl' ? 75 : 60);
+  const waves = rules.waves;
+  const freeThirdMatch = series === 'spl' && waves.length > 1;
   const [contact, setContact] = useState('');
   const [copied, setCopied] = useState(false);
   const teamMatches = fixtures.map((f) => ({ id: f.teamMatchId, home: f.home.name, away: f.away.name }));
-  const schedule = useMemo(() => buildSchedule(teamMatches, { courts, start, slotMinutes: slot, freeThirdMatch }), [JSON.stringify(teamMatches), courts, start, slot, freeThirdMatch]);
+  const schedule = useMemo(() => buildSchedule(teamMatches, { courts, start, slotMinutes: slot, waves }), [JSON.stringify(teamMatches), courts, start, slot, JSON.stringify(waves)]);
   const invitation = buildInvitation({
+    series,
     hostClub,
     division,
     dateLabel: new Date(`${date}T12:00:00`).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
@@ -266,7 +276,7 @@ function HostTools({
     teamMatches,
     schedule: scheduleAsText(schedule, slot),
     freeThirdMatch,
-    feePerTeamMatch: 550,
+    feePerTeamMatch: series === 'spl' ? 550 : null,
   });
 
   if (teamMatches.length === 0) return <Empty>Hittar inga lagmatcher på anläggningen den här dagen.</Empty>;
@@ -321,7 +331,7 @@ function HostTools({
         <input className="input" value={contact} onChange={(e) => setContact(e.target.value)} />
       </label>
       <label className="field">
-        <span>Kallelse – skickas senast måndag samma vecka</span>
+        <span>Kallelse – skickas {rules.invitationDeadline}</span>
         <textarea className="input textarea" readOnly value={invitation} rows={14} />
       </label>
       <div className="row gap">

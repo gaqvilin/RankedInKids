@@ -4,7 +4,7 @@ import { MatchCard } from '../components/MatchCard';
 import { ResultSheet } from '../components/ResultSheet';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDay, fmtTime, isSameDay, relativeDays } from '../lib/format';
-import { getClasses, getClassPairs, getTournament, getTournamentMatches, rinUrl, type Pair, type TournamentMatch } from '../lib/rankedin';
+import { getClasses, getClassPairs, getTournament, getTournamentDetails, getTournamentMatches, rinUrl, type Pair, type TournamentMatch } from '../lib/rankedin';
 import { standings } from '../lib/standings';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
@@ -17,6 +17,7 @@ export default function Tournament() {
 
   const header = useAsync(() => getTournament(tid), [tid]);
   const classes = useAsync(() => getClasses(tid), [tid]);
+  const details = useAsync(() => getTournamentDetails(tid).catch(() => null), [tid], `tdetails.${tid}`);
   const { version } = useSession();
   const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version]);
   const [onlyMine, setOnlyMine] = useState(!!playerId);
@@ -96,7 +97,40 @@ export default function Tournament() {
               Anmälan öppen till <strong>{fmtDay(t.closeSignInDate)} {fmtTime(t.closeSignInDate)}</strong>
             </p>
           )}
+          {details.data && (
+            <p className="small">
+              {details.data.venue && <strong>{details.data.venue}</strong>}
+              {details.data.address && <span className="muted"> · {details.data.address}</span>}
+              {details.data.mapUrl && (
+                <>
+                  {' '}
+                  · <ExternalLink href={details.data.mapUrl}>Karta</ExternalLink>
+                </>
+              )}
+              <span className="block muted">
+                {[
+                  details.data.sanctioned ? 'Sanktionerad (ger rankingpoäng)' : 'Osanktionerad',
+                  details.data.fees.length
+                    ? `Avgift ${[...new Set(details.data.fees.map((f) => `${f.price} kr`))].join(' / ')}`
+                    : null,
+                  details.data.organiser ? `Arrangör ${details.data.organiser.name}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+            </p>
+          )}
           <ExternalLink href={rinUrl(t.url)}>Öppna i Rankedin</ExternalLink>
+          {details.data && details.data.regulations.length > 0 && (
+            <details className="fold">
+              <summary>Information från arrangören</summary>
+              <div className="regulations">
+                {details.data.regulations.map((line, i) => (
+                  <p key={i}>{line}</p>
+                ))}
+              </div>
+            </details>
+          )}
         </div>
 
         {nextMine && (

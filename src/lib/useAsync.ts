@@ -49,13 +49,15 @@ export function useAsync<T>(fn: (fresh: boolean) => Promise<T>, deps: unknown[],
   const [loading, setLoading] = useState(true);
   const seq = useRef(0);
 
-  const run = useCallback((fresh: boolean) => {
+  // reset: the deps changed (another player, team…) – never show the previous one's data.
+  const run = useCallback((fresh: boolean, reset = false) => {
     const id = ++seq.current;
     setLoading(true);
-    if (storeKey) {
-      const stored = readStore<T>(storeKey);
-      if (stored !== undefined) setData(stored);
-    }
+    const stored = storeKey ? readStore<T>(storeKey) : undefined;
+    if (reset) {
+      setData(stored);
+      setError(null);
+    } else if (stored !== undefined) setData(stored);
     fn(fresh)
       .then((d) => {
         if (id !== seq.current) return;
@@ -73,7 +75,7 @@ export function useAsync<T>(fn: (fresh: boolean) => Promise<T>, deps: unknown[],
   }, [...deps, storeKey]);
 
   useEffect(() => {
-    run(false);
+    run(false, true);
   }, [run]);
 
   return { data, error, loading, reload: (fresh = true) => run(fresh) };

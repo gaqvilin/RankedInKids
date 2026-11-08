@@ -30,3 +30,15 @@ describe('findCity', () => {
     expect(findCity('Atlantis')).toBeNull();
   });
 });
+
+import { htmlToParagraphs } from '../src/lib/rankedin';
+
+describe('htmlToParagraphs', () => {
+  it('turns organiser HTML into safe plain paragraphs', () => {
+    const p = htmlToParagraphs('<p><strong>Plats</strong>: Padelview&nbsp;Factory</p><p></p><ul><li>P12 &amp; F12</li></ul><script>alert(1)</script><img src=x onerror=alert(2)>');
+    expect(p).toEqual(['Plats: Padelview Factory', '• P12 & F12']);
+  });
+  it('handles empty input', () => {
+    expect(htmlToParagraphs(null)).toEqual([]);
+  });
+});

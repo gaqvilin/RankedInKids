@@ -2,10 +2,11 @@
 // Same flow as the "Enter result" dialog on rankedin.com:
 //   GET  Match/GetChallengeResultAsync  (participant ids, current player)
 //   POST Match/SubmitResultAsync
-import { RIN_API, getSessionCookie, json, rinHeaders } from './_lib/rankedin.js';
+import { RIN_API, getSessionCookie, json, rinHeaders, isSameOriginJson } from './_lib/rankedin.js';
 import { buildSubmitPayload, type ChallengeResult } from './_lib/result.js';
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
   const session = getSessionCookie(request);
   if (!session) return json({ error: 'not_logged_in' }, 401);
 

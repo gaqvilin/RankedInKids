@@ -12,16 +12,19 @@ const addMinutes = (hhmm: string, minutes: number) => {
 };
 
 /**
- * Greedy court schedule: each team match is 3 individual matches.
+ * Greedy court schedule.
+ * - waves: match numbers per team match, grouped; a wave starts only after the
+ *   previous wave of the same team match is done (e.g. [[1,2],[3]]).
  * - A team is never in two different team matches at the same time.
- * - With freeThirdMatch (div 2+), match 3 starts after matches 1 and 2.
  */
 export function buildSchedule(
   teamMatches: HostTeamMatch[],
-  opts: { courts: number; start: string; slotMinutes: number; freeThirdMatch: boolean },
+  opts: { courts: number; start: string; slotMinutes: number; waves: number[][] },
 ): ScheduleSlot[] {
-  type Game = { tm: HostTeamMatch; n: number; label: string };
-  const queue: Game[] = teamMatches.flatMap((tm) => [1, 2, 3].map((n) => ({ tm, n, label: `${tm.home} – ${tm.away} · match ${n}` })));
+  type Game = { tm: HostTeamMatch; n: number; wave: number; label: string };
+  const queue: Game[] = teamMatches.flatMap((tm) =>
+    opts.waves.flatMap((wave, w) => wave.map((n) => ({ tm, n, wave: w, label: `${tm.home} – ${tm.away} · match ${n}` }))),
+  );
   const doneSlot = new Map<string, number>(); // "tmId-n" -> slot index it was played in
   const slots: ScheduleSlot[] = [];
   let guard = 0;
@@ -33,9 +36,9 @@ export function buildSchedule(
     for (let i = 0; i < queue.length && c < opts.courts; ) {
       const g = queue[i];
       const clash = [g.tm.home, g.tm.away].some((team) => busyTeams.has(team) && busyTeams.get(team) !== g.tm.id);
-      const waitsForFirstTwo =
-        opts.freeThirdMatch && g.n === 3 && [1, 2].some((n) => !(doneSlot.has(`${g.tm.id}-${n}`) && doneSlot.get(`${g.tm.id}-${n}`)! < slotIndex));
-      if (clash || waitsForFirstTwo) {
+      const waitsForEarlierWave =
+        g.wave > 0 && opts.waves[g.wave - 1].some((n) => !(doneSlot.has(`${g.tm.id}-${n}`) && doneSlot.get(`${g.tm.id}-${n}`)! < slotIndex));
+      if (clash || waitsForEarlierWave) {
         i++;
         continue;
       }
@@ -60,6 +63,7 @@ export function scheduleAsText(slots: ScheduleSlot[], slotMinutes: number): stri
 }
 
 export type InvitationInput = {
+  series: 'spl' | 'klubbligan';
   hostClub: string;
   division: string;
   dateLabel: string;
@@ -69,7 +73,7 @@ export type InvitationInput = {
   teamMatches: HostTeamMatch[];
   schedule?: string;
   freeThirdMatch: boolean;
-  feePerTeamMatch: number;
+  feePerTeamMatch: number | null;
 };
 
 /** SPF's example invitation, filled in. */
@@ -87,12 +91,18 @@ export function buildInvitation(i: InvitationInput): string {
     '',
     i.schedule ? `Spelschema:\n${i.schedule}` : 'Spelschema kommer finnas i hallen vid ankomst.',
     '',
-    'Kom ihåg att laguppställning ska vara inlagd i Rankedin 15 minuter före första matchen startar.',
-    ...(i.freeThirdMatch ? ['Den 3:e matchens uppställning ska vara inlagd senast 5 minuter efter att match 1 och 2 spelats färdigt.'] : []),
-    'Se till att du har ett inlogg som administratör/spelare för ditt lag vid ankomst och att alla spelare som ska användas har en aktiv licens – utan licens går spelaren inte att välja i laguppställningen.',
+    ...(i.series === 'spl'
+      ? [
+          'Kom ihåg att laguppställning ska vara inlagd i Rankedin 15 minuter före första matchen startar.',
+          ...(i.freeThirdMatch ? ['Den 3:e matchens uppställning ska vara inlagd senast 5 minuter efter att match 1 och 2 spelats färdigt.'] : []),
+          'Se till att du har ett inlogg som administratör/spelare för ditt lag vid ankomst och att alla spelare som ska användas har en aktiv licens – utan licens går spelaren inte att välja i laguppställningen.',
+        ]
+      : [
+          'Lagledaren lägger in laguppställningen i Rankedin. Alla spelare behöver konto i Rankedin och tävlingslicens.',
+          'Coachning är inte tillåten i Klubbligan. Spelarna dömer själva – hjälp oss hålla god stämning på läktaren.',
+        ]),
     '',
-    `Avgiften är ${i.feePerTeamMatch} kr per lagmatch och betalas till ${i.hostClub} vid ankomst.`,
-    '',
+    ...(i.feePerTeamMatch ? [`Avgiften är ${i.feePerTeamMatch} kr per lagmatch och betalas till ${i.hostClub} vid ankomst.`, ''] : []),
     'Bekräfta gärna att ni tagit emot kallelsen och hur många som vill äta.',
     '',
     `Varmt välkomna till ${i.hostClub}!`,

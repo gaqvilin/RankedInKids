@@ -5,7 +5,7 @@
 // Only people with a Rankedin login on this device that belong to the team
 // (player or team leader) can read; players set their own answer, team
 // leaders can set anyone's.
-import { json } from './_lib/rankedin.js';
+import { json, isSameOriginJson } from './_lib/rankedin.js';
 import { fetchTeamRoster, verifiedAccounts } from './_lib/identity.js';
 import { getStore } from './_lib/store.js';
 
@@ -48,6 +48,7 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
   let body: { teamId?: number; date?: string; playerId?: number; status?: string; comment?: string };
   try {
     body = await request.json();

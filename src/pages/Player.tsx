@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { seriesKind, showsStandings } from '../lib/rules';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { ResultSheet } from '../components/ResultSheet';
@@ -34,7 +35,7 @@ export function LeagueTeamCard({ t, from }: { t: LeagueTeamSummary; from: string
       </span>
       {t.active && (
         <span className="item__side small">
-          {t.position != null && (
+          {t.position != null && showsStandings(seriesKind(t.leagueName)) && (
             <span className="block">
               Plats <strong>{t.position}</strong>
               {t.teamsInDivision ? ` av ${t.teamsInDivision}` : ''}
@@ -64,6 +65,7 @@ export default function Player() {
   const matches = useAsync((fresh) => (playerId ? getUpcomingMatches(playerId, fresh, true) : Promise.resolve([])), [playerId, version]);
   const overview = useAsync(() => (playerId ? loadOverview(playerId) : Promise.resolve(null)), [playerId], playerId ? `overview.${playerId}` : undefined);
   const [saved, setSaved] = useState(() => isSaved(rid));
+  useEffect(() => setSaved(isSaved(rid)), [rid]);
   const [reporting, setReporting] = useState<UpcomingMatch | null>(null);
 
   if (profile.error || !profile.data) {

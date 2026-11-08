@@ -5,6 +5,21 @@ export type Release = { version: string; date: string; title: string; items: str
 
 export const RELEASES: Release[] = [
   {
+    version: '0.11',
+    date: '2026-11-08',
+    title: 'Klubbligans regler, mer tävlingsinfo och säkrare inloggning',
+    items: [
+      'Klubbligan 10–13/10–14 år visar ingen tabell eller placering – precis som SPF:s regler säger. Lagsidan förklarar hur serien spelas.',
+      'Uppställning i Klubbligan varnar om samma par spelar två matcher eller om laget har färre än 4 spelare.',
+      'Arrangör i Klubbligan: kallelse och spelschema (match 1–2, 3–4, 5–6 för de yngsta), att skicka senast 10 dagar före.',
+      'Tävlingar visar anläggning med karta, arrangör, avgift och arrangörens information. Serier visar sina regler.',
+      'Säkrare: inloggningen kan inte längre styras från andra sajter, och ett konto används aldrig i en flik som visar ett annat.',
+      'Du loggas inte längre ut om Rankedin har en kort störning.',
+      'Snabbare och stabilare när du följer flera spelare – appen skickar färre samtidiga frågor till Rankedin.',
+      'Rättat: när du byter spelare eller lag syns inte längre den förra sidans information en kort stund.',
+    ],
+  },
+  {
     version: '0.10',
     date: '2026-11-08',
     title: 'Hjälpsida, fylligare meny och rättningar',

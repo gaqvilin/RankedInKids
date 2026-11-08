@@ -10,7 +10,9 @@ import {
   fetchLayout,
   getAccounts,
   getActiveAccount,
+  isSameOriginJson,
   json,
+  UpstreamError,
   publicUser,
 } from './_lib/rankedin.js';
 
@@ -25,9 +27,19 @@ export async function GET(request: Request): Promise<Response> {
   const accounts: Account[] = [];
   let activeAccount: Account | null = null;
 
+  let upstreamDown = false;
   await Promise.all(
     stored.map(async (a) => {
-      const layout = await fetchLayout(a.cookie);
+      let layout;
+      try {
+        layout = await fetchLayout(a.cookie);
+      } catch (e) {
+        if (e instanceof UpstreamError) {
+          upstreamDown = true; // keep the cookie, ask again later
+          return;
+        }
+        throw e;
+      }
       if (!layout?.IsAuthenticated || !layout.CurrentPlayerId) {
         cookies.push(clearAccountCookieHeader(a.playerId)); // expired session
         return;
@@ -43,6 +55,8 @@ export async function GET(request: Request): Promise<Response> {
     }),
   );
 
+  // Rankedin didn't answer for some account: don't guess, let the client keep what it knows.
+  if (upstreamDown) return json({ error: 'upstream_unavailable' }, 503, {}, cookies);
   if (accounts.length === 0) return json({ loggedIn: false, accounts: [] }, 200, {}, [...cookies, activeCookieHeader(null)]);
   accounts.sort((x, y) => x.name.localeCompare(y.name, 'sv'));
   const current: Account = activeAccount ?? accounts[0];
@@ -51,6 +65,7 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
   let body: { action?: string; playerId?: number } = {};
   try {
     body = await request.json();

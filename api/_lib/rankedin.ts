@@ -31,9 +31,40 @@ const READ_PREFIXES = [
 ];
 
 export function isAllowedReadPath(path: string): boolean {
-  const p = path.replace(/^\/+/, '').toLowerCase();
-  if (p.includes('..') || p.includes('://')) return false;
-  return READ_PREFIXES.some((prefix) => p.startsWith(prefix));
+  return readUrl(path) != null;
+}
+
+/**
+ * The Rankedin URL for an allowed read path, or null. Checked after the URL is
+ * normalised, so encoded tricks like "%2e%2e" cannot leave the allowlist.
+ */
+export function readUrl(path: string): string | null {
+  const p = path.replace(/^\/+/, '');
+  if (/[%\\]|\.\.|:\/\//.test(p)) return null;
+  let url: URL;
+  try {
+    url = new URL(`${RIN_API}/${p}`);
+  } catch {
+    return null;
+  }
+  if (url.origin !== new URL(RIN_API).origin) return null;
+  const rest = url.pathname.toLowerCase();
+  if (!rest.startsWith('/v1/')) return null;
+  const tail = rest.slice(4);
+  return READ_PREFIXES.some((prefix) => tail.startsWith(prefix)) ? url.toString() : null;
+}
+
+/**
+ * Writes must come from our own pages: JSON body and a same-origin request.
+ * Stops other sites from posting forms (e.g. logging the device into another account).
+ */
+export function isSameOriginJson(request: Request): boolean {
+  if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) return false;
+  const site = request.headers.get('sec-fetch-site');
+  if (site && site !== 'same-origin' && site !== 'none') return false;
+  const origin = request.headers.get('origin');
+  if (origin && origin !== new URL(request.url).origin) return false;
+  return true;
 }
 
 function parseCookies(request: Request): Map<string, string> {
@@ -67,13 +98,18 @@ export function getAccounts(request: Request): StoredAccount[] {
   return accounts;
 }
 
-/** The account a request should act as: explicit header, then the active cookie, then any. */
+/**
+ * The account a request should act as: the account the page says it shows
+ * (header), else the active cookie, else any. A header naming an account this
+ * device no longer holds gives null – never act as someone else than the page shows.
+ */
 export function getActiveAccount(request: Request): StoredAccount | null {
   const accounts = getAccounts(request);
   if (accounts.length === 0) return null;
   const byId = (id: number) => (id > 0 ? accounts.find((a) => a.playerId === id) : undefined);
+  const wanted = Number(request.headers.get(ACCOUNT_HEADER));
+  if (wanted > 0) return byId(wanted) ?? null;
   return (
-    byId(Number(request.headers.get(ACCOUNT_HEADER))) ??
     byId(Number(parseCookies(request).get(ACTIVE_COOKIE))) ??
     accounts.find((a) => a.playerId > 0) ??
     accounts[0]
@@ -130,10 +166,25 @@ export type LayoutInfo = {
   LastName: string | null;
 };
 
+export class UpstreamError extends Error {}
+
+/**
+ * Who a Rankedin session belongs to. null = not logged in (session expired).
+ * Throws UpstreamError when Rankedin can't answer right now (rate limit, 5xx,
+ * network) – then the session must be kept, not thrown away.
+ */
 export async function fetchLayout(rinCookie: string): Promise<LayoutInfo | null> {
-  const res = await fetch(`${RIN_API}/Player/GetLayoutInfoAsync`, { headers: rinHeaders(rinCookie) });
-  if (!res.ok) return null;
-  return (await res.json()) as LayoutInfo;
+  let res: Response;
+  try {
+    res = await fetch(`${RIN_API}/Player/GetLayoutInfoAsync`, { headers: rinHeaders(rinCookie) });
+  } catch {
+    throw new UpstreamError('unreachable');
+  }
+  if (res.status === 401 || res.status === 403) return null;
+  if (!res.ok) throw new UpstreamError(String(res.status));
+  const layout = (await res.json().catch(() => null)) as LayoutInfo | null;
+  if (!layout) throw new UpstreamError('bad_json');
+  return layout.IsAuthenticated ? layout : null;
 }
 
 export function json(body: unknown, status = 200, extraHeaders: Record<string, string> = {}, cookies: string[] = []): Response {

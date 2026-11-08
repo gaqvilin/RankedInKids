@@ -1,3 +1,4 @@
+import { seriesKind } from '../lib/rules';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Page, Section } from '../components/ui';
 import { ADULT_LEAGUES } from '../lib/features';
@@ -27,10 +28,12 @@ export default function Leagues() {
   const allLeagues = [...(klubbligan.data || []), ...(spl.data || [])];
   const leagueKey = allLeagues.map((l) => l.id).join(',');
 
+  // Both searches must have settled (data or error) before "no league" can be said.
+  const searchesDone = (!!klubbligan.data || !!klubbligan.error) && (!!spl.data || !!spl.error);
   const mine = useAsync(async () => {
-    if (!klubbligan.data || !spl.data || players.length === 0) return [];
+    if (!searchesDone || players.length === 0) return null;
     const found = await findMyTeams(
-      [...klubbligan.data, ...spl.data].map((l) => l.id),
+      [...(klubbligan.data ?? []), ...(spl.data ?? [])].map((l) => l.id),
       players.map((p) => ({ id: p.id, name: p.name })),
     );
     // One entry per team, listing every known player on it.
@@ -41,7 +44,7 @@ export default function Leagues() {
       else byTeam.set(f.teamId, { ...f, players: [firstName(f.player.name)] });
     }
     return Promise.all([...byTeam.values()].map(async (t) => ({ ...t, status: await teamStatus(t.teamId).catch(() => null) })));
-  }, [playerKey, leagueKey], playerKey ? `mine.${playerKey}` : undefined);
+  }, [playerKey, leagueKey, searchesDone], playerKey ? `mine.${playerKey}` : undefined);
 
   const myLeagueIds = new Set((mine.data || []).map((t) => t.leagueId));
   const otherSavedTeams = savedTeams.filter((s) => !(mine.data || []).some((m) => m.teamId === s.id));
@@ -63,8 +66,9 @@ export default function Leagues() {
               eller logga in med barnets Rankedin-konto, så visas laget här.
             </Empty>
           )}
-          {players.length > 0 && (!klubbligan.data || mine.loading) && !mine.data?.length && <Loading label="Letar efter era lag…" />}
-          {mine.data && mine.data.length === 0 && players.length > 0 && klubbligan.data && !mine.loading && (
+          {players.length > 0 && (!searchesDone || mine.loading || mine.data === null) && !mine.data?.length && !mine.error && <Loading label="Letar efter era lag…" />}
+          {(mine.error || (searchesDone && klubbligan.error && spl.error)) && <ErrorBox error={mine.error ?? klubbligan.error!} onRetry={() => { klubbligan.reload(); spl.reload(); mine.reload(); }} />}
+          {mine.data && mine.data.length === 0 && players.length > 0 && searchesDone && !klubbligan.error && !spl.error && !mine.loading && (
             <Empty>{players.map((p) => firstName(p.name)).join(' och ')} spelar inte i någon serie den här säsongen.</Empty>
           )}
           {mine.data && mine.data.length > 0 && (
@@ -83,7 +87,7 @@ export default function Leagues() {
                     </span>
                     {t.status && (
                       <span className="item__side small">
-                        {t.status.position != null && (
+                        {t.status.position != null && !(league && seriesKind(league.name) === 'klubbligan-young') && (
                           <span className="block">
                             Plats <strong>{t.status.position}</strong> av {t.status.size}
                           </span>

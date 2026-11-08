@@ -14,7 +14,7 @@ describe('account cookies', () => {
   });
   it('lets a request choose another of its own accounts', () => {
     expect(getActiveAccount(req(two, {}, '11'))?.cookie).toBe('rin-auth=parent');
-    expect(getActiveAccount(req(two, {}, '99'))?.cookie).toBe('rin-auth=kid');
+    expect(getActiveAccount(req(two, {}, '99'))).toBeNull(); // never act as an account the page doesn't show
   });
   it('falls back when the active cookie is missing', () => {
     expect(getActiveAccount(req('rk_rin_11=a'))?.playerId).toBe(11);

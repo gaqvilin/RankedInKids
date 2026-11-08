@@ -11,6 +11,39 @@ export class ApiError extends Error {
 }
 
 const cache = new Map<string, { at: number; data: unknown }>();
+/** Identical requests in flight share one fetch. */
+const pending = new Map<string, Promise<unknown>>();
+
+/**
+ * The account this page shows. Sent with every logged-in call so the server
+ * acts as that account, even if another tab switched account meanwhile.
+ */
+let activeAccountId = 0;
+/** Bumped on every account change; answers from an older generation are dropped. */
+let generation = 0;
+export function setActiveAccount(playerId: number) {
+  if (playerId === activeAccountId) return;
+  activeAccountId = playerId;
+  generation++;
+  cache.clear();
+  pending.clear();
+}
+const accountHeaders = (): Record<string, string> => (activeAccountId ? { 'x-rk-account': String(activeAccountId) } : {});
+
+/** At most this many Rankedin requests at once; Rankedin rate limits bursts. */
+const MAX_PARALLEL = 6;
+let running = 0;
+const waiting: (() => void)[] = [];
+async function slot<T>(fn: () => Promise<T>): Promise<T> {
+  if (running >= MAX_PARALLEL) await new Promise<void>((r) => waiting.push(r));
+  running++;
+  try {
+    return await fn();
+  } finally {
+    running--;
+    waiting.shift()?.();
+  }
+}
 
 /** Number of Rankedin requests in flight; the shell shows a thin progress bar while > 0. */
 let inFlight = 0;
@@ -33,24 +66,39 @@ const CACHE_MS = 30_000;
  * (enter-result buttons, captain rights, admin lists).
  */
 export async function rin<T>(path: string, opts: { fresh?: boolean; auth?: boolean } = {}): Promise<T> {
-  const key = opts.auth ? `auth:${path}` : path;
+  const key = opts.auth ? `auth:${activeAccountId}:${path}` : path;
   const hit = cache.get(key);
   if (!opts.fresh && hit && Date.now() - hit.at < CACHE_MS) return hit.data as T;
-  setInFlight(1);
-  let data: T;
+  const shared = pending.get(key);
+  if (shared) return shared as Promise<T>;
+  const gen = generation;
+  const request = slot(async () => {
+    setInFlight(1);
+    try {
+      const res = await fetch(`/api/rin?p=${encodeURIComponent(path)}${opts.auth ? '' : '&anon=1'}`, {
+        credentials: 'same-origin',
+        headers: opts.auth ? accountHeaders() : {},
+      });
+      if (!res.ok) throw new ApiError(`Rankedin svarade ${res.status}`, res.status);
+      return (await res.json()) as T;
+    } finally {
+      setInFlight(-1);
+    }
+  });
+  pending.set(key, request);
   try {
-    const res = await fetch(`/api/rin?p=${encodeURIComponent(path)}${opts.auth ? '' : '&anon=1'}`, { credentials: 'same-origin' });
-    if (!res.ok) throw new ApiError(`Rankedin svarade ${res.status}`, res.status);
-    data = (await res.json()) as T;
+    const data = await request;
+    if (gen === generation) cache.set(key, { at: Date.now(), data });
+    return data;
   } finally {
-    setInFlight(-1);
+    if (pending.get(key) === request) pending.delete(key);
   }
-  cache.set(key, { at: Date.now(), data });
-  return data;
 }
 
 export function clearCache() {
+  generation++;
   cache.clear();
+  pending.clear();
 }
 
 export type Account = { playerId: number; rankedinId: string; name: string };
@@ -62,14 +110,16 @@ export type SessionUser =
 
 const LOGGED_OUT: SessionUser = { loggedIn: false, accounts: [] };
 
-export async function getSession(): Promise<SessionUser> {
+/** null = Rankedin couldn't answer right now; keep what we had. */
+export async function getSession(): Promise<SessionUser | null> {
   try {
     const res = await fetch('/api/session', { credentials: 'same-origin' });
+    if (res.status === 503 || res.status >= 500) return null;
     if (!res.ok) return LOGGED_OUT;
     const data = (await res.json()) as SessionUser;
     return { ...data, accounts: data.accounts ?? [] } as SessionUser;
   } catch {
-    return LOGGED_OUT;
+    return null;
   }
 }
 
@@ -115,7 +165,7 @@ export async function saveLineup(
   const res = await fetch('/api/lineup', {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...accountHeaders() },
     body: JSON.stringify({ teamMatchId, side, lineups }),
   });
   const data = await res.json().catch(() => ({}));
@@ -135,7 +185,7 @@ export async function submitResult(challengeId: number, sets: [number, number][]
   const res = await fetch('/api/submit-result', {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...accountHeaders() },
     body: JSON.stringify({ challengeId, sets }),
   });
   const data = await res.json().catch(() => ({}));
