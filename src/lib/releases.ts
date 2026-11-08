@@ -16,6 +16,11 @@ export const RELEASES: Release[] = [
       'Resultat: lista över matcher som borde vara klara men saknar resultat, med snabb inmatning.',
       'QR-kod att dela ut: skriv ut lappar (8 per A4) eller en affisch. Den som skannar ser sina matcher, tider, banor och resultat direkt i mobilen.',
       'Har ni en TV finns också en skärmvy som uppdateras själv.',
+      'Logiskare flöden: spelarsidans schema visar en rad per speldag (som Översikt), "Senast" sammanfattar hela speldagen, och "Nästa" står inte längre två gånger.',
+      'Varningen "Partner saknas" leder till tävlingen där du ser vilka fler som söker partner.',
+      'Ett och samma ord överallt: speldag. Passerade speldagar visar bara resultaten.',
+      'Lagmatchen visar datum, serie och länk till hela speldagen.',
+      'Översikt är renare: sökningen ligger under Sök och domarkoden under Tävlingar.',
     ],
   },
   {

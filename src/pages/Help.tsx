@@ -28,7 +28,7 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
     body: (
       <ol>
         <li>
-          <strong>Hitta ditt barn</strong> på <Link to="/">Översikt</Link> – sök på namn eller klistra in en Rankedin-länk – och tryck{' '}
+          <strong>Hitta ditt barn</strong> under <Link to="/sok">Sök</Link> – sök på namn eller klistra in en Rankedin-länk – och tryck{' '}
           <em>Spara som min spelare</em>.
         </li>
         <li>
@@ -178,7 +178,7 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
           lagmatchen.
         </p>
         <p>
-          <strong>Döm live</strong> räknar poäng för poäng med matchens domarkod (finns på kommande matcher), och resultatet hamnar i Rankedin när
+          <strong>Döm live</strong> räknar poäng för poäng med matchens domarkod (finns på kommande matcher, eller skriv in den längst ner under Tävlingar), och resultatet hamnar i Rankedin när
           matchen avslutas. Fungerar i tävlingar där arrangören har live-dömning (Premium).
         </p>
       </>

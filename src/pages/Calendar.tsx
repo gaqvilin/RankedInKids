@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Page } from '../components/ui';
@@ -200,7 +201,31 @@ export default function Calendar() {
             </tbody>
           </table>
         )}
+        <RefereeBox />
       </Page>
     </>
+  );
+}
+
+/** Live scoring with a referee code (shown on upcoming matches in a tournament). */
+function RefereeBox() {
+  const [code, setCode] = useState('');
+  const navigate = useNavigate();
+  return (
+    <details className="fold">
+      <summary>Har du en domarkod?</summary>
+      <form
+        className="row gap"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (code.trim()) navigate(`/doma/${encodeURIComponent(code.trim())}`, { state: { from: { label: 'Tävlingar', to: '/tavlingar' } } });
+        }}
+      >
+        <input className="input" placeholder="Domarkod" value={code} onChange={(e) => setCode(e.target.value)} autoCapitalize="off" />
+        <button className="btn" type="submit" disabled={!code.trim()}>
+          Döm live
+        </button>
+      </form>
+    </details>
   );
 }

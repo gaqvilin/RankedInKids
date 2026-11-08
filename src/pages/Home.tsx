@@ -1,7 +1,6 @@
 import { PlayerHitRow } from '../components/PlayerHitRow';
 import { usePlayerSearch } from '../lib/usePlayerSearch';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Notice, Page, Section } from '../components/ui';
@@ -45,7 +44,10 @@ function PlayerSummary({ p, onRemove }: { p: SavedPlayer; onRemove?: () => void 
 
       {missing.map((e) => (
         <Notice key={e.event.id} tone="error">
-          <strong>Partner saknas</strong> i {e.className}, {e.event.name}. Anmälan stänger {fmtDay(e.closeSignInDate)} ({relativeDays(e.closeSignInDate)}).
+          <strong>Partner saknas</strong> i {e.className}, {e.event.name}. Anmälan stänger {fmtDay(e.closeSignInDate)} ({relativeDays(e.closeSignInDate)}).{' '}
+          <Go to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`} from="Översikt">
+            Se vilka fler som söker partner
+          </Go>
         </Notice>
       ))}
 
@@ -91,8 +93,6 @@ export default function Home() {
   const mine = useMine();
   const shown = [...saved, ...known.filter((k) => !saved.some((s) => s.rankedinId === k.rankedinId))];
   const { term, setTerm, hits, error, loading } = usePlayerSearch('Översikt', '/');
-  const [code, setCode] = useState('');
-  const navigate = useNavigate();
 
 
   return (
@@ -136,8 +136,9 @@ export default function Home() {
           })}
         </div>
 
-        <Section title={shown.length ? 'Lägg till spelare' : 'Hitta ditt barn'}>
-          {shown.length === 0 && <p className="muted">Sök på namn och spara spelaren, så samlas allt viktigt här.</p>}
+        {shown.length === 0 ? (
+        <Section title="Hitta ditt barn">
+          {true && <p className="muted">Sök på namn och spara spelaren, så samlas allt viktigt här.</p>}
           <input
             className="input"
             type="search"
@@ -157,21 +158,12 @@ export default function Home() {
             </div>
           )}
         </Section>
+        ) : (
+          <p className="small muted center">
+            Följ fler spelare: <Go to="/sok" from="Översikt">sök spelare</Go> och tryck Spara.
+          </p>
+        )}
 
-        <Section title="Döma en match">
-          <form
-            className="row gap"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (code.trim()) navigate(`/doma/${encodeURIComponent(code.trim())}`, { state: { from: { label: 'Översikt', to: '/' } } });
-            }}
-          >
-            <input className="input" placeholder="Domarkod" value={code} onChange={(e) => setCode(e.target.value)} autoCapitalize="off" />
-            <button className="btn" type="submit" disabled={!code.trim()}>
-              Starta
-            </button>
-          </form>
-        </Section>
       </Page>
     </>
   );

@@ -1,3 +1,4 @@
+import { fmtDayTime } from '../lib/format';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Go } from '../components/shell';
@@ -57,6 +58,27 @@ export default function TeamMatch() {
     <>
       <AppHeader back="/serier" backLabel="Serier" title="Lagmatch" />
       <Page>
+        {info.data && (
+          <p className="muted small center">
+            {info.data.date ? `${fmtDayTime(info.data.date)} · ` : ''}
+            {info.data.leagueId ? (
+              <Go to={`/liga/${info.data.leagueId}`} from="Lagmatchen">
+                {info.data.leagueName}
+              </Go>
+            ) : (
+              info.data.leagueName
+            )}
+            {info.data.division ? ` · ${info.data.division}` : ''}
+            {info.data.date && (
+              <>
+                {' · '}
+                <Go to={`/lag/${t.teams[0].id}/omgang/${info.data.date.slice(0, 10)}`} from="Lagmatchen">
+                  Hela speldagen
+                </Go>
+              </>
+            )}
+          </p>
+        )}
         <div className="team-score">
           <Go className="team-score__team" to={`/lag/${t.teams[0].id}`} from="Lagmatch">
             {t.teams[0].name}

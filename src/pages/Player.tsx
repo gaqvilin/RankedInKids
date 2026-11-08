@@ -20,7 +20,8 @@ export function fmtRange(start: string | null, end: string | null): string {
   return end ? `${fmtDay(start)} – ${fmtDay(end)}` : fmtDay(start);
 }
 
-export function LeagueTeamCard({ t, from }: { t: LeagueTeamSummary; from: string }) {
+/** hideNext: the page shows the next speldag right below (Player page). */
+export function LeagueTeamCard({ t, from, hideNext = false }: { t: LeagueTeamSummary; from: string; hideNext?: boolean }) {
   const opponent = t.next ? (t.next.home.id === t.teamId ? t.next.away : t.next.home) : null;
   // A speldag often has two team matches: name every opponent that day.
   const nextDay = t.next?.date?.slice(0, 10);
@@ -30,6 +31,20 @@ export function LeagueTeamCard({ t, from }: { t: LeagueTeamSummary; from: string
   const last = t.last;
   const lastOwn = last ? (last.home.id === t.teamId ? last.home : last.away) : null;
   const lastOpp = last ? (last.home.id === t.teamId ? last.away : last.home) : null;
+  // The last speldag as a whole: "Senast lör 7 nov: vann 5–1 mot GLTK, förlorade 1–5 mot Halmstad".
+  const lastDay = t.lastDay?.length ? t.lastDay : last ? [last] : [];
+  const lastSummary = lastDay.length
+    ? `Senast ${fmtDay(lastDay[0].date)}: ${lastDay
+        .map((f) => {
+          const [own, opp] = f.home.id === t.teamId ? [f.home, f.away] : [f.away, f.home];
+          const o = Number(own.result) || 0;
+          const x = Number(opp.result) || 0;
+          return `${o > x ? 'vann' : o < x ? 'förlorade' : 'oavgjort'} ${o}–${x} mot ${opp.name}`;
+        })
+        .join(', ')}`
+    : lastOwn && lastOpp
+      ? `Senast ${lastOwn.result}–${lastOpp.result} mot ${lastOpp.name}`
+      : null;
   return (
     <Go to={`/lag/${t.teamId}`} from={from} className="item">
       <span className="item__main">
@@ -47,12 +62,8 @@ export function LeagueTeamCard({ t, from }: { t: LeagueTeamSummary; from: string
               {t.teamsInDivision ? ` av ${t.teamsInDivision}` : ''}
             </span>
           )}
-          {lastOwn && lastOpp && (
-            <span className="block muted">
-              Senast {lastOwn.result}–{lastOpp.result} mot {lastOpp.name}
-            </span>
-          )}
-          {opponent && t.next && (
+          {lastSummary && <span className="block muted">{lastSummary}</span>}
+          {!hideNext && opponent && t.next && (
             <span className="block muted">
               Nästa {fmtDay(t.next.date)} mot {nextOpponents.length ? nextOpponents.join(' och ') : opponent.name}
             </span>
@@ -108,7 +119,7 @@ export default function Player() {
             <p className="muted">
               {p.club &&
                 (p.clubId ? (
-                  <Go to={`/klubb/${p.clubId}`} from={p.firstName}>
+                  <Go to={`/klubb/${p.clubId}`} from={p.firstName} className="nowrap">
                     {p.club}
                   </Go>
                 ) : (
@@ -142,7 +153,11 @@ export default function Player() {
                     {p.firstName} inte med i lottningen.{' '}
                   </>
                 )}
-                <ExternalLink href={rinUrl(e.event.link)}>Lägg till partner i Rankedin</ExternalLink>
+                <Go to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`} from={p.firstName}>
+                  Se vilka fler som söker partner
+                </Go>
+                {' · '}
+                <ExternalLink href={rinUrl(e.event.link)}>Anmäl partner i Rankedin</ExternalLink>
               </Notice>
             );
           })}
@@ -190,7 +205,7 @@ export default function Player() {
                 <div className="list">
                   {activeTeams.map((t) => (
                     <div key={t.leagueId}>
-                      <LeagueTeamCard t={t} from={p.firstName} />
+                      <LeagueTeamCard t={t} from={p.firstName} hideNext />
                       <PlayerRound team={t} playerId={p.id} rankedinId={p.rankedinId} from={p.firstName} />
                     </div>
                   ))}

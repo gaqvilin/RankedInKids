@@ -34,6 +34,8 @@ export type LeagueTeamSummary = {
   points: number | null;
   next: Fixture | null;
   last: Fixture | null;
+  /** Every team match played on the last played day (a speldag has several). */
+  lastDay?: Fixture[];
   /** All remaining team matches this season. */
   upcoming: Fixture[];
 };
@@ -104,6 +106,8 @@ export async function loadLeagueTeams(playerId: number, events: PlayerEvent[]): 
           summary.upcoming = fixtures.filter((f) => !f.played);
           summary.next = summary.upcoming[0] ?? null;
           summary.last = [...fixtures].reverse().find((f) => f.played) ?? null;
+          const lastDate = summary.last?.date?.slice(0, 10);
+          summary.lastDay = lastDate ? fixtures.filter((f) => f.played && f.date?.slice(0, 10) === lastDate) : [];
           const table = await getStandings(info.poolId);
           const row = table.find((r) => r.teamId === team.teamId);
           summary.position = row?.position ?? null;
@@ -128,16 +132,21 @@ export async function loadOverview(playerId: number) {
   return { events, entries, leagueTeams, pastTournaments };
 }
 
-/** One line in a child's schedule: a tournament or a team match. */
+/** One line in a child's schedule: a tournament or a speldag (all team matches that day). */
 export type AgendaItem =
   | { kind: 'tournament'; date: string; entry: Entry }
-  | { kind: 'teammatch'; date: string | null; fixture: Fixture; team: LeagueTeamSummary };
+  | { kind: 'round'; date: string; fixtures: Fixture[]; team: LeagueTeamSummary };
 
-/** Everything coming up for a child, in date order. */
+/** Everything coming up for a child, in date order. Team matches are grouped per speldag, like on Översikt. */
 export function buildAgenda(entries: Entry[], leagueTeams: LeagueTeamSummary[]): AgendaItem[] {
-  const items: AgendaItem[] = [
-    ...entries.map((entry) => ({ kind: 'tournament' as const, date: entry.event.startDate, entry })),
-    ...leagueTeams.flatMap((team) => team.upcoming.map((fixture) => ({ kind: 'teammatch' as const, date: fixture.date, fixture, team }))),
-  ];
+  const rounds = leagueTeams.flatMap((team) => {
+    const byDay = new Map<string, Fixture[]>();
+    for (const f of team.upcoming) {
+      const d = f.date?.slice(0, 10);
+      if (d) byDay.set(d, [...(byDay.get(d) ?? []), f]);
+    }
+    return [...byDay].map(([d, fixtures]) => ({ kind: 'round' as const, date: fixtures[0].date ?? `${d}T12:00:00`, fixtures, team }));
+  });
+  const items: AgendaItem[] = [...entries.map((entry) => ({ kind: 'tournament' as const, date: entry.event.startDate, entry })), ...rounds];
   return items.sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'));
 }

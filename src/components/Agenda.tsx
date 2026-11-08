@@ -2,7 +2,7 @@ import { fmtDay, relativeDays } from '../lib/format';
 import type { AgendaItem } from '../lib/overview';
 import { Go } from './shell';
 
-/** A child's schedule: tournaments and team matches, one line each, by date. */
+/** A child's schedule: tournaments and speldagar, one line each, by date. */
 export function Agenda({ items, playerId, from, limit }: { items: AgendaItem[]; playerId: number; from: string; limit?: number }) {
   const shown = limit ? items.slice(0, limit) : items;
   return (
@@ -32,22 +32,22 @@ export function Agenda({ items, playerId, from, limit }: { items: AgendaItem[]; 
             </Go>
           );
         }
-        const f = it.fixture;
-        const home = f.home.id === it.team.teamId;
-        const opp = home ? f.away : f.home;
+        const day = it.date.slice(0, 10);
+        const opps = it.fixtures.map((f) => (f.home.id === it.team.teamId ? f.away.name : f.home.name));
+        const round = it.fixtures[0].round;
         return (
-          <Go key={`f${f.teamMatchId}`} from={from} to={`/lagmatch/${f.teamMatchId}?spelare=${playerId}`} className="item">
+          <Go key={`r${it.team.teamId}-${day}`} from={from} to={`/lag/${it.team.teamId}/omgang/${day}`} className="item">
             <span className="item__date">
-              {fmtDay(f.date)}
-              <span className="muted small">{relativeDays(f.date)}</span>
+              {fmtDay(it.date)}
+              <span className="muted small">{relativeDays(it.date)}</span>
             </span>
             <span className="item__main">
               <strong>
-                {it.team.teamName} – {opp.name}
+                {it.team.teamName} mot {opps.join(' och ')}
               </strong>
               <span className="small block">
-                {it.team.leagueName.replace(/\s*\b(HT|VT)\s*\d{2}\b.*$/i, '')} · {home ? 'hemma' : 'borta'}
-                {f.round != null ? ` · omgång ${f.round}` : ''}
+                Speldag · {it.team.leagueName.replace(/\s*\b(HT|VT)\s*\d{2}\b.*$/i, '')}
+                {round != null ? ` · omgång ${round}` : ''}
               </span>
             </span>
           </Go>

@@ -50,7 +50,7 @@ export default function Round() {
   const matches = day.data ?? [];
   const firstStart = matches.map((m) => m.startsAt).filter(Boolean).sort()[0] ?? null;
   const deadline = lineupDeadline(firstStart);
-  const title = `Sammandrag ${fmtDay(`${date}T12:00:00`)}`;
+  const title = `Speldag ${fmtDay(`${date}T12:00:00`)}`;
 
   if (team.error) {
     return (
@@ -76,7 +76,9 @@ export default function Round() {
   const sideOf = (m: DayMatch) => (m.tm.teams[0].id === tid ? 0 : 1);
   const lineupSet = (m: DayMatch, side: 0 | 1) => m.tm.slots.length > 0 && m.tm.slots.every((s) => (side === 0 ? s.first : s.second).filter((id) => id > 0).length >= 2);
   const unlicensed = t.players.filter((p) => !p.hasLicense);
-  const isPastOrToday = date <= new Date().toLocaleDateString('sv-SE');
+  const today = new Date().toLocaleDateString('sv-SE');
+  const isPastOrToday = date <= today;
+  const isPast = date < today;
   const resultsMissing = isPastOrToday ? matches.reduce((n, m) => n + m.tm.matches.filter((x) => !x.played).length, 0) : 0;
   // In SPL the whole division plays at one venue per day; Rankedin puts the
   // venue on one of the day's fixtures.
@@ -105,9 +107,9 @@ export default function Round() {
 
         {matches.length > 0 && (
           <div className="checklist">
-            <h2 className="h3">Checklista</h2>
+            <h2 className="h3">{isPast ? 'Resultat' : 'Checklista'}</h2>
             <ul>
-              {matches.map((m) => {
+              {!isPast && matches.map((m) => {
                 const s = sideOf(m);
                 const opp = m.tm.teams[1 - s].name;
                 return (
@@ -117,14 +119,14 @@ export default function Round() {
                   </li>
                 );
               })}
-              {deadline && (
+              {!isPast && deadline && (
                 <li className="info">
                   Uppställning senast <strong>{fmtTime(deadline.toISOString())}</strong> (15 min före första matchen{level != null && level >= 2 ? '; match 3 senast 5 min efter match 1–2' : ''}).
                 </li>
               )}
-              <li className={unlicensed.length ? 'todo' : 'ok'}>
+              {!isPast && <li className={unlicensed.length ? 'todo' : 'ok'}>
                 {unlicensed.length ? `Licens saknas: ${unlicensed.map((p) => p.name).join(', ')}` : 'Alla i truppen har licens'}
-              </li>
+              </li>}
               {isPastOrToday ? (
                 <li className={resultsMissing ? 'todo' : 'ok'}>
                   {resultsMissing ? `${resultsMissing} resultat saknas – ${kind === 'spl' ? 'vinnande lag rapporterar löpande' : 'rapporteras efter lagmatcherna'}` : 'Alla resultat inlagda'}
@@ -153,7 +155,7 @@ export default function Round() {
                   key={m.fixture.teamMatchId}
                   title={`${m.fixture.home.id === tid ? 'Hemma' : 'Borta'} mot ${opp.name}${fmtTime(m.startsAt) ? ` · ${fmtTime(m.startsAt)}` : ''}`}
                   action={
-                    <Go className="btn btn--ghost btn--small" to={`/lagmatch/${m.fixture.teamMatchId}`} from="Sammandraget">
+                    <Go className="btn btn--ghost btn--small" to={`/lagmatch/${m.fixture.teamMatchId}`} from="Speldagen">
                       Lagmatchen
                     </Go>
                   }
@@ -190,10 +192,12 @@ export default function Round() {
             })}
           </div>
           <div>
-            <Section title="Vilka kan spela?">
-              <AvailabilityPanel teamId={tid} date={date} players={t.players} from="Sammandraget" />
-            </Section>
-            {rules && (hosting || (poolDay.data?.length ?? 0) > 0) && (
+            {!isPast && (
+              <Section title="Vilka kan spela?">
+                <AvailabilityPanel teamId={tid} date={date} players={t.players} from="Speldagen" />
+              </Section>
+            )}
+            {rules && !isPast && (hosting || (poolDay.data?.length ?? 0) > 0) && (
               <details className="fold" open={hosting}>
                 <summary>{hosting ? 'Ni arrangerar: kallelse och spelschema' : 'Arrangör: kallelse och spelschema'}</summary>
                 <HostTools
