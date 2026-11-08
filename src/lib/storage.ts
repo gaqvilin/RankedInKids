@@ -61,3 +61,32 @@ export function toggleTeam(t: SavedTeam): SavedTeam[] {
   }
   return next;
 }
+
+// Players recently opened, for quick access on the search page.
+const RECENT_KEY = 'padeladmin.recentPlayers.v1';
+
+export function getRecentPlayers(): SavedPlayer[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    return raw ? (JSON.parse(raw) as SavedPlayer[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function rememberRecentPlayer(p: SavedPlayer) {
+  try {
+    const list = [p, ...getRecentPlayers().filter((x) => x.rankedinId !== p.rankedinId)].slice(0, 8);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function clearRecentPlayers() {
+  try {
+    localStorage.removeItem(RECENT_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+}

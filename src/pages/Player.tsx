@@ -1,3 +1,4 @@
+import { rememberRecentPlayer } from '../lib/storage';
 import { seriesKind, showsStandings } from '../lib/rules';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -67,6 +68,10 @@ export default function Player() {
   const { version } = useSession();
   const profile = useAsync(() => getProfile(rid), [rid], `profile.${rid}`);
   const playerId = profile.data?.id;
+  useEffect(() => {
+    const p = profile.data;
+    if (p && p.rankedinId === rid) rememberRecentPlayer({ id: p.id, rankedinId: p.rankedinId, name: p.name });
+  }, [profile.data, rid]);
   const matches = useAsync((fresh) => (playerId ? getUpcomingMatches(playerId, fresh, true) : Promise.resolve([])), [playerId, version]);
   const overview = useAsync(() => (playerId ? loadOverview(playerId) : Promise.resolve(null)), [playerId], playerId ? `overview.${playerId}` : undefined);
   const [saved, setSaved] = useState(() => isSaved(rid));

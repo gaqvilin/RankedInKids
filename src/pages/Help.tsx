@@ -51,6 +51,7 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
           lottade match och det som är på gång – tävlingar och lagens speldagar i datumordning.
         </p>
         <p>
+          Under <Link to="/sok">Sök</Link> hittar du vilken spelare som helst i Rankedin, t.ex. en motståndare eller en möjlig partner.{' '}
           <strong>Spelarsidan</strong> har allt om en spelare: schema, lag med tabellplacering och nästa match, om spelaren är uttagen till nästa
           speldag, tidigare tävlingar och klubb. Konton du är inloggad med räknas automatiskt som dina spelare.
         </p>

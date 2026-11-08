@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { PlayerHitRow } from '../components/PlayerHitRow';
+import { usePlayerSearch } from '../lib/usePlayerSearch';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { Go } from '../components/shell';
@@ -6,7 +8,7 @@ import { AppHeader, Empty, ErrorBox, Loading, Notice, Page, Section } from '../c
 import { fmtDay, relativeDays } from '../lib/format';
 import { loadOverview } from '../lib/overview';
 import { useMine } from '../lib/mine';
-import { appPathFromRankedinUrl, getUpcomingMatches, searchPlayers, type PlayerHit } from '../lib/rankedin';
+import { getUpcomingMatches } from '../lib/rankedin';
 import { useKnownPlayers } from '../lib/known';
 import { getSavedPlayers, removePlayer, type SavedPlayer } from '../lib/storage';
 import { useAsync } from '../lib/useAsync';
@@ -88,36 +90,10 @@ export default function Home() {
   const known = useKnownPlayers();
   const mine = useMine();
   const shown = [...saved, ...known.filter((k) => !saved.some((s) => s.rankedinId === k.rankedinId))];
-  const [term, setTerm] = useState('');
-  const [hits, setHits] = useState<PlayerHit[] | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { term, setTerm, hits, error, loading } = usePlayerSearch('Översikt', '/');
   const [code, setCode] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const q = term.trim();
-    if (q.length < 3) {
-      setHits(null);
-      return;
-    }
-    const direct = appPathFromRankedinUrl(q);
-    if (direct) {
-      navigate(direct, { state: { from: { label: 'Översikt', to: '/' } } });
-      return;
-    }
-    const t = setTimeout(() => {
-      setLoading(true);
-      searchPlayers(q)
-        .then((h) => {
-          setHits(h);
-          setError(null);
-        })
-        .catch(setError)
-        .finally(() => setLoading(false));
-    }, 300);
-    return () => clearTimeout(t);
-  }, [term, navigate]);
 
   return (
     <>
@@ -176,12 +152,7 @@ export default function Home() {
           {hits && hits.length > 0 && (
             <div className="list">
               {hits.map((h) => (
-                <Go key={h.id} to={`/spelare/${h.rankedinId}`} from="Översikt" className="item">
-                  <span className="item__main">
-                    <strong>{h.name}</strong>
-                    <span className="muted small block">{h.rankedinId}</span>
-                  </span>
-                </Go>
+                <PlayerHitRow key={h.id} h={h} from="Översikt" />
               ))}
             </div>
           )}

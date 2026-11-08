@@ -20,6 +20,7 @@ export const RELEASES: Release[] = [
       '"Nästa" visar alla motståndare på speldagen, inte bara den första.',
       'Speldagar har en liten etikett, Spelad eller Kommande, och spelade visar resultatet mot varje lag.',
       'Ge feedback: knapp längst ner och på hjälpsidan. Allt du skriver sparas och läses.',
+      'Ny flik Sök: hitta vilken spelare som helst – motståndare, lagkamrat eller partner – med klubb och ålder i träffarna, och se dina senast visade spelare.',
       'Rättat: när du byter spelare eller lag syns inte längre den förra sidans information en kort stund.',
     ],
   },

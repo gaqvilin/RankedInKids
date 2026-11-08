@@ -26,6 +26,7 @@ const NAV: NavItem[] = [
   { to: '/', label: 'Översikt', end: true, icon: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' },
   { to: '/tavlingar', label: 'Tävlingar', icon: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4' },
   { to: '/serier', label: 'Serier', icon: 'M4 6h16M4 12h16M4 18h10' },
+  { to: '/sok', label: 'Sök', icon: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4' },
   { to: '/konto', label: 'Konton', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0' },
 ];
 const ADMIN_NAV: NavItem = { to: '/admin', label: 'Admin', icon: 'M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z' };
@@ -62,8 +63,8 @@ function ReleasesLink({ className }: { className: string }) {
 }
 
 /** What you look at: always first. Tools and settings live at the bottom. */
-const MAIN_NAV = NAV.slice(0, 3);
-const ACCOUNT_NAV = NAV[3];
+const MAIN_NAV = NAV.slice(0, 4);
+const ACCOUNT_NAV = NAV[4];
 
 function Icon({ d }: { d: string }) {
   return (

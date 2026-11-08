@@ -6,6 +6,7 @@ import Club from './pages/Club';
 import Division from './pages/Division';
 import Feedback from './pages/Feedback';
 import Help from './pages/Help';
+import Search from './pages/Search';
 import Home from './pages/Home';
 import League from './pages/League';
 import Player from './pages/Player';
@@ -40,6 +41,7 @@ export default function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/nyheter" element={<Releases />} />
         <Route path="/hjalp" element={<Help />} />
+        <Route path="/sok" element={<Search />} />
         <Route path="/feedback" element={<Feedback />} />
         <Route path="*" element={<Home />} />
       </Routes>
