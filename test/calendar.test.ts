@@ -42,3 +42,13 @@ describe('htmlToParagraphs', () => {
     expect(htmlToParagraphs(null)).toEqual([]);
   });
 });
+
+import { unlessInName } from '../src/lib/format';
+describe('unlessInName', () => {
+  it('drops details the name already says', () => {
+    expect(unlessInName('Step In Varberg Padelklubb / Flickor och pojkar', 'Varberg')).toBeNull();
+    expect(unlessInName('Step In Varberg Padelklubb', 'Step In')).toBeNull();
+    expect(unlessInName('Båstad Padelklubb Mästerskap 2026', 'Båstad')).toBeNull();
+    expect(unlessInName('Danderydsmästerskapen Padel 2026 (DJTK & GTG)', 'Stockholm')).toBe('Stockholm');
+  });
+});

@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Page } from '../components/ui';
 import { CITIES, findCity } from '../lib/cities';
-import { fmtDay, relativeDays } from '../lib/format';
+import { fmtDay, relativeDays, unlessInName } from '../lib/format';
 import { getJuniorCalendar, type CalendarLevel } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
 
@@ -188,7 +188,7 @@ export default function Calendar() {
                       {e.name}
                     </Go>
                     <span className="muted small block only-narrow">
-                      {[e.town, e.level !== 'Övrigt' ? e.level : null].filter(Boolean).join(' · ')}
+                      {[unlessInName(e.name, e.town), e.level !== 'Övrigt' ? unlessInName(e.name, e.level) : null].filter(Boolean).join(' · ')}
                     </span>
                   </td>
                   <td className="only-wide">

@@ -54,3 +54,9 @@ export function fmtSets(sets: [number, number][]): string {
 }
 
 export { TZ };
+
+/** A detail worth showing next to a name only if the name doesn't already say it ("Step In Varberg …" + "Varberg"). */
+export function unlessInName(name: string, value: string | null | undefined): string | null {
+  if (!value) return null;
+  return name.toLowerCase().includes(value.toLowerCase()) ? null : value;
+}

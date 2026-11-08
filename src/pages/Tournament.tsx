@@ -8,7 +8,7 @@ import { Go } from '../components/shell';
 import { isTournamentAdmin } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
-import { fmtDay, fmtTime, isSameDay, relativeDays } from '../lib/format';
+import { fmtDay, fmtTime, isSameDay, relativeDays, unlessInName } from '../lib/format';
 import {
   getClasses,
   getClassPairs,
@@ -104,7 +104,7 @@ export default function Tournament() {
       <Page wide>
         <div className="event-head">
           <p className="muted small">
-            {fmtDay(t.startDate)} · {t.city} · {relativeDays(t.startDate)}
+            {[fmtDay(t.startDate), unlessInName(t.name, t.city), relativeDays(t.startDate)].filter(Boolean).join(' · ')}
           </p>
           <h1>{t.name}</h1>
           {t.signInOpen && t.closeSignInDate && (
