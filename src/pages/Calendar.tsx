@@ -123,13 +123,11 @@ export default function Calendar() {
                 </option>
               ))}
             </select>
-            <button type="button" className="btn btn--small btn--ghost" onClick={useMyPosition}>
-              Min position
-            </button>
-            {place && (
+            <span className="chips chips--wrap chips--inline" role="group" aria-label="Område">
               <button
                 type="button"
-                className="btn btn--small btn--ghost"
+                className={`chip ${!place ? 'chip--on' : ''}`}
+                aria-pressed={!place}
                 onClick={() => {
                   setPlace(null);
                   setCityInput('');
@@ -137,7 +135,13 @@ export default function Calendar() {
               >
                 Hela Sverige
               </button>
-            )}
+              <button type="button" className={`chip chip--icon ${place?.label === 'Min position' ? 'chip--on' : ''}`} aria-pressed={place?.label === 'Min position'} onClick={useMyPosition}>
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                  <path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                </svg>
+                Min position
+              </button>
+            </span>
           </form>
           <div className="toolbar__group">
             {LEVELS.map((l) => (

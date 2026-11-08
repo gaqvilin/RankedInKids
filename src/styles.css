@@ -1636,3 +1636,13 @@ a.match:hover {
 .sheet .field {
   text-align: left;
 }
+
+.chips--inline {
+  margin: 0;
+  flex-basis: 100%;
+}
+.chip--icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
