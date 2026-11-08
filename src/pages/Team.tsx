@@ -45,12 +45,15 @@ export default function Team() {
   const unlicensed = t.players.filter((p) => !p.hasLicense);
   const me = t.name;
   // Team matches on the same day form one round ("sammandrag").
-  const byDay = new Map<string, { date: string; opponents: string[]; played: boolean }>();
+  type RoundResult = { opponent: string; own: number; opp: number };
+  const byDay = new Map<string, { date: string; opponents: string[]; played: boolean; results: RoundResult[] }>();
   for (const f of all) {
     const d = f.date?.slice(0, 10);
     if (!d) continue;
-    const r = byDay.get(d) ?? { date: d, opponents: [], played: true };
-    r.opponents.push(f.home.id === t.id ? f.away.name : f.home.name);
+    const r = byDay.get(d) ?? { date: d, opponents: [], played: true, results: [] };
+    const [own, opp] = f.home.id === t.id ? [f.home, f.away] : [f.away, f.home];
+    r.opponents.push(opp.name);
+    if (f.played) r.results.push({ opponent: opp.name, own: Number(own.result) || 0, opp: Number(opp.result) || 0 });
     r.played = r.played && f.played;
     byDay.set(d, r);
   }
@@ -120,9 +123,10 @@ export default function Team() {
           )}
           {next && opponent && (
             <div className="stats__wide">
-              <span className="stats__label">Nästa match</span>
+              <span className="stats__label">Nästa speldag</span>
               <span>
-                {fmtDay(next.date)} {fmtTime(next.date)} ({relativeDays(next.date)}) mot <strong>{opponent.name}</strong>
+                {fmtDay(next.date)} {fmtTime(next.date)} ({relativeDays(next.date)}) mot{' '}
+                <strong>{byDay.get(next.date?.slice(0, 10) ?? '')?.opponents.filter((o, i, a) => a.indexOf(o) === i).join(' och ') || opponent.name}</strong>
                 {next.location ? `, ${next.location}` : ''}
               </span>
             </div>
@@ -136,19 +140,35 @@ export default function Team() {
             {rounds.length > 0 && (
               <Section title="Speldagar">
                 <div className="list">
-                  {rounds.map((r) => (
-                    <Go key={r.date} to={`/lag/${t.id}/omgang/${r.date}`} from={me} className="item">
-                      <span className="item__date">
-                        {fmtDay(`${r.date}T12:00:00`)}
-                        <span className="muted small">{relativeDays(`${r.date}T12:00:00`)}</span>
-                      </span>
-                      <span className="item__main">
-                        <strong>{r.played ? 'Spelat' : r.date === nextRound ? 'Nästa sammandrag' : 'Sammandrag'}</strong>
-                        <span className="muted small block">mot {r.opponents.join(' och ')}</span>
-                      </span>
-                      <span className="item__side small muted">Uppställning, tillgänglighet, resultat ›</span>
-                    </Go>
-                  ))}
+                  {rounds.map((r) => {
+                    const status = r.played ? 'played' : r.date === nextRound ? 'next' : 'later';
+                    return (
+                      <Go key={r.date} to={`/lag/${t.id}/omgang/${r.date}`} from={me} className={`item round-item round-item--${status}`}>
+                        <span className="item__date">
+                          {fmtDay(`${r.date}T12:00:00`)}
+                          <span className="muted small">{relativeDays(`${r.date}T12:00:00`)}</span>
+                        </span>
+                        <span className="item__main">
+                          <span className={`status status--${status}`}>{status === 'played' ? '✓ Spelad' : status === 'next' ? 'Nästa speldag' : 'Kommande'}</span>
+                          {r.played ? (
+                            <span className="block round-results">
+                              {r.results.map((x) => (
+                                <span key={x.opponent} className="block">
+                                  <strong className={x.own > x.opp ? 'text-win' : undefined}>
+                                    {x.own > x.opp ? 'Vann' : x.own < x.opp ? 'Förlorade' : 'Oavgjort'} {x.own}–{x.opp}
+                                  </strong>{' '}
+                                  <span className="muted">mot {x.opponent}</span>
+                                </span>
+                              ))}
+                            </span>
+                          ) : (
+                            <span className="block">mot {r.opponents.join(' och ')}</span>
+                          )}
+                        </span>
+                        <span className="item__side small muted">{r.played ? 'Resultat och matcher ›' : 'Uppställning, tillgänglighet ›'}</span>
+                      </Go>
+                    );
+                  })}
                 </div>
               </Section>
             )}

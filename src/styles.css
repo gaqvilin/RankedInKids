@@ -1578,3 +1578,37 @@ a.match:hover {
 .regulations p {
   margin: 4px 0;
 }
+
+/* ---------- Speldag status ---------- */
+.status {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.status--played {
+  color: var(--win);
+  border-color: currentColor;
+}
+.status--next {
+  background: var(--primary-bg);
+  border-color: var(--primary-bg);
+  color: var(--primary-text);
+}
+.round-item--played {
+  border-left: 3px solid var(--win);
+}
+.round-item--next {
+  border-left: 3px solid var(--primary-bg);
+}
+.round-item--later {
+  border-left: 3px solid transparent;
+}
+.text-win {
+  color: var(--win);
+}
