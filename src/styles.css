@@ -1925,3 +1925,20 @@ body.screen-mode .shell__main {
 .outside-partner {
   margin: 10px 0;
 }
+
+/* ---------- Logo ---------- */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.logo__word-admin {
+  font-weight: 500;
+  color: var(--muted);
+}
+.brand__sub {
+  margin-left: 29px;
+}

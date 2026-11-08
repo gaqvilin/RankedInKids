@@ -1,3 +1,4 @@
+import { Logo } from './Logo';
 import { FeedbackSheet } from './FeedbackSheet';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, type LinkProps } from 'react-router-dom';
@@ -81,8 +82,8 @@ function Sidebar() {
   const myTeams = mine.data?.teams ?? getSavedTeams().map((t) => ({ ...t, nextDate: null as string | null }));
   return (
     <aside className="sidebar" aria-label="Huvudmeny">
-      <Link to="/" className="brand">
-        PadelAdmin
+      <Link to="/" className="brand" aria-label="PadelAdmin start">
+        <Logo />
         <span className="brand__sub">Data från Rankedin</span>
       </Link>
       <nav className="sidebar__nav">

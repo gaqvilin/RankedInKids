@@ -9,6 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Ny logga: en padelracket i en enkel form. Syns i menyn, som app-ikon på hemskärmen och i webbläsarfliken.',
       'Ny sida Tävlingsledning för klubben som arrangerar en tävling (knapp på tävlingen och under Admin).',
       'Före lottning: alla som söker partner per klass med klubb och ålder, färdigt meddelande att kopiera, licenser som saknas och antal par per klass.',
       'Para ihop och dela på par direkt i PadelAdmin (för arrangörens konto, fram till lottningen) – ingen inloggning på rankedin.com behövs.',

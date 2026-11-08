@@ -1,3 +1,4 @@
+import { Logo } from './Logo';
 import { useEffect, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { From } from './shell';
@@ -25,7 +26,7 @@ export function AppHeader({ title, back, backLabel }: { title?: string; back?: s
   );
   let backEl: ReactNode = (
     <Link to="/" className="brand brand--mobile" aria-label="PadelAdmin start">
-      PadelAdmin
+      <Logo size={20} />
     </Link>
   );
   if (from) {
