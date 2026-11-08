@@ -311,6 +311,7 @@ function HostTools({
           </select>
         </label>
       </div>
+      <div className="table-scroll">
       <table className="table">
         <thead>
           <tr>
@@ -333,6 +334,7 @@ function HostTools({
           ))}
         </tbody>
       </table>
+      </div>
       <label className="field">
         <span>Kontaktperson (namn, telefon, e-post)</span>
         <input className="input" value={contact} onChange={(e) => setContact(e.target.value)} />
