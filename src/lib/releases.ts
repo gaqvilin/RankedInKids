@@ -13,7 +13,8 @@ export const RELEASES: Release[] = [
       'Före lottning: alla som söker partner per klass med klubb och ålder, färdigt meddelande att kopiera, licenser som saknas och antal par per klass.',
       'Under dagen: varje bana med pågående och nästa match, och varning när en bana ligger efter.',
       'Resultat: lista över matcher som borde vara klara men saknar resultat, med snabb inmatning.',
-      'QR-kod att sätta upp i hallen och en skärmvy för TV som uppdateras själv.',
+      'QR-kod att dela ut: skriv ut lappar (8 per A4) eller en affisch. Den som skannar ser sina matcher, tider, banor och resultat direkt i mobilen.',
+      'Har ni en TV finns också en skärmvy som uppdateras själv.',
     ],
   },
   {

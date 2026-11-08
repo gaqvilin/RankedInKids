@@ -158,7 +158,7 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
             <strong>Resultat</strong>: matcher som saknar resultat, med snabb inmatning.
           </li>
           <li>
-            <strong>Skärm &amp; QR</strong>: QR-kod att skriva ut och en skärmvy för en TV i hallen.
+            <strong>QR-kod</strong>: lappar att dela ut eller en affisch, så att alla ser matcher och resultat i mobilen. Har ni en TV finns en skärmvy.
           </li>
         </ul>
       </>

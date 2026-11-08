@@ -18,7 +18,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'partner', label: 'Före lottning' },
   { id: 'banor', label: 'Banor' },
   { id: 'resultat', label: 'Resultat' },
-  { id: 'dela', label: 'Skärm & QR' },
+  { id: 'dela', label: 'QR-kod' },
 ];
 
 export default function Organizer() {
@@ -338,30 +338,38 @@ function ShareTab({ tid, name }: { tid: number; name: string }) {
     QRCode.toDataURL(url, { margin: 1, width: 480 }).then(setQr, () => setQr(null));
   }, [url]);
   return (
-    <div className="columns">
+    <>
       <Section title="QR-kod till tävlingen">
-        <p className="small muted">Sätt upp i hallen. Föräldrar och spelare ser sina matcher, tider, banor och resultat direkt i mobilen.</p>
-        {qr && <img src={qr} alt={`QR-kod till ${name}`} className="qr" width={240} height={240} />}
+        <p className="small">
+          Spelare och föräldrar skannar koden och ser direkt sina matcher, tider, banor och resultat i mobilen – ingen app eller inloggning behövs.
+          Sidan uppdateras av sig själv under dagen.
+        </p>
+        {qr && <img src={qr} alt={`QR-kod till ${name}`} className="qr" width={200} height={200} />}
         <p className="small">
           <a href={url}>{url}</a>
         </p>
-        <div className="row gap">
-          <button className="btn btn--small" onClick={() => window.print()}>
-            Skriv ut
-          </button>
+        <div className="row gap wrap">
+          <Go className="btn btn--primary btn--small" to={`/tavling/${tid}/qr?typ=lappar`} from="Tävlingsledning">
+            Skriv ut lappar att dela ut
+          </Go>
+          <Go className="btn btn--small" to={`/tavling/${tid}/qr?typ=affisch`} from="Tävlingsledning">
+            Skriv ut affisch
+          </Go>
           {qr && (
             <a className="btn btn--small btn--ghost" href={qr} download={`qr-tavling-${tid}.png`}>
               Ladda ner bild
             </a>
           )}
         </div>
+        <p className="muted small">Tips: dela länken eller bilden i klubbens chatt redan innan, så har alla den på morgonen.</p>
       </Section>
-      <Section title="Skärm i hallen">
-        <p className="small muted">Öppna på en dator kopplad till en TV. Visar varje bana med pågående och nästa match och uppdateras själv var 30:e sekund.</p>
-        <Go className="btn btn--primary" to={`/tavling/${tid}/skarm`} from="Tävlingsledning">
+      <details className="fold">
+        <summary>Har ni en TV eller projektor?</summary>
+        <p className="small muted">Skärmvyn visar varje bana med pågående och nästa match och uppdateras själv.</p>
+        <Go className="btn btn--small" to={`/tavling/${tid}/skarm`} from="Tävlingsledning">
           Öppna skärmvy
         </Go>
-      </Section>
-    </div>
+      </details>
+    </>
   );
 }

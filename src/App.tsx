@@ -8,6 +8,7 @@ import Feedback from './pages/Feedback';
 import Help from './pages/Help';
 import Organizer from './pages/Organizer';
 import Screen from './pages/Screen';
+import QrPrint from './pages/QrPrint';
 import Search from './pages/Search';
 import Home from './pages/Home';
 import League from './pages/League';
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/tavling/:id" element={<Tournament />} />
         <Route path="/tavling/:id/ledning" element={<Organizer />} />
         <Route path="/tavling/:id/skarm" element={<Screen />} />
+        <Route path="/tavling/:id/qr" element={<QrPrint />} />
         <Route path="/tavlingar" element={<Calendar />} />
         <Route path="/lagmatch/:id" element={<TeamMatch />} />
         <Route path="/serier" element={<Leagues />} />

@@ -1803,3 +1803,102 @@ body.screen-mode .shell__main {
   border-top: 1px solid var(--line);
   font-size: 17px;
 }
+
+/* ---------- Printable QR ---------- */
+.qr-page {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: auto;
+  background: #fff;
+  color: #111;
+  padding: 16px;
+}
+.qr-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.qr-toolbar .chips--inline {
+  flex-basis: auto;
+}
+.qr-sheet {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  max-width: 210mm;
+}
+.qr-card,
+.qr-poster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+.qr-card {
+  border: 1px dashed #bbb;
+  padding: 5mm;
+  height: 68mm;
+  justify-content: center;
+}
+.qr-card img {
+  width: 34mm;
+  height: 34mm;
+}
+.qr-card .qr-title {
+  font-size: 11pt;
+  line-height: 1.2;
+}
+.qr-card .qr-sub,
+.qr-card .qr-cta,
+.qr-card .qr-url {
+  font-size: 8.5pt;
+}
+.qr-poster {
+  max-width: 190mm;
+  margin: 0 auto;
+  padding-top: 10mm;
+  gap: 10px;
+}
+.qr-poster .qr-title {
+  font-size: 26pt;
+  line-height: 1.15;
+}
+.qr-poster .qr-sub {
+  font-size: 16pt;
+}
+.qr-poster img {
+  width: 120mm;
+  height: 120mm;
+}
+.qr-poster .qr-cta {
+  font-size: 18pt;
+  font-weight: 600;
+}
+.qr-poster .qr-url {
+  font-size: 12pt;
+  color: #555;
+}
+.qr-url {
+  color: #555;
+  word-break: break-all;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 8mm;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .qr-page {
+    position: static;
+    padding: 0;
+  }
+  body.screen-mode .app-header {
+    display: none !important;
+  }
+}
