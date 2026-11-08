@@ -4,7 +4,7 @@ import { Go } from '../components/shell';
 import { StandingsTable } from '../components/StandingsTable';
 import { seriesKind, seriesRules, showsStandings } from '../lib/rules';
 import { AppHeader, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
-import { fmtDay, fmtTime, relativeDays } from '../lib/format';
+import { fmtDay, fmtTime, soon } from '../lib/format';
 import { getLeagueHeader, getStandings, getTeam, getTeamFixtures } from '../lib/leagues';
 import { rinUrl } from '../lib/rankedin';
 import { divisionLevel, isSplLeague, rankingPoints } from '../lib/spl';
@@ -115,7 +115,7 @@ export default function Team() {
             <div className="stats__wide">
               <span className="stats__label">Nästa speldag</span>
               <span>
-                {fmtDay(next.date)} {fmtTime(next.date)} ({relativeDays(next.date)}) mot{' '}
+                {fmtDay(next.date)} {fmtTime(next.date)}{soon(next.date) ? ` (${soon(next.date)})` : ''} mot{' '}
                 <strong>{byDay.get(next.date?.slice(0, 10) ?? '')?.opponents.filter((o, i, a) => a.indexOf(o) === i).join(' och ') || opponent.name}</strong>
                 {next.location ? `, ${next.location}` : ''}
               </span>
@@ -138,7 +138,7 @@ export default function Team() {
                         <span className={`status ${r.played ? 'status--played' : ''}`}>{r.played ? 'Spelad' : 'Kommande'}</span>
                         <span className="item__date">
                           {fmtDay(`${r.date}T12:00:00`)}
-                          <span className="muted small">{relativeDays(`${r.date}T12:00:00`)}</span>
+                          <span className="muted small">{soon(`${r.date}T12:00:00`)}</span>
                         </span>
                         <span className="item__main">
                           {r.played ? (

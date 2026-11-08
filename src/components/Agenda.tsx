@@ -1,4 +1,4 @@
-import { fmtDay, relativeDays } from '../lib/format';
+import { fmtDay, soon } from '../lib/format';
 import type { AgendaItem } from '../lib/overview';
 import { Go } from './shell';
 
@@ -19,7 +19,7 @@ export function Agenda({ items, playerId, from, limit }: { items: AgendaItem[]; 
             >
               <span className="item__date">
                 {fmtDay(e.event.startDate)}
-                <span className="muted small">{relativeDays(e.event.startDate)}</span>
+                <span className="muted small">{soon(e.event.startDate)}</span>
               </span>
               <span className="item__main">
                 <strong>{e.event.name}</strong>
@@ -38,7 +38,7 @@ export function Agenda({ items, playerId, from, limit }: { items: AgendaItem[]; 
           <Go key={`r${it.team.teamId}-${day}`} from={from} to={`/lag/${it.team.teamId}/omgang/${day}`} className="item">
             <span className="item__date">
               {fmtDay(it.date)}
-              <span className="muted small">{relativeDays(it.date)}</span>
+              <span className="muted small">{soon(it.date)}</span>
             </span>
             <span className="item__main">
               <strong>

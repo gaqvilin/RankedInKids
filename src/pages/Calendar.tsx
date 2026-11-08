@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Page } from '../components/ui';
 import { CITIES, findCity } from '../lib/cities';
-import { fmtDay, relativeDays, unlessInName } from '../lib/format';
+import { fmtDay, unlessInName, soon } from '../lib/format';
 import { getJuniorCalendar, type CalendarLevel } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
 
@@ -181,7 +181,7 @@ export default function Calendar() {
                 <tr key={e.id}>
                   <td className="nowrap">
                     <strong>{fmtDay(e.startDate)}</strong>
-                    <span className="muted small block">{relativeDays(e.startDate)}</span>
+                    <span className="muted small block">{soon(e.startDate)}</span>
                   </td>
                   <td>
                     <Go to={`/tavling/${e.id}`} from="Tävlingar" className="row-link">

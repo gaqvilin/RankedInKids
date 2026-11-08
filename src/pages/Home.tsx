@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { MatchCard } from '../components/MatchCard';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Notice, Page, Section } from '../components/ui';
-import { fmtDay, relativeDays } from '../lib/format';
+import { fmtDay, relativeDays, soon } from '../lib/format';
 import { loadOverview } from '../lib/overview';
 import { useMine } from '../lib/mine';
 import { getUpcomingMatches } from '../lib/rankedin';
@@ -113,7 +113,7 @@ export default function Home() {
                   <Go key={u.to} to={u.to} from="Översikt" className="item">
                     <span className="item__date">
                       {fmtDay(`${u.date}T12:00:00`)}
-                      <span className="muted small">{relativeDays(`${u.date}T12:00:00`)}</span>
+                      <span className="muted small">{soon(`${u.date}T12:00:00`)}</span>
                     </span>
                     <span className="item__main">
                       <strong>{u.title}</strong>

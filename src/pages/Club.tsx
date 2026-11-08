@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Page, Section } from '../components/ui';
 import { getClub, getClubLeagues, getClubMembers, getClubTournaments } from '../lib/clubs';
-import { fmtDay, relativeDays } from '../lib/format';
+import { fmtDay, soon } from '../lib/format';
 import { rinUrl } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
 import { fmtRange } from './Player';
@@ -101,7 +101,7 @@ export default function Club() {
                     <Go key={t.id} to={`/tavling/${t.id}`} from={c.name} className="item">
                       <span className="item__date">
                         {fmtDay(t.startDate)}
-                        <span className="muted small">{relativeDays(t.startDate)}</span>
+                        <span className="muted small">{soon(t.startDate)}</span>
                       </span>
                       <span className="item__main">
                         <strong>{t.name}</strong>

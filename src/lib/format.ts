@@ -60,3 +60,9 @@ export function unlessInName(name: string, value: string | null | undefined): st
   if (!value) return null;
   return name.toLowerCase().includes(value.toLowerCase()) ? null : value;
 }
+
+/** Only "idag", "imorgon" or "igår" – the date itself says the rest. */
+export function soon(iso: string | null | undefined, now: Date = new Date()): string {
+  const r = relativeDays(iso, now);
+  return r === 'idag' || r === 'imorgon' || r === 'igår' ? r : '';
+}

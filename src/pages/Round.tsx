@@ -6,7 +6,7 @@ import { MatchCard } from '../components/MatchCard';
 import { ResultSheet } from '../components/ResultSheet';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Page, RefreshButton, Section } from '../components/ui';
-import { fmtDay, fmtTime, relativeDays } from '../lib/format';
+import { fmtDay, fmtTime, soon } from '../lib/format';
 import { buildInvitation, buildSchedule, scheduleAsText } from '../lib/host';
 import { getPoolFixtures, getTeam, getTeamFixtures, type Fixture } from '../lib/leagues';
 import { getTeamMatch, getTeamMatchInfo, type TeamMatch, type TournamentMatch } from '../lib/rankedin';
@@ -95,7 +95,8 @@ export default function Round() {
             <h1>{title}</h1>
             <p className="muted">
               {t.name} · {t.division}
-              {venue ? ` · ${venue}` : ''} · {relativeDays(`${date}T12:00:00`)}
+              {venue ? ` · ${venue}` : ''}
+              {soon(`${date}T12:00:00`) ? ` · ${soon(`${date}T12:00:00`)}` : ''}
             </p>
           </div>
           <RefreshButton onClick={() => day.reload()} loading={day.loading} />
