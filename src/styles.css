@@ -1950,3 +1950,13 @@ body.screen-mode .shell__main {
   padding: 12px;
   margin: 8px 0 12px;
 }
+
+.fold--quiet > summary {
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.notice + .btn {
+  margin-bottom: 10px;
+}
