@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
+import { Go } from '../components/shell';
+import { getAdminEvents } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDay, fmtTime, isSameDay, relativeDays } from '../lib/format';
@@ -18,7 +20,11 @@ export default function Tournament() {
   const header = useAsync(() => getTournament(tid), [tid]);
   const classes = useAsync(() => getClasses(tid), [tid]);
   const details = useAsync(() => getTournamentDetails(tid).catch(() => null), [tid], `tdetails.${tid}`);
-  const { version } = useSession();
+  const { version, user } = useSession();
+  const isOrganiser = useAsync(
+    () => (user.loggedIn ? getAdminEvents().then((es) => es.some((e) => e.id === tid)).catch(() => false) : Promise.resolve(false)),
+    [user.loggedIn, version, tid],
+  );
   const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version]);
   const [onlyMine, setOnlyMine] = useState(!!playerId);
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
@@ -120,7 +126,19 @@ export default function Tournament() {
               </span>
             </p>
           )}
-          <ExternalLink href={rinUrl(t.url)}>Öppna i Rankedin</ExternalLink>
+          <span className="row gap wrap">
+            {isOrganiser.data && (
+              <Go className="btn btn--primary btn--small" to={`/tavling/${tid}/ledning`} from={t.name}>
+                Tävlingsledning
+              </Go>
+            )}
+            <ExternalLink href={rinUrl(t.url)}>Öppna i Rankedin</ExternalLink>
+            {!isOrganiser.data && (
+              <Go className="muted small" to={`/tavling/${tid}/ledning`} from={t.name}>
+                För arrangören
+              </Go>
+            )}
+          </span>
           {details.data && details.data.regulations.length > 0 && (
             <details className="fold">
               <summary>Information från arrangören</summary>

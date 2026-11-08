@@ -5,6 +5,18 @@ export type Release = { version: string; date: string; title: string; items: str
 
 export const RELEASES: Release[] = [
   {
+    version: '0.12',
+    date: '2026-11-08',
+    title: 'Tävlingsledning för arrangörer',
+    items: [
+      'Ny sida Tävlingsledning för klubben som arrangerar en tävling (knapp på tävlingen och under Admin).',
+      'Före lottning: alla som söker partner per klass med klubb och ålder, färdigt meddelande att kopiera, licenser som saknas och antal par per klass.',
+      'Under dagen: varje bana med pågående och nästa match, och varning när en bana ligger efter.',
+      'Resultat: lista över matcher som borde vara klara men saknar resultat, med snabb inmatning.',
+      'QR-kod att sätta upp i hallen och en skärmvy för TV som uppdateras själv.',
+    ],
+  },
+  {
     version: '0.11',
     date: '2026-11-08',
     title: 'Klubbligans regler, mer tävlingsinfo och säkrare inloggning',

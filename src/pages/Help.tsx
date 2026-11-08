@@ -139,6 +139,32 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
     ),
   },
   {
+    id: 'tavlingsledning',
+    title: 'För dig som arrangerar en tävling',
+    body: (
+      <>
+        <p>
+          Lotta, schemalägg och publicera i Rankedin som vanligt. Öppna sedan tävlingen här och tryck <strong>Tävlingsledning</strong> (syns när ditt
+          konto administrerar tävlingen, annars via <em>För arrangören</em>).
+        </p>
+        <ul>
+          <li>
+            <strong>Före lottning</strong>: vilka som söker partner i varje klass, licenser som saknas och antal par per klass.
+          </li>
+          <li>
+            <strong>Banor</strong>: pågående och nästa match per bana, och vilka banor som ligger efter.
+          </li>
+          <li>
+            <strong>Resultat</strong>: matcher som saknar resultat, med snabb inmatning.
+          </li>
+          <li>
+            <strong>Skärm &amp; QR</strong>: QR-kod att skriva ut och en skärmvy för en TV i hallen.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
     id: 'resultat',
     title: 'Resultat och live-dömning',
     body: (

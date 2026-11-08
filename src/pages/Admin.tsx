@@ -120,6 +120,14 @@ function EventList({ items }: { items: { id: number; name: string; date: string 
             </span>
             {e.adminLink && (
               <span className="item__side small">
+                {inApp?.startsWith('/tavling/') && (
+                  <>
+                    <Go to={`${inApp}/ledning`} from="Admin">
+                      Tävlingsledning
+                    </Go>
+                    {' · '}
+                  </>
+                )}
                 <ExternalLink href={rinUrl(e.adminLink)}>Admin i Rankedin</ExternalLink>
               </span>
             )}
