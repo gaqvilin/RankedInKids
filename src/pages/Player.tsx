@@ -114,7 +114,14 @@ export default function Player() {
                 ) : (
                   p.club
                 ))}
-              {[p.club ? '' : null, p.age && `${p.age} år`, `dubbel i år ${p.doublesThisYear}`].filter((x) => x !== null).join(' · ')}
+              {[p.age && `${p.age} år`, p.doublesThisYear && `dubbel i år ${p.doublesThisYear}`]
+                .filter(Boolean)
+                .map((part, i) => (
+                  <span key={i} className="nowrap">
+                    {i > 0 || p.club ? ' · ' : ''}
+                    {part}
+                  </span>
+                ))}
             </p>
           </div>
           <button className={`btn btn--small ${saved ? '' : 'btn--primary'}`} onClick={toggleSave} aria-pressed={saved}>
