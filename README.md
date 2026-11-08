@@ -49,6 +49,14 @@ npm run build
 Inga miljövariabler behövs lokalt (minneslagring). Se `.env.example` för det som finns.
 I en miljö med HTTP-proxy behöver Node `NODE_USE_ENV_PROXY=1` för att `fetch` ska gå via proxyn.
 
+## Arbetsflöde (grenar och releaser)
+- `main` är produktion: allt som hamnar där byggs och läggs ut på https://padeladmin-app.vercel.app av Vercel automatiskt.
+- Jobba aldrig direkt på `main`. Skapa en gren per ändring, t.ex. `feature/kort-namn` eller `fix/kort-namn`, och öppna en pull request mot `main`.
+- Varje PR får en egen förhandsversion av Vercel (länk i PR:en) och kontrolleras av GitHub Actions (`.github/workflows/ci.yml`:
+  typkontroll, oanvänd kod, tester, bygge). Slå ihop när kontrollen är grön och förhandsversionen ser rätt ut.
+- Håll PR:er små och slå ihop ofta, så krockar ni inte med varandra. Hämta senaste `main` (`git pull`) innan ni börjar något nytt.
+- Förhandsversioner använder samma Rankedin som produktion. Skrivningar (resultat, lottning) i en förhandsversion är alltså skarpa.
+
 ## Release notes
 Användarnas "Nyheter" finns i `src/lib/releases.ts`. Lägg till en ny post överst vid varje release (kort, på svenska, för användare). Ny version visar en röd punkt vid länken tills användaren har öppnat sidan.
 

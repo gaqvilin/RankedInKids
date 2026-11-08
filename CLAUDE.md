@@ -51,6 +51,14 @@ Innan push: `npm run typecheck && npm test` ska vara gröna. Kontrollera gärna 
 - Skriv tester mot en fejkad Rankedin (se `test/pairing.test.ts`, `test/draws.test.ts`) innan något körs skarpt.
 - Gör aldrig något som inte kan ångras utan tydlig bekräftelse (t.ex. publicering, omlottning).
 
+## Arbetsflöde (grenar och releaser)
+- `main` är produktion: allt som hamnar där byggs och läggs ut på https://padeladmin-app.vercel.app av Vercel automatiskt.
+- Jobba aldrig direkt på `main`. Skapa en gren per ändring, t.ex. `feature/kort-namn` eller `fix/kort-namn`, och öppna en pull request mot `main`.
+- Varje PR får en egen förhandsversion av Vercel (länk i PR:en) och kontrolleras av GitHub Actions (`.github/workflows/ci.yml`:
+  typkontroll, oanvänd kod, tester, bygge). Slå ihop när kontrollen är grön och förhandsversionen ser rätt ut.
+- Håll PR:er små och slå ihop ofta, så krockar ni inte med varandra. Hämta senaste `main` (`git pull`) innan ni börjar något nytt.
+- Förhandsversioner använder samma Rankedin som produktion. Skrivningar (resultat, lottning) i en förhandsversion är alltså skarpa.
+
 ## Konventioner
 - Formattering: enkla citattecken, ~150 tecken per rad (som befintlig kod). Kör inte prettier med standardinställningar på hela filer.
 - `useAsync(fn, deps, storeKey?)` för datahämtning; `storeKey` cachar på enheten (stale-while-revalidate).
