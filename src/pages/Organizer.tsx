@@ -22,7 +22,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'lottning', label: 'Lottning' },
   { id: 'banor', label: 'Banor' },
   { id: 'resultat', label: 'Resultat' },
-  { id: 'dela', label: 'QR-kod' },
+  { id: 'dela', label: 'Skriv ut' },
 ];
 
 export default function Organizer() {
@@ -378,6 +378,34 @@ function ShareTab({ tid, name }: { tid: number; name: string }) {
   }, [url]);
   return (
     <>
+      <Section title="Utskrifter för dagen">
+        <div className="list">
+          <Go className="item" to={`/tavling/${tid}/skriv-ut?typ=schema`} from="Tävlingsledning">
+            <span className="item__main">
+              <strong>Dagens schema</strong>
+              <span className="muted small block">Alla matcher i tidsordning med bana, klass och ruta för resultat</span>
+            </span>
+          </Go>
+          <Go className="item" to={`/tavling/${tid}/skriv-ut?typ=deltagare`} from="Tävlingsledning">
+            <span className="item__main">
+              <strong>Deltagarlista för avcheckning</strong>
+              <span className="muted small block">Alla anmälda per klass med rutor för på plats och betalt</span>
+            </span>
+          </Go>
+          <Go className="item" to={`/tavling/${tid}/skriv-ut?typ=banor`} from="Tävlingsledning">
+            <span className="item__main">
+              <strong>Spelare per bana</strong>
+              <span className="muted small block">En sida per bana att sätta upp vid banan</span>
+            </span>
+          </Go>
+          <Go className="item" to={`/tavling/${tid}/qr?typ=affisch`} from="Tävlingsledning">
+            <span className="item__main">
+              <strong>QR-kod för resultat</strong>
+              <span className="muted small block">Affisch eller lappar – spelare och föräldrar ser matcher och resultat i mobilen</span>
+            </span>
+          </Go>
+        </div>
+      </Section>
       <Section title="QR-kod till tävlingen">
         <p className="small">
           Spelare och föräldrar skannar koden och ser direkt sina matcher, tider, banor och resultat i mobilen – ingen app eller inloggning behövs.

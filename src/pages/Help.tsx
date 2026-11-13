@@ -200,6 +200,7 @@ const SECTIONS: { id: string; title: string; body: ReactNode }[] = [
         <li>Det aktiva kontot används när du rapporterar eller sätter uppställning – i de rutorna står vilket konto som används, och du kan byta där.</li>
         <li>PadelAdmin sparar bara tillgänglighetssvar (vem som svarat vad och när). Allt annat ligger i Rankedin.</li>
         <li>Sparade spelare och lag ligger bara i din webbläsare.</li>
+        <li>Vi räknar anonymt hur sidor används (inga cookies, inga namn eller spelarnummer) för att kunna förbättra appen.</li>
       </ul>
     ),
   },
