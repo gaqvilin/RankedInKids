@@ -61,6 +61,16 @@ export function unlessInName(name: string, value: string | null | undefined): st
   return name.toLowerCase().includes(value.toLowerCase()) ? null : value;
 }
 
+/** "Pojkar 12 Step In" → "Pojkar 12" when the tournament name already says "Step In". */
+export function classInEvent(className: string, eventName: string): string {
+  const event = eventName.toLowerCase();
+  let out = className;
+  for (const level of ['Step In', 'Level Up', 'SPT Future', 'USM']) {
+    if (event.includes(level.toLowerCase())) out = out.replace(new RegExp(`\\b${level}\\b`, 'i'), ' ');
+  }
+  return out.replace(/\s+/g, ' ').trim() || className;
+}
+
 /** Only "idag", "imorgon" or "igår" – the date itself says the rest. */
 export function soon(iso: string | null | undefined, now: Date = new Date()): string {
   const r = relativeDays(iso, now);

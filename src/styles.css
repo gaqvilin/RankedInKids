@@ -2098,6 +2098,9 @@ button.tabbar__link {
 .print-result {
   width: 22%;
 }
+.print-nowrap {
+  white-space: nowrap;
+}
 .print-tick {
   width: 36px;
   text-align: center !important;
