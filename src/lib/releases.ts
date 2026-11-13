@@ -9,6 +9,9 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Utskrifterna är kortare: klassen står utan nivån när tävlingens namn redan säger den ("Pojkar 12"), och gruppen bara när klassen har flera. Marginaler runt utskriften i alla webbläsare.',
+      'Rättat: utskriftssidan (schema, deltagarlista, banlistor och QR) kunde sluta reagera i mobilen efter en utskrift.',
+      'Alla klasser på tävlingssidan visar nu alla matcher i en lista efter tid, med klassen på varje match. Tidigare låg en klass långt ner under en annan.',
       'PadelAdmin-loggan på alla utskrifter (schema, deltagarlista, banlistor, QR-affisch och lappar).',
       'Tävlingar kan filtreras på ålder (12, 14, 16, 18) – och med ett tryck på "För Aron (12)" ser du bara tävlingar med en klass som passar ditt barn.',
       'Utskrifter för tävlingsdagen: dagens schema, deltagarlista för avcheckning, en sida per bana och QR-kod (Tävlingsledning → Skriv ut).',

@@ -227,24 +227,48 @@ export default function Tournament() {
             ))}
           </Section>
         ) : (
-          matches.data &&
-          visibleClasses.map((c, i) => (
-            <ClassBlock
-              key={c.id}
-              title={showAll ? c.name : null}
-              matches={filtered.filter((m) => m.className === c.name)}
-              pairs={pairs.data?.get(c.name)}
-              pairsLoading={pairs.loading}
-              highlight={highlight}
-              finished={t.state === 4}
-              tournamentId={tid}
-              classId={c.id}
-              signInOpen={t.signInOpen}
-              onPairsChanged={() => pairs.reload()}
-              onEnterResult={setReporting}
-              action={i === 0 ? <RefreshButton onClick={() => matches.reload()} loading={matches.loading} /> : undefined}
-            />
-          ))
+          matches.data && (
+            <>
+              {showAll && all.length > 0 && (
+                // All classes: one list in time order, so no class is hidden below another class's matches and table.
+                <Section title="Matcher" action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
+                  {byTime(filtered).map((m) => (
+                    <MatchCard
+                      key={m.id}
+                      sides={m.sides}
+                      sets={m.sets}
+                      played={m.played}
+                      date={m.date}
+                      court={m.court}
+                      label={m.className}
+                      highlightIds={highlight}
+                      canEnterResult={m.canEnterResult}
+                      awaitingConfirmation={m.awaitingConfirmation}
+                      onEnterResult={() => setReporting(m)}
+                    />
+                  ))}
+                </Section>
+              )}
+              {visibleClasses.map((c, i) => (
+                <ClassBlock
+                  key={c.id}
+                  title={showAll ? c.name : null}
+                  matches={filtered.filter((m) => m.className === c.name)}
+                  pairs={pairs.data?.get(c.name)}
+                  pairsLoading={pairs.loading}
+                  highlight={highlight}
+                  finished={t.state === 4}
+                  tournamentId={tid}
+                  classId={c.id}
+                  signInOpen={t.signInOpen}
+                  onPairsChanged={() => pairs.reload()}
+                  onEnterResult={setReporting}
+                  hideMatches={showAll}
+                  action={i === 0 ? <RefreshButton onClick={() => matches.reload()} loading={matches.loading} /> : undefined}
+                />
+              ))}
+            </>
+          )
         )}
       </Page>
 
@@ -265,6 +289,8 @@ export default function Tournament() {
 }
 
 const ALL = 'alla';
+const byTime = (ms: TournamentMatch[]) =>
+  [...ms].sort((a, b) => (a.date ? Date.parse(a.date) : Infinity) - (b.date ? Date.parse(b.date) : Infinity));
 
 function ClassBlock(props: {
   title: string | null;
@@ -278,6 +304,8 @@ function ClassBlock(props: {
   signInOpen: boolean;
   onPairsChanged: () => void;
   onEnterResult: (m: TournamentMatch) => void;
+  /** Matches are listed above for all classes together. */
+  hideMatches?: boolean;
   action?: ReactNode;
 }) {
   const { matches, pairs, highlight } = props;
@@ -328,7 +356,7 @@ function ClassBlock(props: {
     <>
       {!drawn && pairsSection}
       {!drawn && <p className="muted small">Lottningen är inte publicerad än – matcher och tider dyker upp här när den är klar.</p>}
-      {drawn && (
+      {drawn && !props.hideMatches && (
         <Section title="Matcher" action={props.action}>
           {matches.map((m) => (
             <MatchCard

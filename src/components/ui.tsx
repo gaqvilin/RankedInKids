@@ -2,6 +2,7 @@ import { Logo } from './Logo';
 import { useEffect, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { From } from './shell';
+import { reportError } from '../lib/errors';
 
 /**
  * Page top bar. The back link shows where it goes: the page we came from
@@ -90,7 +91,13 @@ export function Loading({ label = 'Hämtar från Rankedin…' }: { label?: strin
   );
 }
 
+/** Errors from our own code (not "Rankedin svarade 502" – those are reported as calls). */
+const isCodeError = (e: Error) => e instanceof TypeError || e instanceof ReferenceError || e instanceof SyntaxError || e instanceof RangeError;
+
 export function ErrorBox({ error, onRetry }: { error: Error; onRetry?: () => void }) {
+  useEffect(() => {
+    if (isCodeError(error)) reportError('shown', `${error.name}: ${error.message}`);
+  }, [error]);
   return (
     <div className="notice notice--error" role="alert">
       <p>{error.message || 'Något gick fel.'}</p>
