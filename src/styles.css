@@ -1813,14 +1813,16 @@ body.screen-mode .shell__main {
 }
 
 /* ---------- Printable QR ---------- */
+/* A normal page, not a fixed overlay: mobile Safari can stop responding to taps on a
+   fixed, scrolling layer after the print dialog closes. screen-mode hides the app chrome. */
 .qr-page {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  overflow: auto;
+  min-height: 100vh;
   background: #fff;
   color: #111;
   padding: 16px;
+}
+body.screen-mode:has(.qr-page) {
+  background: #fff;
 }
 .qr-toolbar {
   display: flex;
@@ -1903,7 +1905,7 @@ body.screen-mode .shell__main {
     display: none !important;
   }
   .qr-page {
-    position: static;
+    min-height: 0;
     padding: 0;
   }
   body.screen-mode .app-header {
