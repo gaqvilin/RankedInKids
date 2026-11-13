@@ -8,6 +8,7 @@
 import { json, isSameOriginJson } from './_lib/rankedin.js';
 import { verifiedAccounts } from './_lib/identity.js';
 import { getStore } from './_lib/store.js';
+import { ownerOnly } from './_lib/owners.js';
 import { clientIp, storeLimit, tooMany } from './_lib/ratelimit.js';
 
 export type FeedbackKind = 'idea' | 'bug' | 'other';
@@ -24,8 +25,6 @@ export type Feedback = {
 };
 
 const KINDS: FeedbackKind[] = ['idea', 'bug', 'other'];
-/** Rankedin ids that may read feedback. Public ids, not secrets. */
-const admins = () => (process.env.FEEDBACK_ADMINS || 'R000385768').split(',').map((s) => s.trim()).filter(Boolean);
 const clip = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
 
 export async function POST(request: Request): Promise<Response> {
@@ -61,9 +60,8 @@ export async function POST(request: Request): Promise<Response> {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  const accounts = await verifiedAccounts(request).catch(() => []);
-  if (accounts.length === 0) return json({ error: 'not_logged_in' }, 401);
-  if (!accounts.some((a) => admins().includes(a.rankedinId))) return json({ error: 'not_allowed' }, 403);
+  const denied = await ownerOnly(request, json);
+  if (denied) return denied;
   const docs = await getStore().listJson<Feedback>('feedback/');
   return json({ items: docs.map((d) => d.value).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) });
 }
