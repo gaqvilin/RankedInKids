@@ -4,7 +4,9 @@ import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Page } from '../components/ui';
 import { CITIES, findCity } from '../lib/cities';
 import { fmtDay, unlessInName, soon } from '../lib/format';
-import { getJuniorCalendar, type CalendarLevel } from '../lib/rankedin';
+import { getClasses, getJuniorCalendar, getProfile, type CalendarLevel } from '../lib/rankedin';
+import { AGE_CLASSES, ageClassFor, eventMatchesAge, type AgeClass } from '../lib/ages';
+import { useKnownPlayers } from '../lib/known';
 import { useAsync } from '../lib/useAsync';
 
 type Place = { label: string; lat: number; lng: number } | null;
@@ -36,6 +38,24 @@ export default function Calendar() {
   const [radius, setRadius] = useState(100);
   const [level, setLevel] = useState<'Alla' | CalendarLevel>('Alla');
   const [onlySanctioned, setOnlySanctioned] = useState(false);
+  const [age, setAge] = useState<AgeClass | null>(null);
+  // "För Aron (12)": the class each of my players can play, from the age in their profile.
+  const known = useKnownPlayers();
+  const knownKey = known.map((k) => k.rankedinId).join(',');
+  const myClasses = useAsync(
+    async () =>
+      (
+        await Promise.all(
+          known.map(async (k) => {
+            const p = await getProfile(k.rankedinId).catch(() => null);
+            const c = ageClassFor(p?.age ? Number.parseInt(p.age, 10) : null);
+            return c ? { first: k.name.split(' ')[0], age: c } : null;
+          }),
+        )
+      ).filter((x): x is { first: string; age: AgeClass } => !!x),
+    [knownKey],
+    knownKey ? `myclasses.${knownKey}` : undefined,
+  );
   const [geoMsg, setGeoMsg] = useState<string | null>(null);
 
   const setPlace = (p: Place) => {
@@ -44,9 +64,22 @@ export default function Calendar() {
   };
   const events = useAsync(() => getJuniorCalendar(place ? { lat: place.lat, lng: place.lng, radiusKm: radius } : {}), [place?.lat, place?.lng, radius], `calendar.${place?.lat ?? 'se'}.${place?.lng ?? ''}.${radius}`);
 
-  const list = useMemo(
+  const byLevel = useMemo(
     () => (events.data || []).filter((e) => (level === 'Alla' || e.level === level) && (!onlySanctioned || e.sanctioned)),
     [events.data, level, onlySanctioned],
+  );
+  // With an age chosen, look at each tournament's real classes (cached per tournament).
+  const idsKey = age ? byLevel.map((e) => e.id).join(',') : '';
+  const classNames = useAsync(
+    async () =>
+      idsKey
+        ? new Map(await Promise.all(byLevel.map(async (e) => [e.id, (await getClasses(e.id).catch(() => [])).map((c) => c.name)] as const)))
+        : new Map<number, string[]>(),
+    [idsKey],
+  );
+  const list = useMemo(
+    () => (age ? byLevel.filter((e) => eventMatchesAge(e.name, classNames.data?.get(e.id), age)) : byLevel),
+    [byLevel, age, classNames.data],
   );
 
   function applyCity(value: string) {
@@ -144,6 +177,21 @@ export default function Calendar() {
               </button>
             </span>
           </form>
+          <div className="toolbar__group" role="group" aria-label="Ålder">
+            <button className={`chip ${age == null ? 'chip--on' : ''}`} onClick={() => setAge(null)}>
+              Alla åldrar
+            </button>
+            {(myClasses.data ?? []).map((m) => (
+              <button key={m.first} className={`chip ${age === m.age ? 'chip--on' : ''}`} onClick={() => setAge(m.age)}>
+                För {m.first} ({m.age})
+              </button>
+            ))}
+            {AGE_CLASSES.filter((a) => !(myClasses.data ?? []).some((m) => m.age === a)).map((a) => (
+              <button key={a} className={`chip ${age === a ? 'chip--on' : ''}`} onClick={() => setAge(a)}>
+                {a} år
+              </button>
+            ))}
+          </div>
           <div className="toolbar__group">
             {LEVELS.map((l) => (
               <button key={l} className={`chip ${level === l ? 'chip--on' : ''}`} onClick={() => setLevel(l)}>
@@ -159,12 +207,14 @@ export default function Calendar() {
 
         <p className="muted small">
           {events.data ? `${list.length} kommande tävlingar` : ''}
+          {age ? ` med ${age}-årsklass` : ''}
           {place ? ` inom ${radius} km från ${place.label}` : ' i hela Sverige'}
         </p>
 
         {events.loading && !events.data && <Loading />}
         {events.error && <ErrorBox error={events.error} onRetry={() => events.reload()} />}
-        {events.data && list.length === 0 && <Empty>Inga tävlingar matchar. Prova ett större avstånd eller en annan nivå.</Empty>}
+        {age && classNames.loading && !classNames.data && <Loading label="Kollar klasserna…" />}
+        {events.data && list.length === 0 && !(age && classNames.loading) && <Empty>Inga tävlingar matchar. Prova ett större avstånd eller en annan nivå.</Empty>}
 
         {list.length > 0 && (
           <table className="table table--rows">
