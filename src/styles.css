@@ -1851,7 +1851,7 @@ body.screen-mode:has(.qr-page) {
 .qr-card {
   border: 1px dashed #bbb;
   padding: 5mm;
-  height: 68mm;
+  height: 66mm;
   justify-content: center;
 }
 .qr-card img {
@@ -1897,16 +1897,18 @@ body.screen-mode:has(.qr-page) {
   word-break: break-all;
 }
 @media print {
+  /* Top/bottom margin on every page from @page; the side margin as padding as well, since
+     some browsers (Safari) ignore @page margins and would print edge to edge. */
   @page {
     size: A4;
-    margin: 8mm;
+    margin: 8mm 0;
   }
   .no-print {
     display: none !important;
   }
   .qr-page {
     min-height: 0;
-    padding: 0;
+    padding: 6mm 12mm 0;
   }
   body.screen-mode .app-header {
     display: none !important;
