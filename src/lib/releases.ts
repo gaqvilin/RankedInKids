@@ -9,6 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'PadelAdmin-loggan på alla utskrifter (schema, deltagarlista, banlistor, QR-affisch och lappar).',
       'Tävlingar kan filtreras på ålder (12, 14, 16, 18) – och med ett tryck på "För Aron (12)" ser du bara tävlingar med en klass som passar ditt barn.',
       'Utskrifter för tävlingsdagen: dagens schema, deltagarlista för avcheckning, en sida per bana och QR-kod (Tävlingsledning → Skriv ut).',
       'Fyra knappar längst ner: Översikt, Tävlingar, Serier och Meny. Sök ligger som förstoringsglas uppe till höger. Fliken lyser även på sidor under den, t.ex. ett lag.',

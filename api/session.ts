@@ -16,6 +16,7 @@ import {
   publicUser,
 } from './_lib/rankedin.js';
 import { clientIp, memoryLimit, tooMany } from './_lib/ratelimit.js';
+import { countAccount } from './_lib/stats.js';
 
 type Account = ReturnType<typeof publicUser>;
 
@@ -52,6 +53,7 @@ export async function GET(request: Request): Promise<Response> {
         cookies.push(accountCookieHeader(layout.CurrentPlayerId, a.cookie));
       }
       if (!accounts.some((x) => x.playerId === user.playerId)) accounts.push(user);
+      if (user.playerId) await countAccount('active', user.playerId);
       if (a.playerId === active?.playerId) activeAccount = user;
     }),
   );

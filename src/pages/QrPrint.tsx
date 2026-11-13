@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { Go } from '../components/shell';
+import { Logo } from '../components/Logo';
 import { fmtDay } from '../lib/format';
 import { getTournament } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
@@ -27,6 +28,9 @@ export default function QrPrint() {
   const date = header.data ? fmtDay(header.data.startDate) : '';
   const card = (big: boolean) => (
     <div className={big ? 'qr-poster' : 'qr-card'}>
+      <span className="qr-logo">
+        <Logo size={big ? 30 : 14} />
+      </span>
       <strong className="qr-title">{name}</strong>
       <span className="qr-sub">{date}</span>
       {qr && <img src={qr} alt="QR-kod till tävlingen" />}

@@ -2136,3 +2136,22 @@ button.tabbar__link {
 .print-newslot td {
   border-top: 2px solid #111;
 }
+
+.print-logo,
+.qr-logo {
+  display: block;
+  color: #111;
+}
+.print-logo .logo__word-admin,
+.qr-logo .logo__word-admin {
+  color: #555;
+}
+.print-logo {
+  margin-bottom: 6px;
+}
+.qr-poster .qr-logo .logo {
+  font-size: 22pt;
+}
+.qr-card .qr-logo .logo {
+  font-size: 9pt;
+}

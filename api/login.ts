@@ -14,6 +14,7 @@ import {
   rinHeaders,
 } from './_lib/rankedin.js';
 import { clientIp, storeLimit, tooMany } from './_lib/ratelimit.js';
+import { countAccount } from './_lib/stats.js';
 
 export async function POST(request: Request): Promise<Response> {
   if (!isSameOriginJson(request)) return json({ error: 'forbidden' }, 403);
@@ -56,6 +57,7 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (!layout?.IsAuthenticated || !layout.CurrentPlayerId) return json({ error: 'invalid_credentials' }, 401);
 
+  await countAccount('login', layout.CurrentPlayerId);
   // Adds this account next to any others already logged in on this device, and makes it active.
   return json(publicUser(layout), 200, {}, [
     accountCookieHeader(layout.CurrentPlayerId, cookie),

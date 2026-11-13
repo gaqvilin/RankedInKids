@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Go } from '../components/shell';
+import { Logo } from '../components/Logo';
 import { fmtDay, fmtTime } from '../lib/format';
 import { courtOrder } from '../lib/organizer';
 import { getClasses, getClassPairs, getTournament, getTournamentMatches, type Pair, type TournamentMatch } from '../lib/rankedin';
@@ -61,6 +62,9 @@ export default function PrintSheets() {
       </div>
 
       <header className="print-head">
+        <span className="print-logo">
+          <Logo size={18} />
+        </span>
         <h1>{t?.name ?? ''}</h1>
         <p>
           {title}
