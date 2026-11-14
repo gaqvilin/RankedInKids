@@ -11,7 +11,7 @@ describe('summarizeSets', () => {
   it('rejects ties and empty input', () => {
     expect(() => summarizeSets([])).toThrow();
     expect(() => summarizeSets([[5, 5]])).toThrow();
-    expect(summarizeSets([[6, 3], [3, 6]])).toEqual({ p1: 1, p2: 1 }); // 2 sets may be a draw
+    expect(() => summarizeSets([[6, 3], [3, 6]])).toThrow(/supertiebreak/); // Rankedin has no draws
     expect(() => summarizeSets([[6, 3], [3, 6], [6, 6]])).toThrow();
     expect(() => summarizeSets([[6, 3], [3, 6], [4, 6], [6, 4]])).toThrow();
   });
