@@ -45,6 +45,8 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const hasResult = !!initial && initial.length > 0;
 
   const parsed = sets
     .filter((s) => s[0] !== '' || s[1] !== '')
@@ -61,6 +63,19 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
     const clean = v.replace(/\D/g, '').slice(0, 2);
     setSets((prev) => prev.map((s, k) => (k === i ? s.map((x, m) => (m === j ? clean : x)) : s)));
   };
+
+  async function reset() {
+    setBusy(true);
+    setError(null);
+    try {
+      await submitResult(challengeId, null);
+      onDone();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function send() {
     if (!summary) return;
@@ -165,6 +180,24 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
             <button className="btn btn--primary btn--block" disabled={!summary || busy} onClick={send}>
               {busy ? 'Skickar…' : 'Skicka till Rankedin'}
             </button>
+            {hasResult &&
+              (confirmReset ? (
+                <div className="reset-confirm">
+                  <p>Ta bort resultatet? Matchen blir ospelad i Rankedin och tabellen räknas om.</p>
+                  <div className="row gap">
+                    <button className="btn btn--danger btn--small" disabled={busy} onClick={reset}>
+                      Ja, ta bort
+                    </button>
+                    <button className="btn btn--ghost btn--small" onClick={() => setConfirmReset(false)}>
+                      Nej
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button className="btn btn--ghost btn--block" disabled={busy} onClick={() => setConfirmReset(true)}>
+                  Ta bort resultatet
+                </button>
+              ))}
           </>
         )}
         <button className="btn btn--ghost btn--block" onClick={onClose}>

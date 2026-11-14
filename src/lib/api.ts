@@ -181,12 +181,13 @@ export async function saveLineup(
   clearCache();
 }
 
-export async function submitResult(challengeId: number, sets: [number, number][]): Promise<void> {
+/** Sends a result to Rankedin; `null` clears the match's result (Rankedin's "Reset result"). */
+export async function submitResult(challengeId: number, sets: [number, number][] | null): Promise<void> {
   const res = await fetch('/api/submit-result', {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', ...accountHeaders() },
-    body: JSON.stringify({ challengeId, sets }),
+    body: JSON.stringify(sets ? { challengeId, sets } : { challengeId, reset: true }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {

@@ -1,0 +1,98 @@
+// The day's matches as a board: one column per start time, a card per match (sorted by court).
+import { useState } from 'react';
+import { fmtTime } from '../lib/format';
+import type { TournamentMatch } from '../lib/rankedin';
+import { MatchCard } from './MatchCard';
+
+export type MatchView = 'lista' | 'tavla';
+const KEY = 'padeladmin.matchView';
+
+/** List or board, remembered on this device. */
+export function useMatchView(): [MatchView, (v: MatchView) => void] {
+  const [view, setView] = useState<MatchView>(() => {
+    try {
+      return localStorage.getItem(KEY) === 'tavla' ? 'tavla' : 'lista';
+    } catch {
+      return 'lista';
+    }
+  });
+  const set = (v: MatchView) => {
+    setView(v);
+    try {
+      localStorage.setItem(KEY, v);
+    } catch {
+      /* private mode */
+    }
+  };
+  return [view, set];
+}
+
+export function MatchViewToggle({ view, onChange }: { view: MatchView; onChange: (v: MatchView) => void }) {
+  return (
+    <span className="seg" role="group" aria-label="Visa matcher som">
+      {(['lista', 'tavla'] as const).map((v) => (
+        <button key={v} className={`seg__btn ${view === v ? 'is-on' : ''}`} aria-pressed={view === v} onClick={() => onChange(v)}>
+          {v === 'lista' ? 'Lista' : 'Tavla'}
+        </button>
+      ))}
+    </span>
+  );
+}
+
+/** Matches grouped by start time ("10:00"), times in order; matches without a time last. */
+export function boardColumns(matches: TournamentMatch[]): { time: string; matches: TournamentMatch[] }[] {
+  const cols = new Map<string, TournamentMatch[]>();
+  const sorted = [...matches].sort(
+    (a, b) => (a.date ? Date.parse(a.date) : Infinity) - (b.date ? Date.parse(b.date) : Infinity) || (a.court || '').localeCompare(b.court || '', 'sv'),
+  );
+  for (const m of sorted) {
+    const t = fmtTime(m.date) || 'Ingen tid';
+    cols.set(t, [...(cols.get(t) || []), m]);
+  }
+  return [...cols].map(([time, ms]) => ({ time, matches: ms }));
+}
+
+export function MatchBoard({
+  matches,
+  highlight,
+  showClass,
+  onEnterResult,
+}: {
+  matches: TournamentMatch[];
+  highlight: number[];
+  showClass: boolean;
+  onEnterResult: (m: TournamentMatch) => void;
+}) {
+  return (
+    <div className="board">
+      {boardColumns(matches).map((col) => {
+        const played = col.matches.filter((m) => m.played).length;
+        return (
+          <section key={col.time} className="board__col" aria-label={col.time}>
+            <header className="board__head">
+              <strong>{col.time}</strong>
+              <span className="muted small">
+                {played === col.matches.length ? 'Klart' : `${played} av ${col.matches.length} spelade`}
+              </span>
+            </header>
+            {col.matches.map((m) => (
+              <MatchCard
+                key={m.id}
+                sides={m.sides}
+                sets={m.sets}
+                played={m.played}
+                date={null}
+                court={m.court}
+                label={showClass ? m.className : undefined}
+                highlightIds={highlight}
+                canEnterResult={m.canEnterResult}
+                awaitingConfirmation={m.awaitingConfirmation}
+                onEnterResult={() => onEnterResult(m)}
+              />
+            ))}
+          </section>
+        );
+      })}
+    </div>
+  );
+}

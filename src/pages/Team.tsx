@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Go } from '../components/shell';
 import { StandingsTable } from '../components/StandingsTable';
 import { seriesKind, seriesRules, showsStandings } from '../lib/rules';
-import { AppHeader, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
+import { AppHeader, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section, Tip } from '../components/ui';
 import { fmtDay, fmtTime, soon } from '../lib/format';
 import { getLeagueHeader, getStandings, getTeam, getTeamFixtures } from '../lib/leagues';
 import { rinUrl } from '../lib/rankedin';
@@ -199,7 +199,9 @@ export default function Team() {
                     <span className="item__main">
                       {p.name}
                       {p.isCaptain && <span className="tag">Lagledare</span>}
-                      {!p.hasLicense && <span className="tag tag--warn">Licens saknas</span>}
+                      {!p.hasLicense && <span className="tag tag--warn">
+                          <Tip tip="Spelaren har ingen giltig tävlingslicens i Rankedin för i år.">Licens saknas</Tip>
+                        </span>}
                     </span>
                   </Go>
                 ))}

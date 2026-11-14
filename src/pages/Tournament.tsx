@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { DrawGroups } from '../components/DrawGroups';
+import { MatchBoard, MatchViewToggle, useMatchView, type MatchView } from '../components/MatchBoard';
 import { AccountSwitcher } from '../components/AccountSwitcher';
 import { OutsidePartner } from '../components/PairingPanel';
 import { addMyPartner } from '../lib/pairing';
 import { Go } from '../components/shell';
 import { isTournamentAdmin } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
-import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
+import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section, Tip } from '../components/ui';
 import { fmtDay, fmtTime, isSameDay, unlessInName, soon } from '../lib/format';
 import {
   getClasses,
@@ -38,6 +39,7 @@ export default function Tournament() {
   const [onlyMine, setOnlyMine] = useState(!!playerId);
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
   const [onlyToReport, setOnlyToReport] = useState(false);
+  const [view, setView] = useMatchView();
 
   const myClass = useMemo(() => {
     if (!playerId || !matches.data) return null;
@@ -245,22 +247,34 @@ export default function Tournament() {
             <>
               {showAll && all.length > 0 && (
                 // All classes: one list in time order, so no class is hidden below another class's matches and table.
-                <Section title="Matcher" action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
-                  {byTime(filtered).map((m) => (
-                    <MatchCard
-                      key={m.id}
-                      sides={m.sides}
-                      sets={m.sets}
-                      played={m.played}
-                      date={m.date}
-                      court={m.court}
-                      label={m.className}
-                      highlightIds={highlight}
-                      canEnterResult={m.canEnterResult}
-                      awaitingConfirmation={m.awaitingConfirmation}
-                      onEnterResult={() => setReporting(m)}
-                    />
-                  ))}
+                <Section
+                  title="Matcher"
+                  action={
+                    <span className="row gap">
+                      <MatchViewToggle view={view} onChange={setView} />
+                      <RefreshButton onClick={() => matches.reload()} loading={matches.loading} />
+                    </span>
+                  }
+                >
+                  {view === 'tavla' ? (
+                    <MatchBoard matches={filtered} highlight={highlight} showClass onEnterResult={setReporting} />
+                  ) : (
+                    byTime(filtered).map((m) => (
+                      <MatchCard
+                        key={m.id}
+                        sides={m.sides}
+                        sets={m.sets}
+                        played={m.played}
+                        date={m.date}
+                        court={m.court}
+                        label={m.className}
+                        highlightIds={highlight}
+                        canEnterResult={m.canEnterResult}
+                        awaitingConfirmation={m.awaitingConfirmation}
+                        onEnterResult={() => setReporting(m)}
+                      />
+                    ))
+                  )}
                 </Section>
               )}
               {visibleClasses.map((c, i) => (
@@ -278,6 +292,8 @@ export default function Tournament() {
                   onPairsChanged={() => pairs.reload()}
                   onEnterResult={setReporting}
                   hideMatches={showAll}
+                  view={view}
+                  onViewChange={setView}
                   action={i === 0 ? <RefreshButton onClick={() => matches.reload()} loading={matches.loading} /> : undefined}
                 />
               ))}
@@ -307,6 +323,8 @@ const byTime = (ms: TournamentMatch[]) =>
   [...ms].sort((a, b) => (a.date ? Date.parse(a.date) : Infinity) - (b.date ? Date.parse(b.date) : Infinity));
 
 function ClassBlock(props: {
+  view: MatchView;
+  onViewChange: (v: MatchView) => void;
   title: string | null;
   matches: TournamentMatch[];
   pairs: Pair[] | undefined;
@@ -358,7 +376,9 @@ function ClassBlock(props: {
             <li key={i} className={isMine(pair.players.map((p) => p.id)) ? 'is-mine' : ''}>
               {pair.players.map((p) => p.name).join(' / ')}
               {pair.missingPartner && <span className="pill pill--warn">Söker partner</span>}
-              {!props.finished && pair.players.some((p) => !p.hasLicense) && <span className="pill pill--warn">Licens saknas</span>}
+              {!props.finished && pair.players.some((p) => !p.hasLicense) && <span className="pill pill--warn">
+                  <Tip tip="Spelaren har ingen giltig tävlingslicens i Rankedin för i år.">Licens saknas</Tip>
+                </span>}
             </li>
           ))}
         </ul>
@@ -370,21 +390,33 @@ function ClassBlock(props: {
       {!drawn && pairsSection}
       {!drawn && <p className="muted small">Lottningen är inte publicerad än – matcher och tider dyker upp här när den är klar.</p>}
       {drawn && !props.hideMatches && (
-        <Section title="Matcher" action={props.action}>
-          {matches.map((m) => (
-            <MatchCard
-              key={m.id}
-              sides={m.sides}
-              sets={m.sets}
-              played={m.played}
-              date={m.date}
-              court={m.court}
-              highlightIds={highlight}
-              canEnterResult={m.canEnterResult}
-              awaitingConfirmation={m.awaitingConfirmation}
-              onEnterResult={() => props.onEnterResult(m)}
-            />
-          ))}
+        <Section
+          title="Matcher"
+          action={
+            <span className="row gap">
+              <MatchViewToggle view={props.view} onChange={props.onViewChange} />
+              {props.action}
+            </span>
+          }
+        >
+          {props.view === 'tavla' ? (
+            <MatchBoard matches={matches} highlight={highlight} showClass={false} onEnterResult={props.onEnterResult} />
+          ) : (
+            matches.map((m) => (
+              <MatchCard
+                key={m.id}
+                sides={m.sides}
+                sets={m.sets}
+                played={m.played}
+                date={m.date}
+                court={m.court}
+                highlightIds={highlight}
+                canEnterResult={m.canEnterResult}
+                awaitingConfirmation={m.awaitingConfirmation}
+                onEnterResult={() => props.onEnterResult(m)}
+              />
+            ))
+          )}
         </Section>
       )}
 

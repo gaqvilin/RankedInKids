@@ -2321,3 +2321,83 @@ button.tabbar__link {
     grid-column: 1;
   }
 }
+
+/* Abbreviation with its explanation on hover / tap. */
+.tip {
+  position: relative;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+  outline: none;
+}
+.tip:hover::after,
+.tip:focus::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  max-width: 200px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-bg);
+  color: var(--primary-text);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+}
+.section-intro {
+  margin: -4px 0 10px;
+}
+.pill .tip::after,
+.tag .tip::after {
+  left: 0;
+  right: auto;
+}
+
+/* Match board: one column per start time, scrolls sideways on narrow screens. */
+.board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(250px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x proximity;
+}
+.board__col {
+  min-width: 0;
+  background: var(--subtle);
+  border-radius: var(--radius);
+  padding: 8px;
+  scroll-snap-align: start;
+}
+.board__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 2px 4px 8px;
+}
+.board__col .match:last-child {
+  margin-bottom: 0;
+}
+.board {
+  grid-auto-columns: minmax(220px, 1fr);
+}
+.board .match {
+  font-size: 14px;
+  padding: 8px 10px;
+}
+.reset-confirm {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+.reset-confirm p {
+  margin: 0 0 8px;
+}

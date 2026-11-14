@@ -1,4 +1,5 @@
 import { Go } from './shell';
+import { Tip } from './ui';
 import type { StandingRow } from '../lib/leagues';
 
 export function StandingsTable({ rows, highlightTeamId, leagueId, from }: { rows: StandingRow[]; highlightTeamId?: number; leagueId?: number; from: string }) {
@@ -10,10 +11,20 @@ export function StandingsTable({ rows, highlightTeamId, leagueId, from }: { rows
           <tr>
             <th>#</th>
             <th>Lag</th>
-            <th title="Spelade">S</th>
-            <th title="Vunna-förlorade">V–F</th>
-            <th title="Matcher vunna-förlorade">Matcher</th>
-            {hasPoints && <th title="Poäng">P</th>}
+            <th>
+              <Tip tip="Spelade lagmatcher">S</Tip>
+            </th>
+            <th>
+              <Tip tip="Vunna–förlorade lagmatcher">V–F</Tip>
+            </th>
+            <th>
+              <Tip tip="Vunna–förlorade matcher (par mot par)">Matcher</Tip>
+            </th>
+            {hasPoints && (
+              <th>
+                <Tip tip="Poäng i serien">P</Tip>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>

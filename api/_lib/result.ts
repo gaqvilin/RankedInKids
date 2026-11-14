@@ -60,3 +60,21 @@ export function buildSubmitPayload(challengeId: number, challenge: ChallengeResu
     currPlayerId: Number(pick(challenge, 'currentPlayerId')) || 0,
   };
 }
+
+/** Mirrors resetModel() in rankedin.com's enter-results dialog ("Reset result"): clears the score so the match is unplayed. */
+export function buildResetPayload(challengeId: number, challenge: ChallengeResult) {
+  return {
+    challengeId,
+    participant1CancellationType: 0,
+    participant2CancellationType: 0,
+    reset: true,
+    participant1Score: 0,
+    participant2Score: 0,
+    participant1Games: '',
+    participant2Games: '',
+    setDuration: '',
+    duration: false,
+    games: false,
+    currPlayerId: Number(pick(challenge, 'currentPlayerId')) || 0,
+  };
+}

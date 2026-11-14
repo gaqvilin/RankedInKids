@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Go } from './shell';
-import { ErrorBox, Loading } from './ui';
+import { ErrorBox, Loading, Tip } from './ui';
 import { getAvailability, setAvailability, STATUS_LABEL, type AvailabilityStatus } from '../lib/availability';
 import type { TeamPlayer } from '../lib/leagues';
 import { fmtDay } from '../lib/format';
@@ -68,7 +68,9 @@ export function AvailabilityPanel({ teamId, date, players, from }: { teamId: num
               <span className="item__main">
                 {p.name}
                 {isMe && <span className="tag">Du</span>}
-                {!p.hasLicense && <span className="tag tag--warn">Licens saknas</span>}
+                {!p.hasLicense && <span className="tag tag--warn">
+                    <Tip tip="Spelaren har ingen giltig tävlingslicens i Rankedin för i år.">Licens saknas</Tip>
+                  </span>}
                 {e && e.updatedBy !== p.name && <span className="muted small block">satt av {e.updatedBy}</span>}
               </span>
               {canEdit ? (

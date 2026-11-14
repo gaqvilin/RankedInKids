@@ -1,9 +1,9 @@
-// POST /api/submit-result { challengeId, sets: [[6,3],[4,6],[10,8]] }
+// POST /api/submit-result { challengeId, sets: [[6,3],[4,6],[10,8]] }  or  { challengeId, reset: true } to clear a result
 // Same flow as the "Enter result" dialog on rankedin.com:
 //   GET  Match/GetChallengeResultAsync  (participant ids, current player)
 //   POST Match/SubmitResultAsync
 import { RIN_API, getSessionCookie, json, rinHeaders, isSameOriginJson } from './_lib/rankedin.js';
-import { buildSubmitPayload, type ChallengeResult } from './_lib/result.js';
+import { buildResetPayload, buildSubmitPayload, type ChallengeResult } from './_lib/result.js';
 import { clientIp, memoryLimit, tooMany } from './_lib/ratelimit.js';
 
 export async function POST(request: Request): Promise<Response> {
@@ -12,7 +12,7 @@ export async function POST(request: Request): Promise<Response> {
   const session = getSessionCookie(request);
   if (!session) return json({ error: 'not_logged_in' }, 401);
 
-  let body: { challengeId?: number; sets?: [number, number][] };
+  let body: { challengeId?: number; sets?: [number, number][]; reset?: boolean };
   try {
     body = await request.json();
   } catch {
@@ -30,7 +30,7 @@ export async function POST(request: Request): Promise<Response> {
 
   let payload;
   try {
-    payload = buildSubmitPayload(challengeId, challenge, body.sets || []);
+    payload = body.reset === true ? buildResetPayload(challengeId, challenge) : buildSubmitPayload(challengeId, challenge, body.sets || []);
   } catch (e) {
     return json({ error: 'invalid_score', message: (e as Error).message }, 400);
   }
