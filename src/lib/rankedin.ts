@@ -645,7 +645,8 @@ export async function getLeagueRegulations(id: number): Promise<string[]> {
 export type DrawPair = { index: number; names: string[]; ids: number[] };
 export type DrawCell = { matchId: number; challengeId: number; date: string | null; court: string | null; played: boolean };
 export type DrawStanding = { position: number; names: string[]; ids: number[]; played: number; wins: number; losses: number; points: number; gamesWon: number; gamesLost: number };
-export type DrawGroup = { name: string; pairs: DrawPair[]; cells: Map<string, DrawCell>; standings: DrawStanding[] };
+/** cells is a plain object ("row-col" → cell), not a Map, so it survives the device cache (JSON). */
+export type DrawGroup = { name: string; pairs: DrawPair[]; cells: Record<string, DrawCell>; standings: DrawStanding[] };
 
 /** Rankedin's group draws for a class: pairs, the match grid (row vs column) and the official standings. */
 export async function getClassDraws(classId: number, fresh = false): Promise<DrawGroup[]> {
@@ -676,7 +677,7 @@ export async function getClassDraws(classId: number, fresh = false): Promise<Dra
     .map((d) => {
       const rr = d.RoundRobin!;
       const pairs: DrawPair[] = [];
-      const cells = new Map<string, DrawCell>();
+      const cells: Record<string, DrawCell> = {};
       rr.Pool.forEach((row, r) => {
         row.forEach((cell, c) => {
           // Row headers (first column) list the pairs in order.
@@ -686,7 +687,7 @@ export async function getClassDraws(classId: number, fresh = false): Promise<Dra
           }
           if (cell.CellType === 'MatchCell' && cell.MatchCell) {
             const m = cell.MatchCell;
-            cells.set(`${r}-${c}`, { matchId: m.MatchId, challengeId: m.ChallengeId, date: m.ShowDate ? m.Date : null, court: m.Court, played: !!m.MatchResults?.IsPlayed });
+            cells[`${r}-${c}`] = { matchId: m.MatchId, challengeId: m.ChallengeId, date: m.ShowDate ? m.Date : null, court: m.Court, played: !!m.MatchResults?.IsPlayed };
           }
         });
       });
