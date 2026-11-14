@@ -27,11 +27,23 @@ type Props = {
 export function MatchCard(p: Props) {
   const mine = (s: Side) => !!p.highlightIds?.some((id) => s.ids.includes(id));
   const when = p.showDay ? fmtDayTime(p.date) : fmtTime(p.date);
+  const isMine = p.sides.some(mine);
+  // "Pågår nu": started within the last 90 minutes and no result yet.
+  const start = p.date ? Date.parse(p.date) : NaN;
+  const live = !p.played && Number.isFinite(start) && Date.now() >= start && Date.now() < start + 90 * 60_000;
+  const won = isMine && p.played ? p.sides.some((s) => mine(s) && s.isWinner) : null;
   return (
-    <article className={`match ${p.sides.some(mine) ? 'match--mine' : ''}`}>
+    <article className={`match ${isMine ? 'match--mine' : ''} ${live ? 'match--live' : ''} ${p.played ? 'match--played' : ''}`}>
       <div className="match__meta">
         {when && <span className="match__time">{when}</span>}
         {p.court && <span className="pill">{p.court}</span>}
+        {live && (
+          <span className="pill pill--live">
+            <span className="live-dot" aria-hidden="true" />
+            Pågår nu
+          </span>
+        )}
+        {won !== null && <span className={`pill ${won ? 'pill--win' : 'pill--loss'}`}>{won ? 'Vinst' : 'Förlust'}</span>}
         {p.label && <span className="match__label">{p.label}</span>}
       </div>
       <div className="match__body">

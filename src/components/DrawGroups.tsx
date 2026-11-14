@@ -1,6 +1,6 @@
 // The class's groups like a football group stage: table, the group's matches, then the playoff filled from the tables.
 import { fmtTime } from '../lib/format';
-import { getClassDraws, getClassPlayoff, resolvePlayoffSide, type DrawGroup, type PlayoffMatch, type TournamentMatch } from '../lib/rankedin';
+import { getClassDraws, getClassPlayoff, groupLetter, resolvePlayoffSide, type DrawGroup, type PlayoffMatch, type TournamentMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
 import { Section, Tip } from './ui';
 
@@ -14,13 +14,25 @@ export function DrawGroups({ classId, matches, highlight, refreshKey }: Props) {
   if (!Array.isArray(draws.data) || !draws.data.length) return null;
   const groups = draws.data;
   const mine = (ids: number[]) => highlight.some((h) => ids.includes(h));
+  // From the playoff: which match a place in a group leads to.
+  const leadsTo = (groupName: string) => (place: number) => {
+    const list = Array.isArray(playoff.data) ? playoff.data : [];
+    if (!list.length) return null;
+    // Placement playoff: place n in every group plays for places 2n-1 and 2n (known even after Rankedin filled in the names).
+    if (list.every((x) => x.places)) {
+      const m = list.find((x) => x.places![0] === 2 * place - 1);
+      return m ? (place === 1 ? 'final' : `plats ${m.places![0]}–${m.places![1]}`) : null;
+    }
+    const letter = groupLetter(groupName).toUpperCase();
+    return list.some((x) => x.sides.some((sd) => sd.place === place && sd.group?.toUpperCase() === letter)) ? 'slutspel' : null;
+  };
   return (
     <>
       <Section title={groups.length > 1 ? 'Grupper' : 'Grupp'}>
         <p className="muted small section-intro">{groupsIntro(playoff.data)}</p>
         <div className="draw-groups">
           {groups.map((g) => (
-            <Group key={g.name} g={g} matches={matches} mine={mine} />
+            <Group key={g.name} g={g} matches={matches} mine={mine} leadsTo={leadsTo(g.name)} />
           ))}
         </div>
       </Section>
@@ -38,7 +50,18 @@ function groupsIntro(playoff: PlayoffMatch[] | null | undefined): string {
   return `${base} De bästa i varje grupp går vidare till slutspelet.`;
 }
 
-function Group({ g, matches, mine }: { g: DrawGroup; matches: TournamentMatch[]; mine: (ids: number[]) => boolean }) {
+function Group({
+  g,
+  matches,
+  mine,
+  leadsTo,
+}: {
+  g: DrawGroup;
+  matches: TournamentMatch[];
+  mine: (ids: number[]) => boolean;
+  /** What a place in this group plays for in the playoff ("final", "plats 3–4"), if any. */
+  leadsTo: (place: number) => string | null;
+}) {
   const anyPlayed = g.standings.some((s) => s.played > 0);
   const rows = anyPlayed
     ? g.standings
@@ -82,7 +105,16 @@ function Group({ g, matches, mine }: { g: DrawGroup; matches: TournamentMatch[];
               const diff = s.gamesWon - s.gamesLost;
               return (
                 <tr key={s.ids.join('-')} className={mine(s.ids) ? 'is-mine' : ''}>
-                  <td className="muted">{s.position || ''}</td>
+                  <td>
+                    {s.position > 0 &&
+                      (leadsTo(s.position) ? (
+                        <span className={`rank ${leadsTo(s.position) === 'final' ? 'rank--final' : ''}`}>
+                          <Tip tip={leadsTo(s.position) === 'final' ? 'Spelar final' : leadsTo(s.position) === 'slutspel' ? 'Går till slutspel' : `Spelar om ${leadsTo(s.position)}`}>{s.position}</Tip>
+                        </span>
+                      ) : (
+                        <span className="rank">{s.position}</span>
+                      ))}
+                  </td>
                   <td title={s.names.join(' / ')}>
                     <span className="only-wide">{s.names.join(' / ')}</span>
                     <span className="only-narrow">{short(s.names)}</span>

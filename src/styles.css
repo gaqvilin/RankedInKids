@@ -1,5 +1,5 @@
-/* PadelAdmin – deliberately plain: neutral greys, one link colour,
-   colour only where it carries meaning (win, warning, error). */
+/* PadelAdmin – calm and light: neutral greys, one accent colour (buttons, active state, "now"),
+   other colour only where it carries meaning (win, warning, error). Soft cards, subtle motion. */
 
 :root {
   --bg: #fafafa;
@@ -10,13 +10,16 @@
   --line: #e2e2e2;
   --strong-line: #c8c8c8;
   --link: #1f4fd1;
-  --primary-bg: #171717;
+  --accent: #2f8fe8;
+  --accent-soft: #e6f2fd;
+  --primary-bg: var(--accent);
   --primary-text: #ffffff;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 2px 6px rgba(16, 24, 40, 0.04);
   --win: #15803d;
   --warn: #a15c00;
   --error: #b42318;
-  --radius: 4px;
-  --radius-sm: 3px;
+  --radius: 10px;
+  --radius-sm: 7px;
   --sidebar: 232px;
   color-scheme: light;
 }
@@ -31,8 +34,11 @@
     --line: #2a2a2a;
     --strong-line: #3a3a3a;
     --link: #8fb0ff;
-    --primary-bg: #ececec;
+    --accent: #8fb0ff;
+    --accent-soft: #1c2742;
+    --primary-bg: var(--accent);
     --primary-text: #0e0e0e;
+    --shadow: none;
     --win: #4ade80;
     --warn: #f0b354;
     --error: #ff8a7a;
@@ -334,6 +340,7 @@ h3 {
 }
 .columns {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* never wider than the page, whatever the content */
   gap: 0 32px;
 }
 @media (min-width: 960px) {
@@ -2441,5 +2448,212 @@ button.tabbar__link {
   }
   .shell--full .page--wide {
     max-width: none;
+  }
+}
+
+/* ---------- Look: soft cards, accent, status and motion ---------- */
+.match,
+.list,
+.card-list,
+.pairs,
+.playoff,
+.notice {
+  box-shadow: var(--shadow);
+}
+.playoff {
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.match {
+  min-width: 0;
+}
+.match__label {
+  max-width: 100%;
+}
+.match--mine {
+  border-left-color: var(--accent);
+}
+.tabbar__link.is-active,
+.sidebar__link.is-active {
+  color: var(--accent);
+}
+.board__col {
+  border-radius: var(--radius);
+}
+
+/* Match status */
+.pill--live {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+.pill--win {
+  color: var(--win);
+  border-color: currentColor;
+}
+.pill--loss {
+  color: var(--muted);
+}
+.match--live {
+  border-color: var(--accent);
+}
+.match--played:not(.match--mine) .match__names {
+  color: var(--muted);
+}
+.match--played:not(.match--mine) .is-winner .match__names {
+  color: var(--text);
+}
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 6px;
+  vertical-align: 1px;
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+/* Tournament progress */
+.progress {
+  margin: 8px 0 4px;
+}
+.progress__text {
+  font-size: 14px;
+  margin: 0 0 6px;
+}
+.progress__bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--subtle);
+  overflow: hidden;
+}
+.progress__fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.6s ease;
+}
+
+/* Group table: what a place leads to */
+.rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.rank--final {
+  background: var(--accent);
+  color: var(--primary-text);
+}
+
+/* Skeleton while loading */
+.skeleton {
+  display: grid;
+  gap: 8px;
+  padding: 6px 0;
+}
+.skeleton__row {
+  height: 56px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--subtle) 25%, var(--line) 37%, var(--subtle) 63%);
+  background-size: 400% 100%;
+  animation: skeleton 1.4s ease infinite;
+}
+.skeleton__row:nth-child(2) {
+  width: 92%;
+}
+.skeleton__row:nth-child(3) {
+  width: 78%;
+}
+@keyframes skeleton {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0 50%;
+  }
+}
+
+/* Motion: pages ease in, fresh results fade in, buttons respond. */
+.page {
+  animation: page-in 0.22s ease-out;
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.match__sets .set,
+.fixture__score,
+.playoff__score {
+  animation: fade-in 0.4s ease-out;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.btn,
+.chip,
+.seg__btn,
+.match {
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
+}
+.btn:active,
+.chip:active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .page,
+  .match__sets .set,
+  .fixture__score,
+  .playoff__score,
+  .skeleton__row,
+  .live-dot {
+    animation: none;
+  }
+  .btn,
+  .chip,
+  .seg__btn,
+  .match,
+  .progress__fill {
+    transition: none;
   }
 }
