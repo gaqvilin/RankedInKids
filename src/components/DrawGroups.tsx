@@ -37,6 +37,7 @@ export function DrawGroups({ classId, matches, highlight, refreshKey }: Props) {
   };
   return (
     <>
+      <span className="results-anchor" />
       <Section title={groups.length > 1 ? t('Grupper') : t('Grupp')}>
         <p className="muted small section-intro">{groupsIntro(playoff.data)}</p>
         <div className="draw-groups">

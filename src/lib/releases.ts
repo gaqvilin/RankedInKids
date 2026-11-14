@@ -9,6 +9,9 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Bevaka en tävling: tryck Bevaka på tävlingen, så visar Översikt hur många par som är anmälda, vad som är nytt sedan du tittade sist och när anmälan stänger.',
+      'Snabbknappar: Resultat överst på tävlingen hoppar till tabeller och slutresultat. Arrangören har en knapp som alltid syns när resultat saknas.',
+      'Tightare resultat på matchkorten och enklare språkväljare.',
       'Grupper för tränare: samla dina spelare i en grupp på Översikt och se vad som behöver göras (söker partner, licens saknas), vilka som spelar den här veckan och resten. Gruppen sparas på ditt konto och kan delas med en länk.',
       'Appen finns på engelska: välj Svenska eller English under Meny. Första gången följer appen telefonens språk.',
       'Spelarsidan visar spelarens profilbild från Rankedin (eller initialen om bild saknas).',
