@@ -15,8 +15,9 @@ spelare, lagledare och arrangörer. All tävlingsdata ligger i Rankedin; vi läs
 - Rörelse är diskret och kort (sidor tonar in, nya resultat tonar in, skelett vid laddning) och stängs av med `prefers-reduced-motion`.
 
 ## Språk
-- All text i appen är på **svenska**. Kod, kommentarer och commit-meddelanden på engelska.
-- Användarnyheter: lägg en kort punkt i `src/lib/releases.ts` (översta posten) för varje ändring användare märker.
+- Appen finns på **svenska och engelska**. All text går genom `t('Svensk text')` (`src/lib/i18n.ts`); engelskan ligger i `src/lib/i18n/en/`. Se `docs/i18n.md` för regler och ordlista. Kod, kommentarer och commit-meddelanden på engelska.
+- Ny text: skriv svenskan i `t()` och lägg till engelskan i rätt ordlista – `test/i18n.test.ts` faller annars.
+- Användarnyheter: lägg en kort punkt i `src/lib/releases.ts` (översta posten) för varje ändring användare märker, och dess engelska i `src/lib/i18n/en/texts.ts`.
 
 ## Kommandon
 ```bash

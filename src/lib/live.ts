@@ -1,3 +1,4 @@
+import { t } from './i18n';
 // Client for Rankedin's live referee API (the same one used by
 // live.rankedin.com/refereePanel.html). Works with a match's referee code,
 // no login needed. CORS is open, so the browser talks to it directly.
@@ -50,9 +51,9 @@ export class RefereeSession {
   async init(): Promise<RefereeState> {
     const q = new URLSearchParams({ refereeCode: this.code, refereePlayerId: String(this.refereePlayerId) });
     const res = await fetch(`${LIVE_API}/Referee/init?${q}`);
-    if (!res.ok) throw new Error(res.status === 404 || res.status === 400 ? 'Okänd domarkod.' : `Live-tjänsten svarade ${res.status}`);
+    if (!res.ok) throw new Error(res.status === 404 || res.status === 400 ? t('Okänd domarkod.') : t('Live-tjänsten svarade {status}', { status: res.status }));
     const data = (await res.json()) as RefereeState;
-    if (!data || !data.matchDetails) throw new Error('Okänd domarkod.');
+    if (!data || !data.matchDetails) throw new Error(t('Okänd domarkod.'));
     this.state = data;
     this.matchId = data.matchDetails.matchId;
     return data;
@@ -79,7 +80,7 @@ export class RefereeSession {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...this.base(), matchAction, matchSubject, isLeftServePosition }),
     });
-    if (!res.ok) throw new Error(`Live-tjänsten svarade ${res.status}`);
+    if (!res.ok) throw new Error(t('Live-tjänsten svarade {status}', { status: res.status }));
     const next = (await res.json()) as RefereeState;
     if (next.wrongETag) {
       // Someone else (or another tab) refereed meanwhile: reload the true state.
@@ -107,7 +108,7 @@ export class RefereeSession {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...this.base(), settings }),
     });
-    if (!res.ok) throw new Error(`Live-tjänsten svarade ${res.status}`);
+    if (!res.ok) throw new Error(t('Live-tjänsten svarade {status}', { status: res.status }));
     const next = (await res.json()) as RefereeState;
     if (next.wrongETag) return this.init();
     return this.merge({ ...next, settings });

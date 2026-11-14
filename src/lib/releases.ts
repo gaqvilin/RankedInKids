@@ -9,6 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Appen finns på engelska: välj Svenska eller English under Meny. Första gången följer appen telefonens språk.',
       'Spelarsidan visar spelarens profilbild från Rankedin (eller initialen om bild saknas).',
       'Slutresultat: när slutspelet rapporteras visas placeringarna 1–8 i en egen ruta ovanför Slutspel.',
       'Anmäl till en tävling direkt i PadelAdmin: tryck Anmäl på tävlingen, välj klass och partner (eller "söker partner") och bekräfta. Betalning och avanmälan görs i Rankedin.',

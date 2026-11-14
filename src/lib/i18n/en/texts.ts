@@ -26,7 +26,7 @@ export const texts: Record<string, string> = {
   'med ditt Rankedin-konto om du vill rapportera resultat, sätta uppställning eller svara på tillgänglighet. Du kan lägga till flera konton, t.ex. ditt eget och ditt barns.': "with your Rankedin account if you want to report results, set line-ups or answer availability. You can add several accounts, e.g. your own and your child's.",
   'Lägg appen på hemskärmen': 'Put the app on your home screen',
   'med knappen': 'with the button',
-  'Lägg till på hemskärmen': 'Add to home screen',
+  'Lägg till på hemskärmen': 'Add to Home Screen',
   'i Menyn – eller i Safari: Dela → Lägg till på hemskärmen, i Chrome: menyn → Installera app.': 'in the Menu – or in Safari: Share → Add to Home Screen, in Chrome: menu → Install app.',
   'Översikt och spelare': 'Overview and players',
   'visar för varje spelare du följer: varningar (t.ex.': 'shows, for each player you follow: warnings (e.g.',
@@ -258,4 +258,8 @@ export const texts: Record<string, string> = {
   'Tävlingar med klasser, anmälda par, matcher och tabell.': 'Tournaments with classes, entered pairs, matches and table.',
   'Döm matcher live med domarkod.': 'Referee matches live with a referee code.',
   'Rapportera resultat med ditt Rankedin-konto.': 'Report results with your Rankedin account.',
+  'Okänd domarkod.': 'Unknown referee code.',
+  'Live-tjänsten svarade {status}': 'The live service answered {status}',
+  'Appen finns på engelska: välj Svenska eller English under Meny. Första gången följer appen telefonens språk.':
+    'The app is available in English: choose Svenska or English under Menu. The first time, the app follows the language of your phone.',
 };
