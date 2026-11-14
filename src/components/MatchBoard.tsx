@@ -85,7 +85,7 @@ export function MatchBoard({
                 played={m.played}
                 date={null}
                 court={m.court}
-                label={showClass ? m.className : undefined}
+                label={[m.upcoming ? m.draw : null, showClass ? m.className : null].filter(Boolean).join(' · ') || undefined}
                 highlightIds={highlight}
                 canEnterResult={m.canEnterResult}
                 awaitingConfirmation={m.awaitingConfirmation}

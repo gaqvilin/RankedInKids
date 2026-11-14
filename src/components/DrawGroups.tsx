@@ -1,6 +1,6 @@
 // The class's groups like a football group stage: table, the group's matches, then the playoff filled from the tables.
 import { fmtTime } from '../lib/format';
-import { getClassDraws, getClassPlayoff, groupLetter, resolvePlayoffSide, type DrawGroup, type PlayoffMatch, type TournamentMatch } from '../lib/rankedin';
+import { getClassDraws, getClassPlayoff, groupLetter, playoffRoundName, resolvePlayoffSide, type DrawGroup, type PlayoffMatch, type TournamentMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
 import { Section, Tip } from './ui';
 
@@ -187,11 +187,7 @@ function Fixture({ left, right, match, date, court, mine }: {
 }
 
 function Playoff({ list, groups, matches, mine }: { list: PlayoffMatch[]; groups: DrawGroup[]; matches: TournamentMatch[]; mine: (ids: number[]) => boolean }) {
-  const roundName = (m: PlayoffMatch) => {
-    if (m.places) return m.places[0] === 1 ? 'Final' : `Om plats ${m.places[0]}–${m.places[1]}`;
-    const left = m.maxRound - m.round;
-    return left === 0 ? 'Final' : left === 1 ? 'Semifinal' : left === 2 ? 'Kvartsfinal' : `Omgång ${m.round}`;
-  };
+  const roundName = playoffRoundName;
   const sorted = [...list].sort((a, b) => a.round - b.round || a.order - b.order);
   const rows = sorted.map((p) => {
     const m = matches.find((x) => x.id === p.matchId || x.id === p.challengeId);

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getClassPlayoff, groupDone, resolvePlayoffSide, type DrawGroup, type PlayoffSide } from '../src/lib/rankedin';
+import { getClassPlayoff, groupDone, playoffAsMatches, resolvePlayoffSide, type DrawGroup, type PlayoffSide } from '../src/lib/rankedin';
 import placement from './fixtures/playoff-placement.json';
 
 const pair = (i: number, names: string[], ids: number[]) => ({ index: i, names, ids });
@@ -58,5 +58,15 @@ describe('resolvePlayoffSide', () => {
   it('keeps real players as they are', () => {
     const real: PlayoffSide = { names: ['Aron A'], ids: [9], group: null, place: null };
     expect(resolvePlayoffSide(real, [])).toMatchObject({ names: ['Aron A'], label: null });
+  });
+});
+
+describe('playoffAsMatches', () => {
+  it('shows scheduled playoff matches with court and time; undecided pairs by place', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(placement))));
+    const [final, third] = playoffAsMatches('Pojkar 12 Step In', await getClassPlayoff(178911));
+    expect(final).toMatchObject({ id: 7064227, draw: 'Final', court: 'Ludz', date: '2026-11-14T14:00:00', played: false, canEnterResult: false, upcoming: true });
+    expect(final.sides.map((s) => s.names)).toEqual([['1:a grupp A'], ['1:a grupp B']]);
+    expect(third.draw).toBe('Om plats 3–4');
   });
 });
