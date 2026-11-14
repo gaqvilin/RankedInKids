@@ -78,17 +78,51 @@ function Icon({ d }: { d: string }) {
   );
 }
 
-function Sidebar() {
+const FULL_KEY = 'padeladmin.fullscreen';
+
+/** Desktop: hide the sidebar to use the whole screen (e.g. the board on match day). Remembered on this device. */
+function useFullWidth(): [boolean, (v: boolean) => void] {
+  const [full, setFull] = useState(() => {
+    try {
+      return localStorage.getItem(FULL_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const set = (v: boolean) => {
+    setFull(v);
+    try {
+      localStorage.setItem(FULL_KEY, v ? '1' : '0');
+    } catch {
+      /* private mode */
+    }
+  };
+  return [full, set];
+}
+
+const PanelIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+    <rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+    <path d="M9 4v16" stroke="currentColor" strokeWidth="2" />
+  </svg>
+);
+
+function Sidebar({ onHide }: { onHide: () => void }) {
   const { user } = useSession();
   const players = useKnownPlayers();
   const mine = useMine();
   const myTeams = mine.data?.teams ?? getSavedTeams().map((t) => ({ ...t, nextDate: null as string | null }));
   return (
     <aside className="sidebar" aria-label="Huvudmeny">
-      <Link to="/" className="brand" aria-label="PadelAdmin start">
-        <Logo />
-        <span className="brand__sub">Data från Rankedin</span>
-      </Link>
+      <div className="sidebar__top">
+        <Link to="/" className="brand" aria-label="PadelAdmin start">
+          <Logo />
+          <span className="brand__sub">Data från Rankedin</span>
+        </Link>
+        <button className="icon-btn" onClick={onHide} title="Dölj menyn" aria-label="Dölj menyn och använd hela skärmen">
+          <PanelIcon />
+        </button>
+      </div>
       <nav className="sidebar__nav">
         {MAIN_NAV.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `sidebar__link ${isActive ? 'is-active' : ''}`}>
@@ -248,10 +282,17 @@ function LoadingBar() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const [full, setFull] = useFullWidth();
   return (
-    <div className="shell">
+    <div className={`shell ${full ? 'shell--full' : ''}`}>
       <LoadingBar />
-      <Sidebar />
+      {full ? (
+        <button className="icon-btn show-sidebar" onClick={() => setFull(false)} title="Visa menyn" aria-label="Visa menyn">
+          <PanelIcon />
+        </button>
+      ) : (
+        <Sidebar onHide={() => setFull(true)} />
+      )}
       <div className="shell__main">
         {children}
       </div>
