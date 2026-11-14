@@ -2358,3 +2358,37 @@ button.tabbar__link {
   left: 0;
   right: auto;
 }
+
+/* Match board: one column per start time, scrolls sideways on narrow screens. */
+.board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(250px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x proximity;
+}
+.board__col {
+  min-width: 0;
+  background: var(--subtle);
+  border-radius: var(--radius);
+  padding: 8px;
+  scroll-snap-align: start;
+}
+.board__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 2px 4px 8px;
+}
+.board__col .match:last-child {
+  margin-bottom: 0;
+}
+.board {
+  grid-auto-columns: minmax(220px, 1fr);
+}
+.board .match {
+  font-size: 14px;
+  padding: 8px 10px;
+}
