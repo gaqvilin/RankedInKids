@@ -191,7 +191,12 @@ function Playoff({ list, groups, matches, mine }: { list: PlayoffMatch[]; groups
   const sorted = [...list].sort((a, b) => a.round - b.round || a.order - b.order);
   const rows = sorted.map((p) => {
     const m = matches.find((x) => x.id === p.matchId || x.id === p.challengeId);
-    const sides = p.sides.map((s) => resolvePlayoffSide(s, groups));
+    // When Rankedin lists the match, show its sides in the match's own order: the score and the winner follow that
+    // order, and the draw can list the same pairs the other way round.
+    const listed = !!m && m.sides.every((x) => x.ids.length > 0);
+    const sides = listed
+      ? m!.sides.map((x) => ({ names: x.names, ids: x.ids, group: null, place: null, label: null, provisional: false }))
+      : p.sides.map((s) => resolvePlayoffSide(s, groups));
     return { p, m, sides };
   });
   const provisional = rows.some((r) => r.sides.some((s) => s.provisional));
