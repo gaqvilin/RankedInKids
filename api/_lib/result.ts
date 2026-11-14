@@ -78,3 +78,34 @@ export function buildResetPayload(challengeId: number, challenge: ChallengeResul
     currPlayerId: Number(pick(challenge, 'currentPlayerId')) || 0,
   };
 }
+
+/** The sets Rankedin currently holds for a challenge ([] when unplayed). Games come as arrays or "6,4," strings. */
+export function currentSets(challenge: ChallengeResult): SetScore[] {
+  const games = (v: unknown): number[] =>
+    (Array.isArray(v) ? v : String(v ?? '').split(','))
+      .map((x) => String(x).trim())
+      .filter((x) => x !== '')
+      .map(Number)
+      .filter((n) => Number.isFinite(n));
+  const a = games(pick(challenge, 'firstPlayerGames') ?? pick(challenge, 'participant1Games'));
+  const b = games(pick(challenge, 'secondPlayerGames') ?? pick(challenge, 'participant2Games'));
+  const n = Math.min(a.length, b.length);
+  const sets: SetScore[] = [];
+  for (let i = 0; i < n; i++) if (a[i] || b[i]) sets.push([a[i], b[i]]);
+  const score = (Number(pick(challenge, 'participant1Score')) || 0) + (Number(pick(challenge, 'participant2Score')) || 0);
+  return sets.length || score ? sets : [];
+}
+
+const same = (x: SetScore[], y: SetScore[]) => x.length === y.length && x.every((s, i) => s[0] === y[i][0] && s[1] === y[i][1]);
+
+/**
+ * A result queued offline was entered against what the phone saw then (`expected`: [] = unplayed).
+ * If Rankedin now holds something else – someone else reported meanwhile – it is a conflict, unless it already equals ours.
+ */
+export function resultConflict(challenge: ChallengeResult, expected: SetScore[], ours: SetScore[] | null): SetScore[] | null {
+  const now = currentSets(challenge);
+  if (same(now, expected)) return null;
+  if (ours && same(now, ours)) return null;
+  if (!ours && now.length === 0) return null;
+  return now;
+}

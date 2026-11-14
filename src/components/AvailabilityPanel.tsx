@@ -4,6 +4,7 @@ import { ErrorBox, Loading, Tip } from './ui';
 import { getAvailability, setAvailability, STATUS_LABEL, type AvailabilityStatus } from '../lib/availability';
 import type { TeamPlayer } from '../lib/leagues';
 import { fmtDay } from '../lib/format';
+import { t } from '../lib/i18n';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 
@@ -20,9 +21,9 @@ export function AvailabilityPanel({ teamId, date, players, from }: { teamId: num
     return (
       <p className="muted">
         <Go to="/konto" from={from}>
-          Logga in
+          {t('Logga in')}
         </Go>{' '}
-        med ett Rankedin-konto i laget för att svara och se vilka som kan spela {fmtDay(date).replace(/\.$/, '')}.
+        {t('med ett Rankedin-konto i laget för att svara och se vilka som kan spela {day}.', { day: fmtDay(date).replace(/\.$/, '') })}
       </p>
     );
   }
@@ -52,10 +53,10 @@ export function AvailabilityPanel({ teamId, date, players, from }: { teamId: num
       <p className="small">
         {counts.map(([s, n]) => (
           <span key={s} className={`avail-count avail-count--${s}`}>
-            {STATUS_LABEL[s]}: <strong>{n}</strong>
+            {t(STATUS_LABEL[s])}: <strong>{n}</strong>
           </span>
         ))}
-        <span className="avail-count">Inte svarat: {unanswered}</span>
+        <span className="avail-count">{t('Inte svarat: {n}', { n: unanswered })}</span>
       </p>
       {error && <p className="field-error">{error}</p>}
       <div className="list">
@@ -67,14 +68,14 @@ export function AvailabilityPanel({ teamId, date, players, from }: { teamId: num
             <div key={p.id} className={`item avail-row ${isMe ? 'is-mine' : ''}`}>
               <span className="item__main">
                 {p.name}
-                {isMe && <span className="tag">Du</span>}
+                {isMe && <span className="tag">{t('Du')}</span>}
                 {!p.hasLicense && <span className="tag tag--warn">
-                    <Tip tip="Spelaren har ingen giltig tävlingslicens i Rankedin för i år.">Licens saknas</Tip>
+                    <Tip tip={t('Spelaren har ingen giltig tävlingslicens i Rankedin för i år.')}>{t('Licens saknas')}</Tip>
                   </span>}
-                {e && e.updatedBy !== p.name && <span className="muted small block">satt av {e.updatedBy}</span>}
+                {e && e.updatedBy !== p.name && <span className="muted small block">{t('satt av {name}', { name: e.updatedBy })}</span>}
               </span>
               {canEdit ? (
-                <span className="seg" role="group" aria-label={`Kan ${p.name} spela?`}>
+                <span className="seg" role="group" aria-label={t('Kan {name} spela?', { name: p.name })}>
                   {ORDER.map((s) => (
                     <button
                       key={s}
@@ -83,12 +84,12 @@ export function AvailabilityPanel({ teamId, date, players, from }: { teamId: num
                       aria-pressed={e?.status === s}
                       onClick={() => answer(p.id, s)}
                     >
-                      {STATUS_LABEL[s]}
+                      {t(STATUS_LABEL[s])}
                     </button>
                   ))}
                 </span>
               ) : (
-                <span className={`avail-status avail-status--${e?.status ?? 'none'}`}>{e ? STATUS_LABEL[e.status] : '–'}</span>
+                <span className={`avail-status avail-status--${e?.status ?? 'none'}`}>{e ? t(STATUS_LABEL[e.status]) : '–'}</span>
               )}
             </div>
           );

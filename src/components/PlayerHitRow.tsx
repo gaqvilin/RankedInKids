@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { getProfile, type PlayerHit } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
 import { Go } from './shell';
@@ -6,7 +7,7 @@ import { Go } from './shell';
 export function PlayerHitRow({ h, from, badge }: { h: PlayerHit; from: string; badge?: string }) {
   const profile = useAsync(() => getProfile(h.rankedinId), [h.rankedinId], `profile.${h.rankedinId}`);
   const p = profile.data;
-  const details = [p?.club, p?.age ? `${p.age} år` : null].filter(Boolean).join(' · ');
+  const details = [p?.club, p?.age ? t('{n} år', { n: p.age }) : null].filter(Boolean).join(' · ');
   return (
     <Go to={`/spelare/${h.rankedinId}`} from={from} className="item">
       <span className="item__main">

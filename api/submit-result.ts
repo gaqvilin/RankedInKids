@@ -3,7 +3,7 @@
 //   GET  Match/GetChallengeResultAsync  (participant ids, current player)
 //   POST Match/SubmitResultAsync
 import { RIN_API, getSessionCookie, json, rinHeaders, isSameOriginJson } from './_lib/rankedin.js';
-import { buildResetPayload, buildSubmitPayload, type ChallengeResult } from './_lib/result.js';
+import { buildResetPayload, buildSubmitPayload, currentSets, resultConflict, type ChallengeResult, type SetScore } from './_lib/result.js';
 import { clientIp, memoryLimit, tooMany } from './_lib/ratelimit.js';
 
 export async function POST(request: Request): Promise<Response> {
@@ -12,7 +12,8 @@ export async function POST(request: Request): Promise<Response> {
   const session = getSessionCookie(request);
   if (!session) return json({ error: 'not_logged_in' }, 401);
 
-  let body: { challengeId?: number; sets?: [number, number][]; reset?: boolean };
+  // expected: what the phone saw when the result was entered offline ([] = unplayed); checked before writing.
+  let body: { challengeId?: number; sets?: [number, number][]; reset?: boolean; expected?: SetScore[] };
   try {
     body = await request.json();
   } catch {
@@ -27,6 +28,15 @@ export async function POST(request: Request): Promise<Response> {
   if (current.status === 401 || current.status === 403) return json({ error: 'not_allowed' }, 403);
   if (!current.ok) return json({ error: 'upstream_error', status: current.status }, 502);
   const challenge = (await current.json()) as ChallengeResult;
+
+  if (Array.isArray(body.expected)) {
+    const ours = body.reset === true ? null : (body.sets ?? []);
+    const conflict = resultConflict(challenge, body.expected, ours);
+    if (conflict) return json({ error: 'conflict', current: conflict }, 409);
+    // Already there (e.g. the first send got through before the connection dropped): nothing to do.
+    const now = currentSets(challenge);
+    if (ours && now.length && JSON.stringify(now) === JSON.stringify(ours.map((x) => [Number(x[0]), Number(x[1])]))) return json({ ok: true, unchanged: true });
+  }
 
   let payload;
   try {

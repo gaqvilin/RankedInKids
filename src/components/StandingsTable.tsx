@@ -1,5 +1,6 @@
 import { Go } from './shell';
 import { Tip } from './ui';
+import { t } from '../lib/i18n';
 import type { StandingRow } from '../lib/leagues';
 
 export function StandingsTable({ rows, highlightTeamId, leagueId, from }: { rows: StandingRow[]; highlightTeamId?: number; leagueId?: number; from: string }) {
@@ -10,19 +11,19 @@ export function StandingsTable({ rows, highlightTeamId, leagueId, from }: { rows
         <thead>
           <tr>
             <th>#</th>
-            <th>Lag</th>
+            <th>{t('Lag')}</th>
             <th>
-              <Tip tip="Spelade lagmatcher">S</Tip>
+              <Tip tip={t('Spelade lagmatcher')}>{t('S')}</Tip>
             </th>
             <th>
-              <Tip tip="Vunna–förlorade lagmatcher">V–F</Tip>
+              <Tip tip={t('Vunna–förlorade lagmatcher')}>{t('V–F')}</Tip>
             </th>
             <th>
-              <Tip tip="Vunna–förlorade matcher (par mot par)">Matcher</Tip>
+              <Tip tip={t('Vunna–förlorade matcher (par mot par)')}>{t('Matcher')}</Tip>
             </th>
             {hasPoints && (
               <th>
-                <Tip tip="Poäng i serien">P</Tip>
+                <Tip tip={t('Poäng i serien')}>{t('P')}</Tip>
               </th>
             )}
           </tr>
@@ -56,7 +57,7 @@ export function StandingsTable({ rows, highlightTeamId, leagueId, from }: { rows
           ))}
         </tbody>
       </table>
-      <p className="muted small">Matcher = vunna och förlorade dubbelmatcher{hasPoints ? '. P = tabellpoäng' : ''}.</p>
+      <p className="muted small">{t('Matcher = vunna och förlorade dubbelmatcher')}{hasPoints ? t('. P = tabellpoäng') : ''}.</p>
     </>
   );
 }

@@ -6,10 +6,12 @@ import './styles.css';
 import { captureInstallPrompt } from './lib/install';
 import { startAnalytics } from './lib/analytics';
 import { reportError, startErrorReporting } from './lib/errors';
+import { startOffline } from './lib/offline';
 
 captureInstallPrompt();
 startAnalytics();
 startErrorReporting();
+startOffline();
 
 createRoot(document.getElementById('root')!, {
   onUncaughtError: (error) => reportError('crash', (error as Error)?.message ?? String(error)),

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Go } from '../components/shell';
 import { AppHeader, ErrorBox, ExternalLink, Loading, Page, Section } from '../components/ui';
 import { fmtDay } from '../lib/format';
+import { t } from '../lib/i18n';
 import { getLeague, type Pool } from '../lib/leagues';
 import { getLeagueRegulations, rinUrl } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
@@ -17,7 +18,7 @@ export default function League() {
     const groups = new Map<string, Pool[]>();
     for (const p of league.data?.pools || []) {
       if (filter && !p.name.toLowerCase().includes(filter.toLowerCase())) continue;
-      const key = p.region || 'Divisioner';
+      const key = p.region || t('Divisioner');
       groups.set(key, [...(groups.get(key) || []), p]);
     }
     return [...groups.entries()];
@@ -25,7 +26,7 @@ export default function League() {
 
   return (
     <>
-      <AppHeader back="/serier" backLabel="Serier" title={league.data?.name ?? 'Serie'} />
+      <AppHeader back="/serier" backLabel={t('Serier')} title={league.data?.name ?? t('Serie')} />
       <Page wide>
         {league.error && <ErrorBox error={league.error} onRetry={() => league.reload()} />}
         {!league.data && !league.error && <Loading />}
@@ -34,13 +35,13 @@ export default function League() {
             <div className="event-head">
               <p className="muted small">
                 {fmtDay(league.data.startDate)} – {fmtDay(league.data.endDate)}
-                {league.data.teamsCount ? ` · ${league.data.teamsCount} lag` : ''}
+                {league.data.teamsCount ? ` · ${league.data.teamsCount === 1 ? t('1 lag') : t('{n} lag', { n: league.data.teamsCount })}` : ''}
               </p>
               <h1>{league.data.name}</h1>
-              <ExternalLink href={rinUrl(`/sv/teamleague/${league.data.id}`)}>Öppna i Rankedin</ExternalLink>
+              <ExternalLink href={rinUrl(`/sv/teamleague/${league.data.id}`)}>{t('Öppna i Rankedin')}</ExternalLink>
               {regs.data && regs.data.length > 0 && (
                 <details className="fold">
-                  <summary>Seriens regler och information</summary>
+                  <summary>{t('Seriens regler och information')}</summary>
                   <div className="regulations">
                     {regs.data.map((line, i) => (
                       <p key={i}>{line}</p>
@@ -50,7 +51,7 @@ export default function League() {
               )}
             </div>
             {league.data.pools.length > 8 && (
-              <input className="input" type="search" placeholder="Filtrera, t.ex. Sydväst eller Div 2" value={filter} onChange={(e) => setFilter(e.target.value)} />
+              <input className="input" type="search" placeholder={t('Filtrera, t.ex. Sydväst eller Div 2')} value={filter} onChange={(e) => setFilter(e.target.value)} />
             )}
             {regions.map(([region, pools]) => (
               <Section key={region} title={region}>

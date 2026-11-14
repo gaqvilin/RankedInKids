@@ -3,6 +3,8 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { DrawGroups } from '../components/DrawGroups';
 import { matchStatus, type MatchStatus } from '../lib/matchStatus';
+import { JoinSheet } from '../components/JoinSheet';
+import { Sheet } from '../components/Sheet';
 import { MatchBoard, MatchViewToggle, useMatchView, type MatchView } from '../components/MatchBoard';
 import { AccountSwitcher } from '../components/AccountSwitcher';
 import { OutsidePartner } from '../components/PairingPanel';
@@ -12,6 +14,7 @@ import { isTournamentAdmin } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section, Tip } from '../components/ui';
 import { fmtDay, fmtTime, isSameDay, unlessInName, soon } from '../lib/format';
+import { t } from '../lib/i18n';
 import {
   getClasses,
   getClassPairs,
@@ -33,16 +36,25 @@ export default function Tournament() {
   const [params, setParams] = useSearchParams();
   const playerId = Number(params.get('spelare')) || null;
 
-  const header = useAsync(() => getTournament(tid), [tid]);
-  const classes = useAsync(() => getClasses(tid), [tid]);
+  // Remembered on the device (storeKey) so the page works offline on match day.
+  const header = useAsync(() => getTournament(tid), [tid], `t.${tid}`);
+  const classes = useAsync(() => getClasses(tid), [tid], `tclasses.${tid}`);
   const details = useAsync(() => getTournamentDetails(tid).catch(() => null), [tid], `tdetails.${tid}`);
   const { version, user } = useSession();
   const isOrganiser = useAsync(() => (user.loggedIn ? isTournamentAdmin(tid) : Promise.resolve(false)), [user.loggedIn, version, tid]);
-  const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version]);
+  const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version], `tmatches.${tid}`);
+  // Results queued offline went through: show them.
+  useEffect(() => {
+    const on = () => matches.reload();
+    window.addEventListener('padeladmin:results-sent', on);
+    return () => window.removeEventListener('padeladmin:results-sent', on);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tid]);
   const [onlyMine, setOnlyMine] = useState(!!playerId);
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
   const [onlyToReport, setOnlyToReport] = useState(false);
   const [view, setView] = useMatchView();
+  const [joining, setJoining] = useState(false);
 
   const myClass = useMemo(() => {
     if (!playerId || !matches.data) return null;
@@ -76,15 +88,15 @@ export default function Tournament() {
   const matchDay = isSameDay(header.data?.startDate) || isSameDay(header.data?.endDate);
   useEffect(() => {
     if (!matchDay) return;
-    const t = setInterval(() => matches.reload(), 60_000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => matches.reload(), 60_000);
+    return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchDay]);
 
   if (header.error) {
     return (
       <>
-        <AppHeader back="/tavlingar" backLabel="Tävlingar" />
+        <AppHeader back="/tavlingar" backLabel={t('Tävlingar')} />
         <Page>
           <ErrorBox error={header.error} onRetry={() => header.reload()} />
         </Page>
@@ -94,7 +106,7 @@ export default function Tournament() {
   if (!header.data) {
     return (
       <>
-        <AppHeader back="/tavlingar" backLabel="Tävlingar" />
+        <AppHeader back="/tavlingar" backLabel={t('Tävlingar')} />
         <Page>
           <Loading />
         </Page>
@@ -102,7 +114,7 @@ export default function Tournament() {
     );
   }
 
-  const t = header.data;
+  const tour = header.data;
   // Playoff matches Rankedin has scheduled but does not list yet (a pair is still "1:a grupp B"): show them with time and court.
   const listed = matches.data || [];
   const listedIds = new Set(listed.map((m) => m.id));
@@ -121,47 +133,52 @@ export default function Tournament() {
 
   return (
     <>
-      <AppHeader back="/tavlingar" backLabel="Tävlingar" />
+      <AppHeader back="/tavlingar" backLabel={t('Tävlingar')} />
       <Page wide>
         <div className="event-head">
           <p className="muted small">
-            {[fmtDay(t.startDate), unlessInName(t.name, t.city), soon(t.startDate)].filter(Boolean).join(' · ')}
+            {[fmtDay(tour.startDate), unlessInName(tour.name, tour.city), soon(tour.startDate)].filter(Boolean).join(' · ')}
           </p>
-          <h1>{t.name}</h1>
-          {all.length > 0 && (playedCount > 0 || isSameDay(t.startDate) || isSameDay(t.endDate)) && (
+          <h1>{tour.name}</h1>
+          {all.length > 0 && (playedCount > 0 || isSameDay(tour.startDate) || isSameDay(tour.endDate)) && (
             <div className="progress">
               <p className="progress__text">
                 {playedCount === all.length ? (
-                  <strong>Klar</strong>
+                  <strong>{t('Klar')}</strong>
                 ) : (
                   <>
                     <span className="live-dot" aria-hidden="true" />
-                    <strong>Pågår</strong>
+                    <strong>{t('Pågår')}</strong>
                   </>
                 )}{' '}
-                · {playedCount} av {all.length} matcher klara
-                {matches.at && playedCount < all.length && <span className="muted"> · uppdaterad {fmtTime(new Date(matches.at).toISOString()) || 'nyss'}</span>}
+                · {t('{n} av {total} matcher klara', { n: playedCount, total: all.length })}
+                {matches.at && playedCount < all.length && <span className="muted"> · {t('uppdaterad {time}', { time: fmtTime(new Date(matches.at).toISOString()) || t('nyss') })}</span>}
               </p>
               <div className="progress__bar" role="progressbar" aria-valuemin={0} aria-valuemax={all.length} aria-valuenow={playedCount}>
                 <div className="progress__fill" style={{ width: `${Math.round((playedCount / all.length) * 100)}%` }} />
               </div>
             </div>
           )}
-          {t.signInOpen && t.closeSignInDate && (
+          {tour.signInOpen && tour.closeSignInDate && (
             <p className="small">
-              Anmälan öppen till{' '}
+              {t('Anmälan öppen till')}{' '}
               <strong>
-                {fmtDay(t.closeSignInDate)} {fmtTime(t.closeSignInDate)}
+                {fmtDay(tour.closeSignInDate)} {fmtTime(tour.closeSignInDate)}
               </strong>
             </p>
           )}
+          {tour.signInOpen && (
+            <button className="btn btn--primary btn--small" onClick={() => setJoining(true)}>
+              {t('Anmäl')}
+            </button>
+          )}{' '}
           {isOrganiser.data && (
-            <Go className="btn btn--primary btn--small" to={`/tavling/${tid}/ledning`} from={t.name}>
-              Tävlingsledning
+            <Go className="btn btn--primary btn--small" to={`/tavling/${tid}/ledning`} from={tour.name}>
+              {t('Tävlingsledning')}
             </Go>
           )}
           <details className="fold fold--quiet">
-            <summary>Om tävlingen</summary>
+            <summary>{t('Om tävlingen')}</summary>
             {details.data && (
               <p className="small">
                 {details.data.venue && <strong>{details.data.venue}</strong>}
@@ -169,14 +186,14 @@ export default function Tournament() {
                 {details.data.mapUrl && (
                   <>
                     {' '}
-                    · <ExternalLink href={details.data.mapUrl}>Karta</ExternalLink>
+                    · <ExternalLink href={details.data.mapUrl}>{t('Karta')}</ExternalLink>
                   </>
                 )}
                 <span className="block muted">
                   {[
-                    details.data.sanctioned ? 'Sanktionerad (ger rankingpoäng)' : 'Osanktionerad',
-                    details.data.fees.length ? `Avgift ${[...new Set(details.data.fees.map((f) => `${f.price} kr`))].join(' / ')}` : null,
-                    details.data.organiser ? `Arrangör ${details.data.organiser.name}` : null,
+                    details.data.sanctioned ? t('Sanktionerad (ger rankingpoäng)') : t('Osanktionerad'),
+                    details.data.fees.length ? t('Avgift {fees}', { fees: [...new Set(details.data.fees.map((f) => `${f.price} kr`))].join(' / ') }) : null,
+                    details.data.organiser ? t('Arrangör {name}', { name: details.data.organiser.name }) : null,
                   ]
                     .filter(Boolean)
                     .join(' · ')}
@@ -191,10 +208,10 @@ export default function Tournament() {
               </div>
             )}
             <p className="small row gap wrap">
-              <ExternalLink href={rinUrl(t.url)}>Öppna i Rankedin</ExternalLink>
+              <ExternalLink href={rinUrl(tour.url)}>{t('Öppna i Rankedin')}</ExternalLink>
               {!isOrganiser.data && (
-                <Go className="muted" to={`/tavling/${tid}/ledning`} from={t.name}>
-                  För arrangören
+                <Go className="muted" to={`/tavling/${tid}/ledning`} from={tour.name}>
+                  {t('För arrangören')}
                 </Go>
               )}
             </p>
@@ -203,16 +220,17 @@ export default function Tournament() {
 
         {nextMine && (
           <Notice tone="ok">
-            <strong>Nästa match:</strong> {fmtTime(nextMine.date) || 'tid ej satt'}
-            {nextMine.court ? ` på ${nextMine.court}` : ''} mot {nextMine.sides.find((s) => !s.ids.includes(playerId!))?.names.join(' / ')}
+            <strong>{t('Nästa match:')}</strong> {fmtTime(nextMine.date) || t('tid ej satt')}
+            {nextMine.court ? ` ${t('på {court}', { court: nextMine.court })}` : ''}{' '}
+            {t('mot {names}', { names: nextMine.sides.find((s) => !s.ids.includes(playerId!))?.names.join(' / ') ?? '' })}
           </Notice>
         )}
 
         {classes.data && classes.data.length > 0 && (
-          <div className="chips chips--wrap-wide" role="tablist" aria-label="Klasser">
+          <div className="chips chips--wrap-wide" role="tablist" aria-label={t('Klasser')}>
             {mine.length > 0 && (
               <button className={`chip ${showMine ? 'chip--on' : ''}`} onClick={() => setOnlyMine(true)} role="tab" aria-selected={showMine}>
-                Mina matcher
+                {t('Mina matcher')}
               </button>
             )}
             {classes.data.length > 1 && (
@@ -222,7 +240,7 @@ export default function Tournament() {
                 className={`chip ${!showMine && showAll ? 'chip--on' : ''}`}
                 onClick={() => selectClass(ALL)}
               >
-                Alla klasser
+                {t('Alla klasser')}
               </button>
             )}
             {classes.data.map((c) => (
@@ -243,17 +261,18 @@ export default function Tournament() {
         {!matches.data && matches.loading && <Loading />}
         {(reportable.length > 0 || onlyToReport) && !showMine && (
           <label className="toolbar__check report-toggle">
-            <input type="checkbox" checked={onlyToReport} onChange={(e) => setOnlyToReport(e.target.checked)} /> Bara matcher att rapportera (
-            {reportable.length} kvar)
+            <input type="checkbox" checked={onlyToReport} onChange={(e) => setOnlyToReport(e.target.checked)} />{' '}
+            {t('Bara matcher att rapportera ({n} kvar)', { n: reportable.length })}
           </label>
         )}
 
         {showMine ? (
           <>
-          <Section title="Mina matcher" action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
+          <Section title={t('Mina matcher')} action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
             {mine.map((m) => (
               <MatchCard
                 key={m.id}
+                challengeId={m.id}
                 sides={m.sides}
                 sets={m.sets}
                 played={m.played}
@@ -288,7 +307,7 @@ export default function Tournament() {
               {showAll && all.length > 0 && (
                 // All classes: one list in time order, so no class is hidden below another class's matches and table.
                 <Section
-                  title="Matcher"
+                  title={t('Matcher')}
                   action={
                     <span className="row gap">
                       <MatchViewToggle view={view} onChange={setView} />
@@ -308,6 +327,7 @@ export default function Tournament() {
                     byTime(filtered).map((m) => (
                       <MatchCard
                         key={m.id}
+                        challengeId={m.id}
                         sides={m.sides}
                         sets={m.sets}
                         played={m.played}
@@ -333,10 +353,10 @@ export default function Tournament() {
                   pairs={pairs.data?.get(c.name)}
                   pairsLoading={pairs.loading}
                   highlight={highlight}
-                  finished={t.state === 4}
+                  finished={tour.state === 4}
                   tournamentId={tid}
                   classId={c.id}
-                  signInOpen={t.signInOpen}
+                  signInOpen={tour.signInOpen}
                   onPairsChanged={() => pairs.reload()}
                   onEnterResult={setReporting}
                   hideMatches={showAll}
@@ -350,6 +370,29 @@ export default function Tournament() {
           )
         )}
       </Page>
+
+      {joining &&
+        (user.loggedIn ? (
+          <JoinSheet
+            tournamentId={tid}
+            tournamentName={tour.name}
+            rankedinUrl={rinUrl(tour.url)}
+            fees={details.data?.fees ?? []}
+            onClose={() => setJoining(false)}
+            onDone={() => pairs.reload()}
+          />
+        ) : (
+          <Sheet label={t('Anmäl')} onClose={() => setJoining(false)}>
+            <h2>{t('Anmäl till tävlingen')}</h2>
+            <p>{t('Anmälan görs med spelarens eget Rankedin-konto. Logga in med det först.')}</p>
+            <Go className="btn btn--primary btn--block" to="/konto" from={tour.name}>
+              {t('Logga in')}
+            </Go>
+            <button className="btn btn--ghost btn--block" onClick={() => setJoining(false)}>
+              {t('Avbryt')}
+            </button>
+          </Sheet>
+        ))}
 
       {reporting && (
         <ResultSheet
@@ -394,9 +437,9 @@ function ClassBlock(props: {
   const isMine = (ids: number[]) => highlight.some((h) => ids.includes(h));
   const drawn = matches.length > 0;
   const pairsSection = (
-    <Section title={`Anmälda par${pairs ? ` (${pairs.length})` : ''}`}>
+    <Section title={pairs ? t('Anmälda par ({n})', { n: pairs.length }) : t('Anmälda par')}>
       {props.pairsLoading && !pairs && <Loading />}
-      {pairs && pairs.length === 0 && <Empty>Inga anmälda.</Empty>}
+      {pairs && pairs.length === 0 && <Empty>{t('Inga anmälda.')}</Empty>}
       {pairs &&
         (() => {
           // Help a player without a partner: who else in this class is looking?
@@ -406,8 +449,8 @@ function ClassBlock(props: {
           return (
             <>
               <p className="notice notice--warn small">
-                <strong>{mineLooking.players[0]?.name.split(' ')[0]} söker partner.</strong>{' '}
-                {others.length ? `Även ${others.join(', ')} söker.` : 'Ingen annan i klassen söker just nu.'}
+                <strong>{t('{name} söker partner.', { name: mineLooking.players[0]?.name.split(' ')[0] ?? '' })}</strong>{' '}
+                {others.length ? t('Även {names} söker.', { names: others.join(', ') }) : t('Ingen annan i klassen söker just nu.')}
               </p>
               {props.signInOpen && mineLooking.players[0] && (
                 <AddPartnerBox
@@ -425,9 +468,9 @@ function ClassBlock(props: {
           {pairs.map((pair, i) => (
             <li key={i} className={isMine(pair.players.map((p) => p.id)) ? 'is-mine' : ''}>
               {pair.players.map((p) => p.name).join(' / ')}
-              {pair.missingPartner && <span className="pill pill--warn">Söker partner</span>}
+              {pair.missingPartner && <span className="pill pill--warn">{t('Söker partner')}</span>}
               {!props.finished && pair.players.some((p) => !p.hasLicense) && <span className="pill pill--warn">
-                  <Tip tip="Spelaren har ingen giltig tävlingslicens i Rankedin för i år.">Licens saknas</Tip>
+                  <Tip tip={t('Spelaren har ingen giltig tävlingslicens i Rankedin för i år.')}>{t('Licens saknas')}</Tip>
                 </span>}
             </li>
           ))}
@@ -438,10 +481,10 @@ function ClassBlock(props: {
   const body = (
     <>
       {!drawn && pairsSection}
-      {!drawn && <p className="muted small">Lottningen är inte publicerad än – matcher och tider dyker upp här när den är klar.</p>}
+      {!drawn && <p className="muted small">{t('Lottningen är inte publicerad än – matcher och tider dyker upp här när den är klar.')}</p>}
       {drawn && !props.hideMatches && (
         <Section
-          title="Matcher"
+          title={t('Matcher')}
           action={
             <span className="row gap">
               <MatchViewToggle view={props.view} onChange={props.onViewChange} />
@@ -455,6 +498,7 @@ function ClassBlock(props: {
             matches.map((m) => (
               <MatchCard
                 key={m.id}
+                challengeId={m.id}
                 sides={m.sides}
                 sets={m.sets}
                 played={m.played}
@@ -520,36 +564,36 @@ function AddPartnerBox({
   if (!open && !msg)
     return (
       <button className="btn btn--primary btn--small" onClick={() => setOpen(true)}>
-        Lägg till partner åt {first}
+        {t('Lägg till partner åt {name}', { name: first })}
       </button>
     );
   return (
     <div className="add-partner">
-      <strong>Lägg till partner åt {first}</strong>
+      <strong>{t('Lägg till partner åt {name}', { name: first })}</strong>
       {!active ? (
         <>
-          <p className="small">Det görs med {first}s eget Rankedin-konto. Byt till det kontot:</p>
-          <AccountSwitcher label="Aktivt konto" />
+          <p className="small">{t('Det görs med {name}s eget Rankedin-konto. Byt till det kontot:', { name: first })}</p>
+          <AccountSwitcher label={t('Aktivt konto')} />
         </>
       ) : (
         <>
-          <p className="small muted">Sök fram partnern. Det funkar även om hen spelar i en annan klubb och inte är anmäld än.</p>
+          <p className="small muted">{t('Sök fram partnern. Det funkar även om hen spelar i en annan klubb och inte är anmäld än.')}</p>
           <OutsidePartner
             disabled={busy}
             exclude={[seeker.id]}
             onPick={async (h) => {
-              if (!window.confirm(`Lägga till ${h.name} som partner till ${seeker.name}? Ändringen görs direkt i Rankedin.`)) return;
+              if (!window.confirm(t('Lägga till {partner} som partner till {name}? Ändringen görs direkt i Rankedin.', { partner: h.name, name: seeker.name }))) return;
               setBusy(true);
               setMsg(null);
               try {
                 await addMyPartner(tournamentId, classId, h.id);
                 setMsg({
                   tone: 'ok',
-                  text: `${h.name} är tillagd som partner. Rankedin kan be ${h.name.split(' ')[0]} bekräfta – kolla listan nedan.`,
+                  text: t('{partner} är tillagd som partner. Rankedin kan be {first} bekräfta – kolla listan nedan.', { partner: h.name, first: h.name.split(' ')[0] }),
                 });
                 onDone();
               } catch (e) {
-                setMsg({ tone: 'error', text: (e as Error).message });
+                setMsg({ tone: 'error', text: t((e as Error).message) });
               } finally {
                 setBusy(false);
               }

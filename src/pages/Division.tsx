@@ -5,13 +5,14 @@ import { FixtureCard } from '../components/FixtureCard';
 import { StandingsTable } from '../components/StandingsTable';
 import { AppHeader, Empty, ErrorBox, Loading, Page, RefreshButton, Section } from '../components/ui';
 import { getLeague, getPoolFixtures, getStandings, type Fixture } from '../lib/leagues';
+import { t } from '../lib/i18n';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 
 function byRound(fixtures: Fixture[]): [string, Fixture[]][] {
   const groups = new Map<string, Fixture[]>();
   for (const f of fixtures) {
-    const key = f.round != null ? `Omgång ${f.round}` : 'Övriga';
+    const key = f.round != null ? t('Omgång {n}', { n: f.round }) : t('Övriga');
     groups.set(key, [...(groups.get(key) || []), f]);
   }
   return [...groups.entries()];
@@ -32,7 +33,7 @@ export default function Division() {
   const rounds = byRound(fixtures.data || []);
   const nextRound = rounds.find(([, fs]) => fs.some((f) => !f.played))?.[0];
 
-  const title = pool?.division || 'Division';
+  const title = pool?.division || t('Division');
   return (
     <>
       <AppHeader back={leagueId ? `/liga/${leagueId}` : '/serier'} backLabel={league.data?.name ?? 'Klubbligan'} title={title} />
@@ -53,12 +54,12 @@ export default function Division() {
 
         <div className="columns">
           <div>
-            <Section title="Tabell" action={<RefreshButton onClick={() => standings.reload()} loading={standings.loading} />}>
+            <Section title={t('Tabell')} action={<RefreshButton onClick={() => standings.reload()} loading={standings.loading} />}>
               {standings.error && <ErrorBox error={standings.error} onRetry={() => standings.reload()} />}
               {!standings.data && standings.loading && <Loading />}
-              {standings.data && standings.data.length === 0 && <Empty>Ingen tabell ännu.</Empty>}
+              {standings.data && standings.data.length === 0 && <Empty>{t('Ingen tabell ännu.')}</Empty>}
               {league.data && !showsStandings(seriesKind(league.data.name)) ? (
-                <p className="notice notice--info small">I Klubbligans yngsta klasser (10–13 och 10–14 år) förs ingen tabell. Matcherna och resultaten finns här bredvid.</p>
+                <p className="notice notice--info small">{t('I Klubbligans yngsta klasser (10–13 och 10–14 år) förs ingen tabell. Matcherna och resultaten finns här bredvid.')}</p>
               ) : standings.data && standings.data.length > 0 && (
                 <StandingsTable rows={standings.data} highlightTeamId={highlight} leagueId={leagueId} from={title} />
               )}
@@ -67,9 +68,9 @@ export default function Division() {
           <div>
             {fixtures.error && <ErrorBox error={fixtures.error} onRetry={() => fixtures.reload()} />}
             {!fixtures.data && fixtures.loading && <Loading />}
-            {fixtures.data && fixtures.data.length === 0 && <Empty>Inga matcher lottade ännu.</Empty>}
+            {fixtures.data && fixtures.data.length === 0 && <Empty>{t('Inga matcher lottade ännu.')}</Empty>}
             {rounds.map(([round, fs]) => (
-              <Section key={round} title={round + (round === nextRound ? ' · nästa' : '')}>
+              <Section key={round} title={round + (round === nextRound ? ` · ${t('nästa')}` : '')}>
                 {fs.map((f) => (
                   <FixtureCard key={f.teamMatchId} f={f} highlightTeamId={highlight} from={title} />
                 ))}

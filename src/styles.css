@@ -2456,6 +2456,27 @@ button.tabbar__link {
   }
 }
 
+/* Offline and results waiting to be sent. */
+.offline-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 16px;
+  font-size: 14px;
+}
+.offline-bar.is-offline {
+  border-bottom-color: var(--warn);
+}
+.offline-bar p {
+  margin: 2px 0;
+}
+.offline-bar__problem {
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.offline-bar__problem p {
+  color: var(--warn);
+}
+
 /* ---------- Look: soft cards, accent, status and motion ---------- */
 .match,
 .list,
@@ -2742,4 +2763,40 @@ button.tabbar__link {
 }
 .page-title__who > div {
   min-width: 0;
+}
+.item--button.is-on {
+  background: var(--accent-soft);
+}
+.item--button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Trainer's group on Översikt */
+.group {
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.group__name {
+  font-size: 20px;
+}
+.group-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.group-row__who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+}
+.group-row__who:hover {
+  text-decoration: none;
+}
+.group-row__action {
+  flex: none;
 }

@@ -2,6 +2,7 @@
 // to /api/errors so the owners see them (Feedback page) without anyone having to tell us.
 // Never personal data: the server scrubs ids and e-mail addresses, and we only send the path.
 import { anonymousPath } from './analytics';
+import { t } from './i18n';
 import { CURRENT_VERSION } from './releases';
 
 export type ErrorKind = 'crash' | 'shown' | 'call';
@@ -86,6 +87,6 @@ export function startErrorReporting() {
 export async function listErrors(): Promise<ErrorSummary[] | null> {
   const res = await fetch('/api/errors', { credentials: 'same-origin' });
   if (res.status === 401 || res.status === 403) return null;
-  if (!res.ok) throw new Error('Kunde inte hämta felen.');
+  if (!res.ok) throw new Error(t('Kunde inte hämta felen.'));
   return ((await res.json()) as { items: ErrorSummary[] }).items;
 }

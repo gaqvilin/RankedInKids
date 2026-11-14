@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { useState } from 'react';
 import { sendFeedback } from '../lib/feedback';
 import { Sheet } from './Sheet';
@@ -25,13 +26,13 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Sheet label="Ge feedback" onClose={onClose}>
-      <h2>Ge feedback</h2>
+    <Sheet label={t('Ge feedback')} onClose={onClose}>
+      <h2>{t('Ge feedback')}</h2>
       {sent ? (
         <>
-          <p>Tack! Vi läser allt.</p>
+          <p>{t('Tack! Vi läser allt.')}</p>
           <button className="btn btn--primary" onClick={onClose}>
-            Stäng
+            {t('Stäng')}
           </button>
         </>
       ) : (
@@ -42,8 +43,8 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             maxLength={4000}
-            placeholder="Vad krånglar, vad saknas, vad kan bli bättre?"
-            aria-label="Feedback"
+            placeholder={t('Vad krånglar, vad saknas, vad kan bli bättre?')}
+            aria-label={t('Feedback')}
             autoFocus
           />
           <input
@@ -51,17 +52,17 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
             value={contact}
             onChange={(e) => setContact(e.target.value)}
             maxLength={200}
-            placeholder="E-post eller telefon (valfritt)"
-            aria-label="Kontakt"
+            placeholder={t('E-post eller telefon (valfritt)')}
+            aria-label={t('Kontakt')}
           />
           <input className="visually-hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" value={website} onChange={(e) => setWebsite(e.target.value)} name="website" />
-          {error && <p className="notice notice--error small">{error}</p>}
+          {error && <p className="notice notice--error small">{t(error)}</p>}
           <div className="row gap">
             <button className="btn btn--primary" disabled={busy || message.trim().length < 3} onClick={send}>
-              {busy ? 'Skickar…' : 'Skicka'}
+              {busy ? t('Skickar…') : t('Skicka')}
             </button>
             <button className="btn btn--ghost" onClick={onClose}>
-              Avbryt
+              {t('Avbryt')}
             </button>
           </div>
         </>

@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { rememberRecentPlayer } from '../lib/storage';
 import { seriesKind, showsStandings } from '../lib/rules';
 import { useEffect, useState } from 'react';
@@ -21,50 +22,59 @@ export function fmtRange(start: string | null, end: string | null): string {
 }
 
 /** hideNext: the page shows the next speldag right below (Player page). */
-export function LeagueTeamCard({ t, from, hideNext = false }: { t: LeagueTeamSummary; from: string; hideNext?: boolean }) {
-  const opponent = t.next ? (t.next.home.id === t.teamId ? t.next.away : t.next.home) : null;
+export function LeagueTeamCard({ t: team, from, hideNext = false }: { t: LeagueTeamSummary; from: string; hideNext?: boolean }) {
+  const opponent = team.next ? (team.next.home.id === team.teamId ? team.next.away : team.next.home) : null;
   // A speldag often has two team matches: name every opponent that day.
-  const nextDay = t.next?.date?.slice(0, 10);
+  const nextDay = team.next?.date?.slice(0, 10);
   const nextOpponents = nextDay
-    ? [...new Set(t.upcoming.filter((f) => f.date?.slice(0, 10) === nextDay).map((f) => (f.home.id === t.teamId ? f.away.name : f.home.name)))]
+    ? [...new Set(team.upcoming.filter((f) => f.date?.slice(0, 10) === nextDay).map((f) => (f.home.id === team.teamId ? f.away.name : f.home.name)))]
     : [];
-  const last = t.last;
-  const lastOwn = last ? (last.home.id === t.teamId ? last.home : last.away) : null;
-  const lastOpp = last ? (last.home.id === t.teamId ? last.away : last.home) : null;
+  const last = team.last;
+  const lastOwn = last ? (last.home.id === team.teamId ? last.home : last.away) : null;
+  const lastOpp = last ? (last.home.id === team.teamId ? last.away : last.home) : null;
   // The last speldag as a whole: "Senast lör 7 nov: vann 5–1 mot GLTK, förlorade 1–5 mot Halmstad".
-  const lastDay = t.lastDay?.length ? t.lastDay : last ? [last] : [];
+  const lastDay = team.lastDay?.length ? team.lastDay : last ? [last] : [];
   const tally = lastDay.reduce(
     (acc, f) => {
-      const [own, opp] = f.home.id === t.teamId ? [f.home, f.away] : [f.away, f.home];
+      const [own, opp] = f.home.id === team.teamId ? [f.home, f.away] : [f.away, f.home];
       const d = (Number(own.result) || 0) - (Number(opp.result) || 0);
       return d > 0 ? { ...acc, w: acc.w + 1 } : d < 0 ? { ...acc, l: acc.l + 1 } : acc;
     },
     { w: 0, l: 0 },
   );
   const lastSummary = lastDay.length
-    ? `Senast ${fmtDay(lastDay[0].date)}: ${[tally.w ? `${tally.w} vinst${tally.w > 1 ? 'er' : ''}` : null, tally.l ? `${tally.l} förlust${tally.l > 1 ? 'er' : ''}` : null].filter(Boolean).join(', ') || 'oavgjort'}`
+    ? t('Senast {day}: {summary}', {
+        day: fmtDay(lastDay[0].date),
+        summary:
+          [
+            tally.w ? (tally.w > 1 ? t('{n} vinster', { n: tally.w }) : t('1 vinst')) : null,
+            tally.l ? (tally.l > 1 ? t('{n} förluster', { n: tally.l }) : t('1 förlust')) : null,
+          ]
+            .filter(Boolean)
+            .join(', ') || t('oavgjort'),
+      })
     : lastOwn && lastOpp
-      ? `Senast ${lastOwn.result}–${lastOpp.result} mot ${lastOpp.name}`
+      ? t('Senast {own}–{opp} mot {name}', { own: lastOwn.result ?? '', opp: lastOpp.result ?? '', name: lastOpp.name })
       : null;
   return (
-    <Go to={`/lag/${t.teamId}`} from={from} className="item">
+    <Go to={`/lag/${team.teamId}`} from={from} className="item">
       <span className="item__main">
-        <strong>{t.teamName}</strong>
-        <span className="muted small block">{t.leagueName.replace(/\s*\b(HT|VT)\s*\d{2}\b.*$/i, '').replace(/^SPL Swedish Padel League\s*/i, 'SPL ')}</span>
-        {!t.active && <span className="muted small block">{fmtRange(t.startDate, t.endDate)}</span>}
+        <strong>{team.teamName}</strong>
+        <span className="muted small block">{team.leagueName.replace(/\s*\b(HT|VT)\s*\d{2}\b.*$/i, '').replace(/^SPL Swedish Padel League\s*/i, 'SPL ')}</span>
+        {!team.active && <span className="muted small block">{fmtRange(team.startDate, team.endDate)}</span>}
       </span>
-      {t.active && (
+      {team.active && (
         <span className="item__side small">
-          {t.position != null && showsStandings(seriesKind(t.leagueName)) && (
+          {team.position != null && showsStandings(seriesKind(team.leagueName)) && (
             <span className="block">
-              Plats <strong>{t.position}</strong>
-              {t.teamsInDivision ? ` av ${t.teamsInDivision}` : ''}
+              {t('Plats')} <strong>{team.position}</strong>
+              {team.teamsInDivision ? ` ${t('av')} ${team.teamsInDivision}` : ''}
             </span>
           )}
           {lastSummary && <span className="block muted">{lastSummary}</span>}
-          {!hideNext && opponent && t.next && (
+          {!hideNext && opponent && team.next && (
             <span className="block muted">
-              Nästa {fmtDay(t.next.date)} mot {nextOpponents.length ? nextOpponents.join(' och ') : opponent.name}
+              {t('Nästa {day} mot {opponents}', { day: fmtDay(team.next.date), opponents: nextOpponents.length ? nextOpponents.join(` ${t('och')} `) : opponent.name })}
             </span>
           )}
         </span>
@@ -91,7 +101,7 @@ export default function Player() {
   if (profile.error || !profile.data) {
     return (
       <>
-        <AppHeader back="/" backLabel="Översikt" />
+        <AppHeader back="/" backLabel={t('Översikt')} />
         <Page>{profile.error ? <ErrorBox error={profile.error} onRetry={() => profile.reload()} /> : <Loading />}</Page>
       </>
     );
@@ -110,7 +120,7 @@ export default function Player() {
 
   return (
     <>
-      <AppHeader back="/" backLabel="Översikt" title={p.name} />
+      <AppHeader back="/" backLabel={t('Översikt')} title={p.name} />
       <Page wide>
         <div className="page-title">
           <div className="page-title__who">
@@ -126,7 +136,7 @@ export default function Player() {
                 ) : (
                   p.club
                 ))}
-              {[p.age && `${p.age} år`, p.doublesThisYear && `dubbel i år ${p.doublesThisYear}`]
+              {[p.age && t('{n} år', { n: p.age }), p.doublesThisYear && t('dubbel i år {n}', { n: p.doublesThisYear })]
                 .filter(Boolean)
                 .map((part, i) => (
                   <span key={i}>
@@ -138,7 +148,7 @@ export default function Player() {
             </div>
           </div>
           <button className={`btn btn--small ${saved ? '' : 'btn--primary'}`} onClick={toggleSave} aria-pressed={saved}>
-            {saved ? 'Sparad' : 'Spara som min spelare'}
+            {saved ? t('Sparad') : t('Spara som min spelare')}
           </button>
         </div>
 
@@ -148,10 +158,12 @@ export default function Player() {
             const h = hoursUntil(e.closeSignInDate);
             return (
               <Notice key={e.event.id} tone={h != null && h < 72 ? 'error' : 'warn'}>
-                <strong>Partner saknas</strong> till {e.event.name.split(/\s[\/–-]\s/)[0]}
-                {e.closeSignInDate ? ` – anmälan stänger ${relativeDays(e.closeSignInDate)} ${fmtTime(e.closeSignInDate)}` : ''}.{' '}
+                <strong>{t('Partner saknas')}</strong>{' '}
+                {e.closeSignInDate
+                  ? t('till {event} – anmälan stänger {when}.', { event: e.event.name.split(/\s[\/–-]\s/)[0], when: `${relativeDays(e.closeSignInDate)} ${fmtTime(e.closeSignInDate)}` })
+                  : t('till {event}.', { event: e.event.name.split(/\s[\/–-]\s/)[0] })}{' '}
                 <Go to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`} from={p.firstName}>
-                  Lös det
+                  {t('Lös det')}
                 </Go>
               </Notice>
             );
@@ -160,7 +172,7 @@ export default function Player() {
         <div className="columns">
           <div>
             {matches.data && matches.data.length > 0 && (
-              <Section title="Lottade matcher" action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
+              <Section title={t('Lottade matcher')} action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
                 {matches.data.map((m) => (
                   <MatchCard
                     key={m.challengeId}
@@ -184,33 +196,33 @@ export default function Player() {
             )}
             {matches.error && <ErrorBox error={matches.error} onRetry={() => matches.reload()} />}
 
-            <Section title="Schema">
+            <Section title={t('Schema')}>
               {!o && overview.loading && <Loading />}
-              {o && agenda.length === 0 && <Empty>Inget inbokat just nu.</Empty>}
+              {o && agenda.length === 0 && <Empty>{t('Inget inbokat just nu.')}</Empty>}
               {agenda.length > 0 && <Agenda items={agenda} playerId={p.id} from={p.firstName} />}
             </Section>
           </div>
 
           <div>
-            <Section title="Lag">
+            <Section title={t('Lag')}>
               {!o && overview.loading && <Loading />}
-              {o && o.leagueTeams.length === 0 && <Empty>Inget lag i någon serie.</Empty>}
+              {o && o.leagueTeams.length === 0 && <Empty>{t('Inget lag i någon serie.')}</Empty>}
               {activeTeams.length > 0 && (
                 <div className="list">
-                  {activeTeams.map((t) => (
-                    <div key={t.leagueId}>
-                      <LeagueTeamCard t={t} from={p.firstName} hideNext />
-                      <PlayerRound team={t} playerId={p.id} rankedinId={p.rankedinId} from={p.firstName} />
+                  {activeTeams.map((lt) => (
+                    <div key={lt.leagueId}>
+                      <LeagueTeamCard t={lt} from={p.firstName} hideNext />
+                      <PlayerRound team={lt} playerId={p.id} rankedinId={p.rankedinId} from={p.firstName} />
                     </div>
                   ))}
                 </div>
               )}
               {pastTeams.length > 0 && (
                 <details className="fold">
-                  <summary>Tidigare säsonger ({pastTeams.length})</summary>
+                  <summary>{t('Tidigare säsonger ({n})', { n: pastTeams.length })}</summary>
                   <div className="list">
-                    {pastTeams.map((t) => (
-                      <LeagueTeamCard key={t.leagueId} t={t} from={p.firstName} />
+                    {pastTeams.map((lt) => (
+                      <LeagueTeamCard key={lt.leagueId} t={lt} from={p.firstName} />
                     ))}
                   </div>
                 </details>
@@ -219,7 +231,7 @@ export default function Player() {
 
             {o && o.pastTournaments.length > 0 && (
               <details className="fold">
-                <summary>Tidigare tävlingar ({o.pastTournaments.length})</summary>
+                <summary>{t('Tidigare tävlingar ({n})', { n: o.pastTournaments.length })}</summary>
                 <div className="list">
                   {o.pastTournaments.map((e) => (
                     <Go key={e.id} from={p.firstName} to={`/tavling/${e.id}?spelare=${p.id}`} className="item">
@@ -232,7 +244,7 @@ export default function Player() {
             )}
 
             <p className="small">
-              <ExternalLink href={rinUrl(`/sv/player/${p.rankedinId}`)}>Profil på Rankedin</ExternalLink>
+              <ExternalLink href={rinUrl(`/sv/player/${p.rankedinId}`)}>{t('Profil på Rankedin')}</ExternalLink>
             </p>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { accountHeaders } from './api';
+import { t } from './i18n';
 
 export type PairEntry = {
   entryId: number;
@@ -19,7 +20,7 @@ export class PairingApiError extends Error {
 
 async function handle(res: Response): Promise<PairEntry[]> {
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new PairingApiError(data.error ?? 'error', data.message ?? (res.status === 401 ? 'Logga in först.' : 'Något gick fel.'));
+  if (!res.ok) throw new PairingApiError(data.error ?? 'error', t(data.message ?? (res.status === 401 ? 'Logga in först.' : 'Något gick fel.')));
   return data.entries as PairEntry[];
 }
 
@@ -51,5 +52,5 @@ export async function addMyPartner(tournamentId: number, classId: number, partne
     body: JSON.stringify({ tournamentId, classId, partnerId }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new PairingApiError(data.error ?? 'error', data.message ?? 'Något gick fel.');
+  if (!res.ok) throw new PairingApiError(data.error ?? 'error', t(data.message ?? 'Något gick fel.'));
 }

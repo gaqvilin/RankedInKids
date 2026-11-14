@@ -5,6 +5,7 @@ import Calendar from './pages/Calendar';
 import Club from './pages/Club';
 import Division from './pages/Division';
 import Feedback from './pages/Feedback';
+import Group from './pages/Group';
 import Help from './pages/Help';
 import Organizer from './pages/Organizer';
 import Screen from './pages/Screen';
@@ -23,11 +24,14 @@ import Tournament from './pages/Tournament';
 import { AppShell } from './components/shell';
 import Leagues from './pages/Leagues';
 import { SessionProvider } from './session';
+import { useLang } from './lib/i18n';
 
 export default function App() {
+  // The key remounts every page when the language changes, so all texts are read again.
+  const lang = useLang();
   return (
     <SessionProvider>
-      <AppShell>
+      <AppShell key={lang}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/spelare/:rid" element={<Player />} />
@@ -40,6 +44,7 @@ export default function App() {
         <Route path="/lagmatch/:id" element={<TeamMatch />} />
         <Route path="/serier" element={<Leagues />} />
         <Route path="/klubb/:id" element={<Club />} />
+        <Route path="/grupp/:shareId" element={<Group />} />
         <Route path="/liga/:id" element={<League />} />
         <Route path="/division/:poolId" element={<Division />} />
         <Route path="/lag/:teamId" element={<Team />} />

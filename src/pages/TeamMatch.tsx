@@ -7,6 +7,7 @@ import { LineupSheet } from '../components/LineupSheet';
 import { ResultSheet } from '../components/ResultSheet';
 import { AppHeader, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { getTeamMatch, getTeamMatchInfo, rinUrl, type TournamentMatch } from '../lib/rankedin';
+import { t } from '../lib/i18n';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 
@@ -25,15 +26,15 @@ export default function TeamMatch() {
   const ongoing = !!tm.data && tm.data.matches.some((m) => !m.played);
   useEffect(() => {
     if (!ongoing) return;
-    const t = setInterval(() => tm.reload(), 60_000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => tm.reload(), 60_000);
+    return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ongoing]);
 
   if (tm.error) {
     return (
       <>
-        <AppHeader back="/serier" backLabel="Serier" title="Lagmatch" />
+        <AppHeader back="/serier" backLabel={t('Serier')} title={t('Lagmatch')} />
         <Page>
           <ErrorBox error={tm.error} onRetry={() => tm.reload()} />
         </Page>
@@ -43,7 +44,7 @@ export default function TeamMatch() {
   if (!tm.data) {
     return (
       <>
-        <AppHeader back="/serier" backLabel="Serier" title="Lagmatch" />
+        <AppHeader back="/serier" backLabel={t('Serier')} title={t('Lagmatch')} />
         <Page>
           <Loading />
         </Page>
@@ -51,17 +52,17 @@ export default function TeamMatch() {
     );
   }
 
-  const t = tm.data;
-  const played = t.matches.filter((m) => m.played).length;
+  const d = tm.data;
+  const played = d.matches.filter((m) => m.played).length;
   return (
     <>
-      <AppHeader back="/serier" backLabel="Serier" title="Lagmatch" />
+      <AppHeader back="/serier" backLabel={t('Serier')} title={t('Lagmatch')} />
       <Page>
         {info.data && (
           <p className="muted small center">
             {info.data.date ? `${fmtDayTime(info.data.date)} · ` : ''}
             {info.data.leagueId ? (
-              <Go to={`/liga/${info.data.leagueId}`} from="Lagmatchen">
+              <Go to={`/liga/${info.data.leagueId}`} from={t('Lagmatchen')}>
                 {info.data.leagueName}
               </Go>
             ) : (
@@ -71,55 +72,54 @@ export default function TeamMatch() {
             {info.data.date && (
               <>
                 {' · '}
-                <Go to={`/lag/${t.teams[0].id}/omgang/${info.data.date.slice(0, 10)}`} from="Lagmatchen">
-                  Hela speldagen
+                <Go to={`/lag/${d.teams[0].id}/omgang/${info.data.date.slice(0, 10)}`} from={t('Lagmatchen')}>
+                  {t('Hela speldagen')}
                 </Go>
               </>
             )}
           </p>
         )}
         <div className="team-score">
-          <Go className="team-score__team" to={`/lag/${t.teams[0].id}`} from="Lagmatch">
-            {t.teams[0].name}
+          <Go className="team-score__team" to={`/lag/${d.teams[0].id}`} from={t('Lagmatch')}>
+            {d.teams[0].name}
           </Go>
-          <div className="team-score__num" aria-label={`Ställning ${t.score[0]} mot ${t.score[1]}`}>
-            {t.score[0]}–{t.score[1]}
+          <div className="team-score__num" aria-label={t('Ställning {a} mot {b}', { a: d.score[0], b: d.score[1] })}>
+            {d.score[0]}–{d.score[1]}
           </div>
-          <Go className="team-score__team" to={`/lag/${t.teams[1].id}`} from="Lagmatch">
-            {t.teams[1].name}
+          <Go className="team-score__team" to={`/lag/${d.teams[1].id}`} from={t('Lagmatch')}>
+            {d.teams[1].name}
           </Go>
           <p className="team-score__sub">
-            {t.matches.length ? `${played} av ${t.matches.length} matcher spelade` : 'Matcherna är inte skapade i Rankedin än'}
+            {d.matches.length ? t('{n} av {total} matcher spelade', { n: played, total: d.matches.length }) : t('Matcherna är inte skapade i Rankedin än')}
           </p>
         </div>
 
-        {t.matches.length === 0 && (
+        {d.matches.length === 0 && (
           <Notice tone="info">
-            <strong>Matcherna är inte öppnade än.</strong> Rankedin har inte skapat de enskilda matcherna för den här lagmatchen, så
-            laguppställning och resultat går inte att lägga in ännu, varken här eller på rankedin.com. De öppnas när arrangören
-            startar omgången, oftast närmare matchdagen.
+            <strong>{t('Matcherna är inte öppnade än.')}</strong>{' '}
+            {t('Rankedin har inte skapat de enskilda matcherna för den här lagmatchen, så laguppställning och resultat går inte att lägga in ännu, varken här eller på rankedin.com. De öppnas när arrangören startar omgången, oftast närmare matchdagen.')}
           </Notice>
         )}
 
-        {t.matches.length > 0 && t.canLineup.some(Boolean) && (
+        {d.matches.length > 0 && d.canLineup.some(Boolean) && (
           <Notice tone="info">
             <div className="row gap" style={{ justifyContent: 'space-between' }}>
               <span>
-                Du kan sätta uppställning för{' '}
+                {t('Du kan sätta uppställning för')}{' '}
                 <strong>
-                  {t.teams
-                    .filter((_, i) => t.canLineup[i])
+                  {d.teams
+                    .filter((_, i) => d.canLineup[i])
                     .map((x) => x.name)
-                    .join(' och ')}
+                    .join(t(' och '))}
                 </strong>
                 .
               </span>
-              {t.canLineup.map(
+              {d.canLineup.map(
                 (can, i) =>
                   can && (
                     <button key={i} className="btn btn--primary btn--small" onClick={() => setLineupSide(i === 0 ? 'first' : 'second')}>
-                      {t.slots.some((s) => (i === 0 ? s.first : s.second).some((id) => id > 0)) ? 'Ändra uppställning' : 'Sätt uppställning'}
-                      {t.canLineup[0] && t.canLineup[1] ? ` (${t.teams[i].name})` : ''}
+                      {d.slots.some((s) => (i === 0 ? s.first : s.second).some((id) => id > 0)) ? t('Ändra uppställning') : t('Sätt uppställning')}
+                      {d.canLineup[0] && d.canLineup[1] ? ` (${d.teams[i].name})` : ''}
                     </button>
                   ),
               )}
@@ -127,19 +127,19 @@ export default function TeamMatch() {
           </Notice>
         )}
 
-        {t.matches.length > 0 && t.canLineup.some(Boolean) && !t.matches.some((m) => m.canEnterResult) && (
+        {d.matches.length > 0 && d.canLineup.some(Boolean) && !d.matches.some((m) => m.canEnterResult) && (
           <p className="muted small">
-            {played === t.matches.length
-              ? 'Resultaten är inlagda. I Rankedin kan bara seriens administratör ändra ett inlagt resultat.'
-              : 'Resultat kan rapporteras när båda lagens uppställning är satt.'}
+            {played === d.matches.length
+              ? t('Resultaten är inlagda. I Rankedin kan bara seriens administratör ändra ett inlagt resultat.')
+              : t('Resultat kan rapporteras när båda lagens uppställning är satt.')}
           </p>
         )}
 
-        <Section title="Matcher" action={<RefreshButton onClick={() => tm.reload()} loading={tm.loading} />}>
-          {t.matches.map((m, i) => (
+        <Section title={t('Matcher')} action={<RefreshButton onClick={() => tm.reload()} loading={tm.loading} />}>
+          {d.matches.map((m, i) => (
             <MatchCard
               key={m.id}
-              label={`Match ${i + 1}`}
+              label={t('Match {n}', { n: i + 1 })}
               sides={m.sides}
               sets={m.sets}
               played={m.played}
@@ -154,7 +154,7 @@ export default function TeamMatch() {
         </Section>
 
         <p className="center">
-          <ExternalLink href={rinUrl(`/sv/team/matchresults/${t.id}`)}>Öppna i Rankedin</ExternalLink>
+          <ExternalLink href={rinUrl(`/sv/team/matchresults/${d.id}`)}>{t('Öppna i Rankedin')}</ExternalLink>
         </p>
       </Page>
 
@@ -163,7 +163,7 @@ export default function TeamMatch() {
           leagueName={info.data?.leagueName ?? null}
           division={info.data?.division ?? null}
           firstMatchStart={info.data?.date ?? null}
-          teamMatch={t}
+          teamMatch={d}
           side={lineupSide}
           onClose={() => setLineupSide(null)}
           onSaved={() => {

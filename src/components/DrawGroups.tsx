@@ -1,12 +1,21 @@
 // The class's groups like a football group stage: table, the group's matches, then the playoff filled from the tables.
 import { fmtTime } from '../lib/format';
+import { t } from '../lib/i18n';
 import { finalPlacings, getClassDraws, getClassPlayoff, groupLetter, playoffRoundName, resolvePlayoffSide, type DrawGroup, type PlayoffMatch, type TournamentMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
+import { roundLabel } from './MatchCard';
 import { Section, Tip } from './ui';
 
 type Props = { classId: number; matches: TournamentMatch[]; highlight: number[]; refreshKey: string };
 
 const short = (names: string[]) => names.map((n) => n.split(' ')[0]).join(' / ');
+
+/** What a place in a group plays for in the playoff: the final, places (3–4), or a place in the playoff. */
+type LeadsTo = 'final' | 'slutspel' | { from: number; to: number } | null;
+const leadsToTip = (to: Exclude<LeadsTo, null>) =>
+  to === 'final' ? t('Spelar final') : to === 'slutspel' ? t('Går till slutspel') : t('Spelar om plats {from}–{to}', to);
+// "A1" in the playoff: place 1 in group A.
+const SEEDS = ['Etta i grupp {group}', 'Tvåa i grupp {group}', 'Trea i grupp {group}', 'Fyra i grupp {group}', 'Femma i grupp {group}', 'Sexa i grupp {group}'];
 
 export function DrawGroups({ classId, matches, highlight, refreshKey }: Props) {
   const draws = useAsync((fresh) => getClassDraws(classId, fresh), [classId, refreshKey], `draws.v2.${classId}`);
@@ -15,20 +24,20 @@ export function DrawGroups({ classId, matches, highlight, refreshKey }: Props) {
   const groups = draws.data;
   const mine = (ids: number[]) => highlight.some((h) => ids.includes(h));
   // From the playoff: which match a place in a group leads to.
-  const leadsTo = (groupName: string) => (place: number) => {
+  const leadsTo = (groupName: string) => (place: number): LeadsTo => {
     const list = Array.isArray(playoff.data) ? playoff.data : [];
     if (!list.length) return null;
     // Placement playoff: place n in every group plays for places 2n-1 and 2n (known even after Rankedin filled in the names).
     if (list.every((x) => x.places)) {
       const m = list.find((x) => x.places![0] === 2 * place - 1);
-      return m ? (place === 1 ? 'final' : `plats ${m.places![0]}–${m.places![1]}`) : null;
+      return m ? (place === 1 ? 'final' : { from: m.places![0], to: m.places![1] }) : null;
     }
     const letter = groupLetter(groupName).toUpperCase();
     return list.some((x) => x.sides.some((sd) => sd.place === place && sd.group?.toUpperCase() === letter)) ? 'slutspel' : null;
   };
   return (
     <>
-      <Section title={groups.length > 1 ? 'Grupper' : 'Grupp'}>
+      <Section title={groups.length > 1 ? t('Grupper') : t('Grupp')}>
         <p className="muted small section-intro">{groupsIntro(playoff.data)}</p>
         <div className="draw-groups">
           {groups.map((g) => (
@@ -43,11 +52,11 @@ export function DrawGroups({ classId, matches, highlight, refreshKey }: Props) {
 
 /** One line on what the group table decides. */
 function groupsIntro(playoff: PlayoffMatch[] | null | undefined): string {
-  const base = 'Alla möter alla i gruppen.';
+  const base = t('Alla möter alla i gruppen.');
   if (!Array.isArray(playoff)) return base;
-  if (!playoff.length) return `${base} Tabellen är slutresultatet.`;
-  if (playoff.every((m) => m.places)) return `${base} Placeringen avgör slutspelet: ettorna spelar final, tvåorna om plats 3–4 och så vidare.`;
-  return `${base} De bästa i varje grupp går vidare till slutspelet.`;
+  if (!playoff.length) return `${base} ${t('Tabellen är slutresultatet.')}`;
+  if (playoff.every((m) => m.places)) return `${base} ${t('Placeringen avgör slutspelet: ettorna spelar final, tvåorna om plats 3–4 och så vidare.')}`;
+  return `${base} ${t('De bästa i varje grupp går vidare till slutspelet.')}`;
 }
 
 function Group({
@@ -59,8 +68,8 @@ function Group({
   g: DrawGroup;
   matches: TournamentMatch[];
   mine: (ids: number[]) => boolean;
-  /** What a place in this group plays for in the playoff ("final", "plats 3–4"), if any. */
-  leadsTo: (place: number) => string | null;
+  /** What a place in this group plays for in the playoff (the final, places 3–4), if any. */
+  leadsTo: (place: number) => LeadsTo;
 }) {
   const anyPlayed = g.standings.some((s) => s.played > 0);
   const rows = anyPlayed
@@ -82,34 +91,35 @@ function Group({
           <thead>
             <tr>
               <th />
-              <th>Par</th>
+              <th>{t('Par')}</th>
               <th>
-                <Tip tip="Spelade matcher">S</Tip>
+                <Tip tip={t('Spelade matcher')}>{t('S')}</Tip>
               </th>
               <th>
-                <Tip tip="Vunna matcher">V</Tip>
+                <Tip tip={t('Vunna matcher')}>{t('V')}</Tip>
               </th>
               <th>
-                <Tip tip="Förlorade matcher">F</Tip>
+                <Tip tip={t('Förlorade matcher')}>{t('F')}</Tip>
               </th>
               <th>
-                <Tip tip="Game vunna minus game förlorade">+/-</Tip>
+                <Tip tip={t('Game vunna minus game förlorade')}>+/-</Tip>
               </th>
               <th>
-                <Tip tip="Poäng – det som avgör placeringen">P</Tip>
+                <Tip tip={t('Poäng – det som avgör placeringen')}>{t('P')}</Tip>
               </th>
             </tr>
           </thead>
           <tbody>
             {rows.map((s) => {
               const diff = s.gamesWon - s.gamesLost;
+              const to = s.position > 0 ? leadsTo(s.position) : null;
               return (
                 <tr key={s.ids.join('-')} className={mine(s.ids) ? 'is-mine' : ''}>
                   <td>
                     {s.position > 0 &&
-                      (leadsTo(s.position) ? (
-                        <span className={`rank ${leadsTo(s.position) === 'final' ? 'rank--final' : ''}`}>
-                          <Tip tip={leadsTo(s.position) === 'final' ? 'Spelar final' : leadsTo(s.position) === 'slutspel' ? 'Går till slutspel' : `Spelar om ${leadsTo(s.position)}`}>{s.position}</Tip>
+                      (to ? (
+                        <span className={`rank ${to === 'final' ? 'rank--final' : ''}`}>
+                          <Tip tip={leadsToTip(to)}>{s.position}</Tip>
                         </span>
                       ) : (
                         <span className="rank">{s.position}</span>
@@ -135,7 +145,7 @@ function Group({
 
       {fixtures.length > 0 && (
         <details className="fold fold--quiet">
-          <summary>Matcher ({fixtures.length})</summary>
+          <summary>{t('Matcher ({n})', { n: fixtures.length })}</summary>
           <ul className="fixtures">
             {fixtures.map(({ a, b, cell }) => {
               const m = matches.find((x) => x.id === cell!.matchId || x.id === cell!.challengeId);
@@ -205,22 +215,22 @@ function Playoff({ list, groups, matches, mine }: { list: PlayoffMatch[]; groups
   return (
     <>
     {placings.length > 0 && (
-      <Section title={placings.length === total ? 'Slutresultat' : 'Slutresultat hittills'}>
+      <Section title={placings.length === total ? t('Slutresultat') : t('Slutresultat hittills')}>
         <ol className="placings">
           {Array.from({ length: total }, (_, i) => i + 1).map((place) => {
             const pl = placings.find((x) => x.place === place);
             return (
               <li key={place} className={pl && mine(pl.ids) ? 'is-mine' : ''}>
                 <span className={`rank ${place === 1 && pl ? 'rank--final' : ''}`}>{place}</span>
-                {pl ? pl.names.join(' / ') : <span className="muted">Inte avgjort</span>}
+                {pl ? pl.names.join(' / ') : <span className="muted">{t('Inte avgjort')}</span>}
               </li>
             );
           })}
         </ol>
       </Section>
     )}
-    <Section title="Slutspel">
-      {provisional && <p className="muted small playoff-note">Preliminärt – paren fylls i från grupptabellerna just nu (A1 = etta i grupp A).</p>}
+    <Section title={t('Slutspel')}>
+      {provisional && <p className="muted small playoff-note">{t('Preliminärt – paren fylls i från grupptabellerna just nu (A1 = etta i grupp A).')}</p>}
       <div className="playoff">
         {rows.map(({ p, m, sides }) => {
           const played = !!m?.played && m.sets.length > 0;
@@ -232,16 +242,16 @@ function Playoff({ list, groups, matches, mine }: { list: PlayoffMatch[]; groups
               <div className={`playoff__side ${i === 0 ? 'playoff__side--left' : ''} ${won ? 'is-won' : ''} ${mine(s.ids) ? 'is-mine' : ''}`}>
                 {seed && (
                   <span className="seed">
-                    <Tip tip={`${['Etta', 'Tvåa', 'Trea', 'Fyra', 'Femma', 'Sexa'][s.place! - 1] ?? `Nr ${s.place}`} i grupp ${s.group}`}>{seed}</Tip>
+                    <Tip tip={t(SEEDS[s.place! - 1] ?? 'Nr {n} i grupp {group}', { n: s.place!, group: s.group! })}>{seed}</Tip>
                   </span>
                 )}
-                <span className={s.names.length ? '' : 'muted'}>{s.names.length ? short(s.names) : 'Ej klart'}</span>
+                <span className={s.names.length ? '' : 'muted'}>{s.names.length ? short(s.names) : t('Ej klart')}</span>
               </div>
             );
           };
           return (
             <div key={p.matchId} className={`playoff__row ${mine([...sides[0].ids, ...sides[1].ids]) ? 'is-mine' : ''} ${roundName(p) === 'Final' ? 'is-final' : ''}`}>
-              <div className="playoff__title">{roundName(p)}</div>
+              <div className="playoff__title">{roundLabel(roundName(p))}</div>
               {side(0)}
               <div className="playoff__score">{played ? m!.sets.map(([x, y]) => `${x}–${y}`).join(' ') : '–'}</div>
               {side(1)}

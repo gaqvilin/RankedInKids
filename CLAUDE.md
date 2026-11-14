@@ -15,8 +15,9 @@ spelare, lagledare och arrangörer. All tävlingsdata ligger i Rankedin; vi läs
 - Rörelse är diskret och kort (sidor tonar in, nya resultat tonar in, skelett vid laddning) och stängs av med `prefers-reduced-motion`.
 
 ## Språk
-- All text i appen är på **svenska**. Kod, kommentarer och commit-meddelanden på engelska.
-- Användarnyheter: lägg en kort punkt i `src/lib/releases.ts` (översta posten) för varje ändring användare märker.
+- Appen finns på **svenska och engelska**. All text går genom `t('Svensk text')` (`src/lib/i18n.ts`); engelskan ligger i `src/lib/i18n/en/`. Se `docs/i18n.md` för regler och ordlista. Kod, kommentarer och commit-meddelanden på engelska.
+- Ny text: skriv svenskan i `t()` och lägg till engelskan i rätt ordlista – `test/i18n.test.ts` faller annars.
+- Användarnyheter: lägg en kort punkt i `src/lib/releases.ts` (översta posten) för varje ändring användare märker, och dess engelska i `src/lib/i18n/en/texts.ts`.
 
 ## Kommandon
 ```bash
@@ -59,6 +60,11 @@ Innan push: `npm run typecheck && npm test` ska vara gröna. Kontrollera gärna 
   typkontroll, oanvänd kod, tester, bygge). Slå ihop när kontrollen är grön och förhandsversionen ser rätt ut.
 - Håll PR:er små och slå ihop ofta, så krockar ni inte med varandra. Hämta senaste `main` (`git pull`) innan ni börjar något nytt.
 - Förhandsversioner använder samma Rankedin som produktion. Skrivningar (resultat, lottning) i en förhandsversion är alltså skarpa.
+
+## Offline
+- `public/sw.js` sparar bara själva appen (sidor nätverk först, `/assets/` cache först). Data sparas av appen (`useAsync` med `storeKey`).
+- Resultat utan nät köas i `src/lib/outbox.ts` och skickas med `expected` (det telefonen såg), så servern vägrar skriva över ett annat resultat (409 `conflict`).
+- Nödstopp om service workern ställer till det: sätt `KILL = true` i `public/sw.js` och driftsätt – telefonerna tar bort den vid nästa besök.
 
 ## Konventioner
 - Formattering: enkla citattecken, ~150 tecken per rad (som befintlig kod). Kör inte prettier med standardinställningar på hela filer.

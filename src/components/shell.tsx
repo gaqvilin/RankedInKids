@@ -1,8 +1,11 @@
+import { t } from '../lib/i18n';
 import { Logo } from './Logo';
 import { FeedbackSheet } from './FeedbackSheet';
 import { AccountSwitcher } from './AccountSwitcher';
 import { InstallButton } from './InstallButton';
 import { Sheet } from './Sheet';
+import { OfflineBar } from './OfflineBar';
+import { LangSwitch } from './ui';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, type LinkProps } from 'react-router-dom';
 import { onLoadingChange } from '../lib/api';
@@ -52,14 +55,15 @@ function ReleasesLink({ className }: { className: string }) {
   return (
     <span className={className}>
       <button type="button" className="link-button" onClick={() => setFeedback(true)}>
-        Ge feedback
+        {t('Ge feedback')}
       </button>
       {feedback && <FeedbackSheet onClose={() => setFeedback(false)} />}
       <span className="muted"> · </span>
-      <Link to="/hjalp">Hjälp</Link>
+      <Link to="/hjalp">{t('Hjälp')}</Link>
       <span className="muted"> · </span>
       <Link to="/nyheter">
-        Nyheter{unseen && <span className="new-dot" aria-label="nytt" />}
+        {t('Nyheter')}
+        {unseen && <span className="new-dot" aria-label={t('nytt')} />}
       </Link>
       <span className="muted"> · version {CURRENT_VERSION}</span>
     </span>
@@ -111,15 +115,15 @@ function Sidebar({ onHide }: { onHide: () => void }) {
   const { user } = useSession();
   const players = useKnownPlayers();
   const mine = useMine();
-  const myTeams = mine.data?.teams ?? getSavedTeams().map((t) => ({ ...t, nextDate: null as string | null }));
+  const myTeams = mine.data?.teams ?? getSavedTeams().map((tm) => ({ ...tm, nextDate: null as string | null }));
   return (
-    <aside className="sidebar" aria-label="Huvudmeny">
+    <aside className="sidebar" aria-label={t('Huvudmeny')}>
       <div className="sidebar__top">
-        <Link to="/" className="brand" aria-label="PadelAdmin start">
+        <Link to="/" className="brand" aria-label={t('PadelAdmin start')}>
           <Logo />
-          <span className="brand__sub">Data från Rankedin</span>
+          <span className="brand__sub">{t('Data från Rankedin')}</span>
         </Link>
-        <button className="icon-btn" onClick={onHide} title="Dölj menyn" aria-label="Dölj menyn och använd hela skärmen">
+        <button className="icon-btn" onClick={onHide} title={t('Dölj menyn')} aria-label={t('Dölj menyn och använd hela skärmen')}>
           <PanelIcon />
         </button>
       </div>
@@ -127,13 +131,13 @@ function Sidebar({ onHide }: { onHide: () => void }) {
         {MAIN_NAV.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `sidebar__link ${isActive ? 'is-active' : ''}`}>
             <Icon d={n.icon} />
-            {n.label}
+            {t(n.label)}
           </NavLink>
         ))}
       </nav>
       {players.length > 0 && (
         <div className="sidebar__group">
-          <p className="sidebar__heading">Mina spelare</p>
+          <p className="sidebar__heading">{t('Mina spelare')}</p>
           {players.map((p) => (
             <NavLink key={p.rankedinId} to={`/spelare/${p.rankedinId}`} className={({ isActive }) => `sidebar__link sidebar__link--sub ${isActive ? 'is-active' : ''}`}>
               {p.name}
@@ -143,17 +147,17 @@ function Sidebar({ onHide }: { onHide: () => void }) {
       )}
       {myTeams.length > 0 && (
         <div className="sidebar__group">
-          <p className="sidebar__heading">Mina lag</p>
-          {myTeams.map((t) => (
-            <NavLink key={t.id} to={`/lag/${t.id}`} className={({ isActive }) => `sidebar__link sidebar__link--sub ${isActive ? 'is-active' : ''}`}>
-              {t.name}
+          <p className="sidebar__heading">{t('Mina lag')}</p>
+          {myTeams.map((tm) => (
+            <NavLink key={tm.id} to={`/lag/${tm.id}`} className={({ isActive }) => `sidebar__link sidebar__link--sub ${isActive ? 'is-active' : ''}`}>
+              {tm.name}
             </NavLink>
           ))}
         </div>
       )}
       {(mine.data?.clubs.length ?? 0) > 0 && (
         <div className="sidebar__group">
-          <p className="sidebar__heading">{mine.data!.clubs.length > 1 ? 'Klubbar' : 'Klubb'}</p>
+          <p className="sidebar__heading">{mine.data!.clubs.length > 1 ? t('Klubbar') : t('Klubb')}</p>
           {mine.data!.clubs.map((c) => (
             <NavLink key={c.id} to={`/klubb/${c.id}`} className={({ isActive }) => `sidebar__link sidebar__link--sub ${isActive ? 'is-active' : ''}`}>
               {c.name}
@@ -163,21 +167,22 @@ function Sidebar({ onHide }: { onHide: () => void }) {
       )}
 
       <div className="sidebar__foot">
-        <nav className="sidebar__nav" aria-label="Verktyg">
+        <nav className="sidebar__nav" aria-label={t('Verktyg')}>
           {user.loggedIn && (
             <NavLink to={ADMIN_NAV.to} className={({ isActive }) => `sidebar__link ${isActive ? 'is-active' : ''}`}>
               <Icon d={ADMIN_NAV.icon} />
-              {ADMIN_NAV.label}
+              {t(ADMIN_NAV.label)}
             </NavLink>
           )}
           <NavLink to={ACCOUNT_NAV.to} className={({ isActive }) => `sidebar__link ${isActive ? 'is-active' : ''}`}>
             <Icon d={ACCOUNT_NAV.icon} />
             <span>
-              {user.loggedIn ? user.name : 'Logga in'}
+              {user.loggedIn ? user.name : t('Logga in')}
               {user.loggedIn && user.accounts.length > 1 && <span className="muted small"> +{user.accounts.length - 1}</span>}
             </span>
           </NavLink>
         </nav>
+        <LangSwitch />
         <ReleasesLink className="sidebar__releases small" />
       </div>
     </aside>
@@ -202,19 +207,19 @@ function TabBar() {
   useEffect(() => setOpen(false), [loc.pathname]);
   return (
     <>
-      <nav className="tabbar" aria-label="Huvudmeny">
+      <nav className="tabbar" aria-label={t('Huvudmeny')}>
         {MAIN_NAV.filter((n) => n.to !== '/sok').map((n) => (
           <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `tabbar__link ${isActive || section(loc.pathname) === n.to ? 'is-active' : ''}`}>
             <Icon d={n.icon} />
-            <span>{n.label}</span>
+            <span>{t(n.label)}</span>
           </NavLink>
         ))}
         <button type="button" className={`tabbar__link ${open ? 'is-active' : ''}`} onClick={() => setOpen(true)} aria-haspopup="dialog">
           <span className="tabbar__icon">
             <Icon d={MENU_ICON} />
-            {unseen && <span className="new-dot new-dot--icon" aria-label="nytt" />}
+            {unseen && <span className="new-dot new-dot--icon" aria-label={t('nytt')} />}
           </span>
-          <span>Meny</span>
+          <span>{t('Meny')}</span>
         </button>
       </nav>
       {open && <MenuSheet onClose={() => setOpen(false)} />}
@@ -228,41 +233,44 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
   const [feedback, setFeedback] = useState(false);
   if (feedback) return <FeedbackSheet onClose={onClose} />;
   return (
-    <Sheet label="Meny" onClose={onClose}>
+    <Sheet label={t('Meny')} onClose={onClose}>
       <div className="menu">
         {user.loggedIn ? (
           <div className="menu__account">
-            <span className="muted small">Inloggad som</span>
+            <span className="muted small">{t('Inloggad som')}</span>
             <AccountSwitcher label="" />
           </div>
         ) : null}
         <nav className="list">
           <Link to="/sok" className="item">
-            <strong>Sök spelare</strong>
+            <strong>{t('Sök spelare')}</strong>
           </Link>
           <Link to="/konto" className="item">
-            <strong>{user.loggedIn ? 'Konton' : 'Logga in med Rankedin'}</strong>
+            <strong>{user.loggedIn ? t('Konton') : t('Logga in med Rankedin')}</strong>
           </Link>
           {user.loggedIn && (
             <Link to="/admin" className="item">
-              <strong>Admin</strong>
+              <strong>{t('Admin')}</strong>
             </Link>
           )}
           <Link to="/hjalp" className="item">
-            <strong>Hjälp</strong>
+            <strong>{t('Hjälp')}</strong>
           </Link>
           <Link to="/nyheter" className="item">
-            <strong>Nyheter</strong>
-            {unseen && <span className="new-dot" aria-label="nytt" />}
+            <strong>{t('Nyheter')}</strong>
+            {unseen && <span className="new-dot" aria-label={t('nytt')} />}
           </Link>
           <button type="button" className="item item--button" onClick={() => setFeedback(true)}>
-            <strong>Ge feedback</strong>
+            <strong>{t('Ge feedback')}</strong>
           </button>
         </nav>
         <p className="center">
+          <LangSwitch />
+        </p>
+        <p className="center">
           <InstallButton />
         </p>
-        <p className="muted small center">PadelAdmin {CURRENT_VERSION} · data från Rankedin</p>
+        <p className="muted small center">PadelAdmin {CURRENT_VERSION} · {t('data från Rankedin')}</p>
       </div>
     </Sheet>
   );
@@ -278,7 +286,7 @@ function LoadingBar() {
       }),
     [],
   );
-  return <div className={`loading-bar ${busy ? 'is-busy' : ''}`} role="progressbar" aria-hidden={!busy} aria-label="Hämtar från Rankedin" />;
+  return <div className={`loading-bar ${busy ? 'is-busy' : ''}`} role="progressbar" aria-hidden={!busy} aria-label={t('Hämtar från Rankedin')} />;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -287,13 +295,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className={`shell ${full ? 'shell--full' : ''}`}>
       <LoadingBar />
       {full ? (
-        <button className="icon-btn show-sidebar" onClick={() => setFull(false)} title="Visa menyn" aria-label="Visa menyn">
+        <button className="icon-btn show-sidebar" onClick={() => setFull(false)} title={t('Visa menyn')} aria-label={t('Visa menyn')}>
           <PanelIcon />
         </button>
       ) : (
         <Sidebar onHide={() => setFull(true)} />
       )}
       <div className="shell__main">
+        <OfflineBar />
         {children}
       </div>
       <TabBar />

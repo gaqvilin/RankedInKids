@@ -7,6 +7,7 @@ import { ResultSheet } from '../components/ResultSheet';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDay, fmtTime, soon } from '../lib/format';
+import { locale, t } from '../lib/i18n';
 import { buildInvitation, buildSchedule, scheduleAsText } from '../lib/host';
 import { getPoolFixtures, getTeam, getTeamFixtures, type Fixture } from '../lib/leagues';
 import { getTeamMatch, getTeamMatchInfo, type TeamMatch, type TournamentMatch } from '../lib/rankedin';
@@ -41,31 +42,31 @@ export default function Round() {
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
   const [lineupFor, setLineupFor] = useState<DayMatch | null>(null);
 
-  const t = team.data;
-  const spl = t ? isSplLeague(t.leagueName) : false;
-  const level = spl ? divisionLevel(t?.division) : null;
-  const kind = seriesKind(t?.leagueName);
-  const rules = seriesRules(kind, t?.division);
+  const td = team.data;
+  const spl = td ? isSplLeague(td.leagueName) : false;
+  const level = spl ? divisionLevel(td?.division) : null;
+  const kind = seriesKind(td?.leagueName);
+  const rules = seriesRules(kind, td?.division);
   const points = rankingPoints(level);
   const matches = day.data ?? [];
   const firstStart = matches.map((m) => m.startsAt).filter(Boolean).sort()[0] ?? null;
   const deadline = lineupDeadline(firstStart);
-  const title = `Speldag ${fmtDay(`${date}T12:00:00`)}`;
+  const title = t('Speldag {day}', { day: fmtDay(`${date}T12:00:00`) });
 
   if (team.error) {
     return (
       <>
-        <AppHeader back={`/lag/${tid}`} backLabel="Laget" />
+        <AppHeader back={`/lag/${tid}`} backLabel={t('Laget')} />
         <Page>
           <ErrorBox error={team.error} onRetry={() => team.reload()} />
         </Page>
       </>
     );
   }
-  if (!t) {
+  if (!td) {
     return (
       <>
-        <AppHeader back={`/lag/${tid}`} backLabel="Laget" />
+        <AppHeader back={`/lag/${tid}`} backLabel={t('Laget')} />
         <Page>
           <Loading />
         </Page>
@@ -75,7 +76,7 @@ export default function Round() {
 
   const sideOf = (m: DayMatch) => (m.tm.teams[0].id === tid ? 0 : 1);
   const lineupSet = (m: DayMatch, side: 0 | 1) => m.tm.slots.length > 0 && m.tm.slots.every((s) => (side === 0 ? s.first : s.second).filter((id) => id > 0).length >= 2);
-  const unlicensed = t.players.filter((p) => !p.hasLicense);
+  const unlicensed = td.players.filter((p) => !p.hasLicense);
   const today = new Date().toLocaleDateString('sv-SE');
   const isPastOrToday = date <= today;
   const isPast = date < today;
@@ -84,17 +85,17 @@ export default function Round() {
   // venue on one of the day's fixtures.
   const venue = (poolDay.data ?? []).map((f) => f.location).find(Boolean) ?? matches.map((m) => m.fixture.location).find(Boolean) ?? null;
   const norm = (x: string | null | undefined) => (x ?? '').toLowerCase().replace(/[^a-zåäö0-9]/g, '');
-  const hosting = !!venue && !!t.club && (norm(venue).includes(norm(t.club)) || norm(t.club).includes(norm(venue)));
+  const hosting = !!venue && !!td.club && (norm(venue).includes(norm(td.club)) || norm(td.club).includes(norm(venue)));
 
   return (
     <>
-      <AppHeader back={`/lag/${tid}`} backLabel={t.name} title={title} />
+      <AppHeader back={`/lag/${tid}`} backLabel={td.name} title={title} />
       <Page wide>
         <div className="page-title">
           <div>
             <h1>{title}</h1>
             <p className="muted">
-              {t.name} · {t.division}
+              {td.name} · {td.division}
               {venue ? ` · ${venue}` : ''}
               {soon(`${date}T12:00:00`) ? ` · ${soon(`${date}T12:00:00`)}` : ''}
             </p>
@@ -104,42 +105,44 @@ export default function Round() {
 
         {day.error && <ErrorBox error={day.error} onRetry={() => day.reload()} />}
         {!day.data && day.loading && <Loading />}
-        {day.data && matches.length === 0 && <Empty>Laget har ingen lagmatch den här dagen.</Empty>}
+        {day.data && matches.length === 0 && <Empty>{t('Laget har ingen lagmatch den här dagen.')}</Empty>}
 
         {matches.length > 0 && (
           <div className="checklist">
-            <h2 className="h3">{isPast ? 'Resultat' : 'Checklista'}</h2>
+            <h2 className="h3">{isPast ? t('Resultat') : t('Checklista')}</h2>
             <ul>
               {!isPast && matches.map((m) => {
                 const s = sideOf(m);
                 const opp = m.tm.teams[1 - s].name;
                 return (
                   <li key={m.fixture.teamMatchId} className={lineupSet(m, s as 0 | 1) ? 'ok' : 'todo'}>
-                    Uppställning mot {opp}: {lineupSet(m, s as 0 | 1) ? 'inlagd' : m.tm.slots.length ? 'inte inlagd' : 'matcherna inte öppnade i Rankedin än'}
-                    {lineupSet(m, (1 - s) as 0 | 1) ? <span className="muted"> · motståndaren har lagt in</span> : null}
+                    {t('Uppställning mot {opponent}:', { opponent: opp })} {lineupSet(m, s as 0 | 1) ? t('inlagd') : m.tm.slots.length ? t('inte inlagd') : t('matcherna inte öppnade i Rankedin än')}
+                    {lineupSet(m, (1 - s) as 0 | 1) ? <span className="muted"> · {t('motståndaren har lagt in')}</span> : null}
                   </li>
                 );
               })}
               {!isPast && deadline && (
                 <li className="info">
-                  Uppställning senast <strong>{fmtTime(deadline.toISOString())}</strong> (15 min före första matchen{level != null && level >= 2 ? '; match 3 senast 5 min efter match 1–2' : ''}).
+                  {t('Uppställning senast')} <strong>{fmtTime(deadline.toISOString())}</strong> ({t('15 min före första matchen')}{level != null && level >= 2 ? t('; match 3 senast 5 min efter match 1–2') : ''}).
                 </li>
               )}
               {!isPast && <li className={unlicensed.length ? 'todo' : 'ok'}>
-                {unlicensed.length ? `Licens saknas: ${unlicensed.map((p) => p.name).join(', ')}` : 'Alla i truppen har licens'}
+                {unlicensed.length ? t('Licens saknas: {names}', { names: unlicensed.map((p) => p.name).join(', ') }) : t('Alla i truppen har licens')}
               </li>}
               {isPastOrToday ? (
                 <li className={resultsMissing ? 'todo' : 'ok'}>
-                  {resultsMissing ? `${resultsMissing} resultat saknas – ${kind === 'spl' ? 'vinnande lag rapporterar löpande' : 'rapporteras efter lagmatcherna'}` : 'Alla resultat inlagda'}
+                  {resultsMissing
+                    ? `${resultsMissing === 1 ? t('1 resultat saknas') : t('{n} resultat saknas', { n: resultsMissing })} – ${kind === 'spl' ? t('vinnande lag rapporterar löpande') : t('rapporteras efter lagmatcherna')}`
+                    : t('Alla resultat inlagda')}
                 </li>
               ) : (
                 <li className="info">
-                  {kind === 'spl' ? 'Resultat rapporteras löpande under speldagen av vinnande lag.' : 'Resultaten rapporteras i Rankedin efter lagmatcherna. Spelarna dömer själva.'}
+                  {kind === 'spl' ? t('Resultat rapporteras löpande under speldagen av vinnande lag.') : t('Resultaten rapporteras i Rankedin efter lagmatcherna. Spelarna dömer själva.')}
                 </li>
               )}
               {points && (
                 <li className="info">
-                  Rankingpoäng i {t.division}: {String(points.win).replace('.', ',')} per vinst, {String(points.loss).replace('.', ',')} per förlust.
+                  {t('Rankingpoäng i {division}: {win} per vinst, {loss} per förlust.', { division: td.division ?? '', win: points.win.toLocaleString(locale()), loss: points.loss.toLocaleString(locale()) })}
                 </li>
               )}
             </ul>
@@ -154,35 +157,35 @@ export default function Round() {
               return (
                 <Section
                   key={m.fixture.teamMatchId}
-                  title={`${m.fixture.home.id === tid ? 'Hemma' : 'Borta'} mot ${opp.name}${fmtTime(m.startsAt) ? ` · ${fmtTime(m.startsAt)}` : ''}`}
+                  title={`${m.fixture.home.id === tid ? t('Hemma mot {opponent}', { opponent: opp.name }) : t('Borta mot {opponent}', { opponent: opp.name })}${fmtTime(m.startsAt) ? ` · ${fmtTime(m.startsAt)}` : ''}`}
                   action={
-                    <Go className="btn btn--ghost btn--small" to={`/lagmatch/${m.fixture.teamMatchId}`} from="Speldagen">
-                      Lagmatchen
+                    <Go className="btn btn--ghost btn--small" to={`/lagmatch/${m.fixture.teamMatchId}`} from={t('Speldagen')}>
+                      {t('Lagmatchen')}
                     </Go>
                   }
                 >
                   <p className="small">
-                    Ställning{' '}
+                    {t('Ställning')}{' '}
                     <strong>
                       {m.tm.score[s]}–{m.tm.score[1 - s]}
                     </strong>
                     {m.tm.canLineup[s] && m.tm.slots.length > 0 && (
                       <button className="btn btn--small" style={{ marginLeft: 10 }} onClick={() => setLineupFor(m)}>
-                        {lineupSet(m, s as 0 | 1) ? 'Ändra uppställning' : 'Sätt uppställning'}
+                        {lineupSet(m, s as 0 | 1) ? t('Ändra uppställning') : t('Sätt uppställning')}
                       </button>
                     )}
                   </p>
-                  {m.tm.matches.length === 0 && <Empty>Matcherna är inte öppnade i Rankedin än.</Empty>}
+                  {m.tm.matches.length === 0 && <Empty>{t('Matcherna är inte öppnade i Rankedin än.')}</Empty>}
                   {m.tm.matches.map((x, i) => (
                     <MatchCard
                       key={x.id}
-                      label={`Match ${i + 1}`}
+                      label={t('Match {n}', { n: i + 1 })}
                       sides={x.sides}
                       sets={x.sets}
                       played={x.played}
                       date={null}
                       court={null}
-                      highlightIds={t.players.map((p) => p.id)}
+                      highlightIds={td.players.map((p) => p.id)}
                       canEnterResult={x.canEnterResult}
                       awaitingConfirmation={x.awaitingConfirmation}
                       onEnterResult={() => setReporting(x)}
@@ -194,16 +197,16 @@ export default function Round() {
           </div>
           <div>
             {!isPast && (
-              <Section title="Vilka kan spela?">
-                <AvailabilityPanel teamId={tid} date={date} players={t.players} from="Speldagen" />
+              <Section title={t('Vilka kan spela?')}>
+                <AvailabilityPanel teamId={tid} date={date} players={td.players} from={t('Speldagen')} />
               </Section>
             )}
             {rules && !isPast && (hosting || (poolDay.data?.length ?? 0) > 0) && (
               <details className="fold" open={hosting}>
-                <summary>{hosting ? 'Ni arrangerar: kallelse och spelschema' : 'Arrangör: kallelse och spelschema'}</summary>
+                <summary>{hosting ? t('Ni arrangerar: kallelse och spelschema') : t('Arrangör: kallelse och spelschema')}</summary>
                 <HostTools
-                  hostClub={venue ?? t.club ?? t.name}
-                  division={t.division ?? ''}
+                  hostClub={venue ?? td.club ?? td.name}
+                  division={td.division ?? ''}
                   date={date}
                   series={spl ? 'spl' : 'klubbligan'}
                   rules={rules}
@@ -232,8 +235,8 @@ export default function Round() {
         <LineupSheet
           teamMatch={lineupFor.tm}
           side={sideOf(lineupFor) === 0 ? 'first' : 'second'}
-          leagueName={t.leagueName}
-          division={t.division}
+          leagueName={td.leagueName}
+          division={td.division}
           firstMatchStart={lineupFor.startsAt}
           onClose={() => setLineupFor(null)}
           onSaved={() => {
@@ -276,7 +279,7 @@ function HostTools({
     series,
     hostClub,
     division,
-    dateLabel: new Date(`${date}T12:00:00`).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+    dateLabel: new Date(`${date}T12:00:00`).toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
     venue: venue ?? '',
     contact,
     startTime: start,
@@ -286,13 +289,13 @@ function HostTools({
     feePerTeamMatch: series === 'spl' ? 550 : null,
   });
 
-  if (teamMatches.length === 0) return <Empty>Hittar inga lagmatcher på anläggningen den här dagen.</Empty>;
+  if (teamMatches.length === 0) return <Empty>{t('Hittar inga lagmatcher på anläggningen den här dagen.')}</Empty>;
 
   return (
     <div className="stack">
       <div className="toolbar__group">
         <label className="toolbar__label">
-          Banor{' '}
+          {t('Banor')}{' '}
           <select className="input input--inline" value={courts} onChange={(e) => setCourts(Number(e.target.value))}>
             {[2, 3, 4, 5, 6, 8].map((n) => (
               <option key={n}>{n}</option>
@@ -300,10 +303,10 @@ function HostTools({
           </select>
         </label>
         <label className="toolbar__label">
-          Start <input className="input input--inline" type="time" value={start} onChange={(e) => setStart(e.target.value)} />
+          {t('Start')} <input className="input input--inline" type="time" value={start} onChange={(e) => setStart(e.target.value)} />
         </label>
         <label className="toolbar__label">
-          Min/match{' '}
+          {t('Min/match')}{' '}
           <select className="input input--inline" value={slot} onChange={(e) => setSlot(Number(e.target.value))}>
             {[60, 75, 90].map((n) => (
               <option key={n}>{n}</option>
@@ -315,9 +318,9 @@ function HostTools({
       <table className="table">
         <thead>
           <tr>
-            <th>Tid</th>
+            <th>{t('Tid')}</th>
             {Array.from({ length: courts }, (_, i) => (
-              <th key={i}>Bana {i + 1}</th>
+              <th key={i}>{t('Bana {n}', { n: i + 1 })}</th>
             ))}
           </tr>
         </thead>
@@ -336,11 +339,11 @@ function HostTools({
       </table>
       </div>
       <label className="field">
-        <span>Kontaktperson (namn, telefon, e-post)</span>
+        <span>{t('Kontaktperson (namn, telefon, e-post)')}</span>
         <input className="input" value={contact} onChange={(e) => setContact(e.target.value)} />
       </label>
       <label className="field">
-        <span>Kallelse – skickas {rules.invitationDeadline}</span>
+        <span>{t('Kallelse – skickas {deadline}', { deadline: rules.invitationDeadline })}</span>
         <textarea className="input textarea" readOnly value={invitation} rows={14} />
       </label>
       <div className="row gap">
@@ -356,10 +359,10 @@ function HostTools({
             }
           }}
         >
-          {copied ? 'Kopierad' : 'Kopiera kallelse'}
+          {copied ? t('Kopierad') : t('Kopiera kallelse')}
         </button>
-        <a className="btn btn--small" href={`mailto:?subject=${encodeURIComponent(`Kallelse sammandrag ${division}`)}&body=${encodeURIComponent(invitation)}`}>
-          Öppna i e-post
+        <a className="btn btn--small" href={`mailto:?subject=${encodeURIComponent(t('Kallelse sammandrag {division}', { division }))}&body=${encodeURIComponent(invitation)}`}>
+          {t('Öppna i e-post')}
         </a>
       </div>
     </div>

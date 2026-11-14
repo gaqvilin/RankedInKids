@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { submitResult } from '../lib/api';
+import { accountId, submitResult } from '../lib/api';
+import { enqueue, isNetworkError } from '../lib/outbox';
+import { t } from '../lib/i18n';
 import { summarizeSets, type SetScore } from '../../api/_lib/result';
 import type { Side } from '../lib/rankedin';
 import { useSession } from '../session';
@@ -65,26 +67,42 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
   };
 
   async function reset() {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return queue(null);
     setBusy(true);
     setError(null);
     try {
       await submitResult(challengeId, null);
       onDone();
     } catch (e) {
+      if (isNetworkError(e)) return queue(null);
       setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
 
+  // No connection: keep it on the phone and send when the connection is back (see lib/outbox).
+  const queue = (value: [number, number][] | null) => {
+    enqueue({
+      challengeId,
+      sets: value,
+      expected: initial && initial.length ? initial.map((x) => [Number(x[0]), Number(x[1])] as [number, number]) : [],
+      account: accountId(),
+      title: sides.map((x) => x.names.map((n) => n.split(' ')[0]).join(' / ')).join(' – '),
+    });
+    onDone();
+  };
+
   async function send() {
     if (!summary) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return queue(parsed);
     setBusy(true);
     setError(null);
     try {
       await submitResult(challengeId, parsed);
       onDone();
     } catch (e) {
+      if (isNetworkError(e)) return queue(parsed);
       setError((e as Error).message);
     } finally {
       setBusy(false);
@@ -93,19 +111,19 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label="Rapportera resultat" onClick={(e) => e.stopPropagation()}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={t('Rapportera resultat')} onClick={(e) => e.stopPropagation()}>
         <div className="sheet__grip" aria-hidden="true" />
-        <h2>Rapportera resultat</h2>
+        <h2>{t('Rapportera resultat')}</h2>
         {!user.loggedIn ? (
           <>
-            <p className="muted">För att skicka resultat till Rankedin behöver du logga in med ditt Rankedin-konto.</p>
+            <p className="muted">{t('För att skicka resultat till Rankedin behöver du logga in med ditt Rankedin-konto.')}</p>
             <Link className="btn btn--primary btn--block" to="/konto">
-              Logga in
+              {t('Logga in')}
             </Link>
           </>
         ) : (
           <>
-            <AccountSwitcher label="Rapporteras som" />
+            <AccountSwitcher label={t('Rapporteras som')} />
             <div className="presets">
               {PRESETS.map((p) => (
                 <button
@@ -116,7 +134,7 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
                     setSets(Array.from({ length: p.sets }, (_, i) => sets[i] ?? ['', '']));
                   }}
                 >
-                  {p.label}
+                  {t(p.label)}
                 </button>
               ))}
             </div>
@@ -125,20 +143,20 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
                 <tr>
                   <th />
                   {sets.map((_, i) => (
-                    <th key={i}>Set {i + 1}</th>
+                    <th key={i}>{t('Set {n}', { n: i + 1 })}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {sides.map((side, j) => (
                   <tr key={j}>
-                    <th scope="row">{side.names.join(' / ') || `Lag ${j + 1}`}</th>
+                    <th scope="row">{side.names.join(' / ') || t('Lag {n}', { n: j + 1 })}</th>
                     {sets.map((s, i) => (
                       <td key={i}>
                         <input
                           inputMode="numeric"
                           pattern="[0-9]*"
-                          aria-label={`Set ${i + 1}, ${side.names.join(' och ')}`}
+                          aria-label={`${t('Set {n}', { n: i + 1 })}, ${side.names.join(` ${t('och')} `)}`}
                           value={s[j]}
                           onChange={(e) => update(i, j, e.target.value)}
                         />
@@ -151,57 +169,57 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
             <div className="row gap">
               {sets.length < 5 && (
                 <button className="btn btn--ghost btn--small" onClick={() => setSets([...sets, ['', '']])}>
-                  + Set
+                  + {t('Set')}
                 </button>
               )}
               {sets.length > 1 && (
                 <button className="btn btn--ghost btn--small" onClick={() => setSets(sets.slice(0, -1))}>
-                  − Set
+                  − {t('Set')}
                 </button>
               )}
             </div>
-            <p className="muted small">Supertiebreak skrivs som ett eget set, t.ex. 10–8.</p>
+            <p className="muted small">{t('Supertiebreak skrivs som ett eget set, t.ex. 10–8.')}</p>
             {parsed.length > 0 && validation && (
               <p className="field-error">
-                {validation}{' '}
+                {t(validation)}{' '}
                 {sets.length === parsed.length && sets.length < 5 && /supertiebreak/.test(validation) && (
                   <button className="link-btn" onClick={() => setSets([...sets, ['', '']])}>
-                    Lägg till set
+                    {t('Lägg till set')}
                   </button>
                 )}
               </p>
             )}
             {summary && (
               <p className="result-summary">
-                Vinnare: <strong>{(summary.p1 > summary.p2 ? sides[0] : sides[1]).names.join(' / ')}</strong> ({summary.p1}–{summary.p2} i set)
+                {t('Vinnare:')} <strong>{(summary.p1 > summary.p2 ? sides[0] : sides[1]).names.join(' / ')}</strong> ({summary.p1}–{summary.p2} {t('i set')})
               </p>
             )}
-            {error && <p className="field-error">{error}</p>}
+            {error && <p className="field-error">{t(error)}</p>}
             <button className="btn btn--primary btn--block" disabled={!summary || busy} onClick={send}>
-              {busy ? 'Skickar…' : 'Skicka till Rankedin'}
+              {busy ? t('Skickar…') : typeof navigator !== 'undefined' && navigator.onLine === false ? t('Spara – skickas när nätet är tillbaka') : t('Skicka till Rankedin')}
             </button>
             {hasResult &&
               (confirmReset ? (
                 <div className="reset-confirm">
-                  <p>Ta bort resultatet? Matchen blir ospelad i Rankedin och tabellen räknas om.</p>
+                  <p>{t('Ta bort resultatet? Matchen blir ospelad i Rankedin och tabellen räknas om.')}</p>
                   <div className="row gap">
                     <button className="btn btn--danger btn--small" disabled={busy} onClick={reset}>
-                      Ja, ta bort
+                      {t('Ja, ta bort')}
                     </button>
                     <button className="btn btn--ghost btn--small" onClick={() => setConfirmReset(false)}>
-                      Nej
+                      {t('Nej')}
                     </button>
                   </div>
                 </div>
               ) : (
                 <button className="btn btn--ghost btn--block" disabled={busy} onClick={() => setConfirmReset(true)}>
-                  Ta bort resultatet
+                  {t('Ta bort resultatet')}
                 </button>
               ))}
           </>
         )}
         <button className="btn btn--ghost btn--block" onClick={onClose}>
-          Avbryt
+          {t('Avbryt')}
         </button>
       </div>
     </div>

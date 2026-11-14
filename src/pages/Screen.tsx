@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { fmtTime } from '../lib/format';
+import { locale, t } from '../lib/i18n';
 import { courtBoard } from '../lib/organizer';
 import { getTournament, getTournamentMatches, type TournamentMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
@@ -37,16 +38,16 @@ export default function Screen() {
       <header className="screen__head">
         <div>
           <h1>{header.data?.name ?? ''}</h1>
-          <span className="muted">{now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}</span>
+          <span className="muted">{now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
         {qr && (
           <div className="screen__qr">
-            <img src={qr} alt="QR-kod till tävlingen" width={120} height={120} />
-            <span className="small">Följ dina matcher</span>
+            <img src={qr} alt={t('QR-kod till tävlingen')} width={120} height={120} />
+            <span className="small">{t('Följ dina matcher')}</span>
           </div>
         )}
       </header>
-      {board.length === 0 && <p className="muted">Inga schemalagda matcher än.</p>}
+      {board.length === 0 && <p className="muted">{t('Inga schemalagda matcher än.')}</p>}
       <div className="screen__grid">
         {board.map((c) => (
           <section key={c.court} className="screen__court">
@@ -54,7 +55,7 @@ export default function Screen() {
             {c.now ? (
               <div className="screen__now">
                 <span className="screen__label">
-                  Nu · {fmtTime(c.now.date)} · {c.now.className}
+                  {t('Nu')} · {fmtTime(c.now.date)} · {c.now.className}
                 </span>
                 {names(c.now).map((n, i) => (
                   <span key={i} className="block screen__names">
@@ -63,11 +64,11 @@ export default function Screen() {
                 ))}
               </div>
             ) : (
-              <p className="screen__label">{c.next ? 'Ledig' : 'Klar för dagen'}</p>
+              <p className="screen__label">{c.next ? t('Ledig') : t('Klar för dagen')}</p>
             )}
             {c.next && (
               <div className="screen__next">
-                <span className="screen__label">Sedan {fmtTime(c.next.date)} · {c.next.className}</span>
+                <span className="screen__label">{t('Sedan {time}', { time: fmtTime(c.next.date) })} · {c.next.className}</span>
                 <span className="block">{names(c.next).join(' – ')}</span>
               </div>
             )}

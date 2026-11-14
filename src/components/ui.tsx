@@ -1,4 +1,5 @@
 import { Logo } from './Logo';
+import { setLang, t, useLang } from '../lib/i18n';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { From } from './shell';
@@ -24,7 +25,7 @@ export function AppHeader({ title, back, backLabel }: { title?: string; back?: s
     </svg>
   );
   let backEl: ReactNode = (
-    <Link to="/" className="brand brand--mobile" aria-label="PadelAdmin start">
+    <Link to="/" className="brand brand--mobile" aria-label={t('PadelAdmin start')}>
       <Logo size={20} />
     </Link>
   );
@@ -39,14 +40,14 @@ export function AppHeader({ title, back, backLabel }: { title?: string; back?: s
     backEl = (
       <button className="back-link" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>
         {arrow}
-        <span>{backLabel ?? 'Tillbaka'}</span>
+        <span>{backLabel ?? t('Tillbaka')}</span>
       </button>
     );
   } else if (back) {
     backEl = (
       <Link to={back} className="back-link">
         {arrow}
-        <span>{backLabel ?? 'Tillbaka'}</span>
+        <span>{backLabel ?? t('Tillbaka')}</span>
       </Link>
     );
   }
@@ -56,7 +57,7 @@ export function AppHeader({ title, back, backLabel }: { title?: string; back?: s
       <div className="app-header__inner">
         {backEl}
         {loc.pathname !== '/sok' && (
-          <Link to="/sok" className="header-search" aria-label="Sök spelare">
+          <Link to="/sok" className="header-search" aria-label={t('Sök spelare')}>
             <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
               <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -83,7 +84,7 @@ export function Section({ title, action, children }: { title: string; action?: R
   );
 }
 
-export function Loading({ label = 'Hämtar från Rankedin…' }: { label?: string }) {
+export function Loading({ label = t('Hämtar från Rankedin…') }: { label?: string }) {
   // Grey placeholders in the shape of what is coming; the label is for screen readers.
   return (
     <div className="skeleton" role="status" aria-label={label}>
@@ -103,10 +104,10 @@ export function ErrorBox({ error, onRetry }: { error: Error; onRetry?: () => voi
   }, [error]);
   return (
     <div className="notice notice--error" role="alert">
-      <p>{error.message || 'Något gick fel.'}</p>
+      <p>{error.message ? t(error.message) : t('Något gick fel.')}</p>
       {onRetry && (
         <button className="btn btn--small" onClick={onRetry}>
-          Försök igen
+          {t('Försök igen')}
         </button>
       )}
     </div>
@@ -134,11 +135,11 @@ export function ExternalLink({ href, children }: { href: string; children: React
 
 export function RefreshButton({ onClick, loading }: { onClick: () => void; loading: boolean }) {
   return (
-    <button className="btn btn--ghost btn--small" onClick={onClick} disabled={loading} aria-label="Uppdatera">
+    <button className="btn btn--ghost btn--small" onClick={onClick} disabled={loading} aria-label={t('Uppdatera')}>
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" className={loading ? 'spin' : ''}>
         <path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      Uppdatera
+      {t('Uppdatera')}
     </button>
   );
 }
@@ -158,6 +159,20 @@ export function Avatar({ name, imageUrl, large }: { name: string; imageUrl?: str
   return (
     <span className={`avatar ${large ? 'avatar--large' : ''}`} aria-hidden="true">
       {imageUrl && !broken ? <img src={imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} /> : name.trim()[0]}
+    </span>
+  );
+}
+
+/** Svenska | English. The choice is remembered on the device. */
+export function LangSwitch() {
+  const lang = useLang();
+  return (
+    <span className="seg" role="group" aria-label={t('Språk')}>
+      {(['sv', 'en'] as const).map((l) => (
+        <button key={l} className={`seg__btn ${lang === l ? 'is-on' : ''}`} aria-pressed={lang === l} onClick={() => setLang(l)} lang={l}>
+          {l === 'sv' ? 'Svenska' : 'English'}
+        </button>
+      ))}
     </span>
   );
 }

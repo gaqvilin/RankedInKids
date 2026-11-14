@@ -50,6 +50,8 @@ export function useAsync<T>(fn: (fresh: boolean) => Promise<T>, deps: unknown[],
   const [loading, setLoading] = useState(true);
   const [at, setAt] = useState<number | null>(null);
   const seq = useRef(0);
+  const latest = useRef(data);
+  latest.current = data;
 
   // reset: the deps changed (another player, team…) – never show the previous one's data.
   const run = useCallback((fresh: boolean, reset = false) => {
@@ -69,7 +71,11 @@ export function useAsync<T>(fn: (fresh: boolean) => Promise<T>, deps: unknown[],
         if (storeKey) writeStore(storeKey, d);
       })
       .catch((e: Error) => {
-        if (id === seq.current) setError(e);
+        if (id !== seq.current) return;
+        // No connection but something to show: keep showing it (the offline bar says it may be old).
+        const offline = e instanceof TypeError || (typeof navigator !== 'undefined' && navigator.onLine === false);
+        if (offline && (latest.current !== undefined || stored !== undefined)) return;
+        setError(e);
       })
       .finally(() => {
         if (id === seq.current) setLoading(false);

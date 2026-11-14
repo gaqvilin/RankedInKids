@@ -1,3 +1,4 @@
+import { locale, t } from './i18n';
 const TZ = 'Europe/Stockholm';
 
 function toDate(iso: string | null | undefined): Date | null {
@@ -10,13 +11,13 @@ function toDate(iso: string | null | undefined): Date | null {
 export function fmtDay(iso: string | null | undefined): string {
   const d = toDate(iso);
   if (!d) return '';
-  return d.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' });
+  return d.toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 export function fmtTime(iso: string | null | undefined): string {
   const d = toDate(iso);
   if (!d) return '';
-  const t = d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+  const t = d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
   return t === '00:00' ? '' : t;
 }
 
@@ -37,11 +38,11 @@ export function relativeDays(iso: string | null | undefined, now: Date = new Dat
   if (!d) return '';
   const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diff = Math.round((start(d) - start(now)) / 86_400_000);
-  if (diff === 0) return 'idag';
-  if (diff === 1) return 'imorgon';
-  if (diff === -1) return 'igår';
-  if (diff > 1) return `om ${diff} dagar`;
-  return `för ${-diff} dagar sedan`;
+  if (diff === 0) return t('idag');
+  if (diff === 1) return t('imorgon');
+  if (diff === -1) return t('igår');
+  if (diff > 1) return t('om {n} dagar', { n: diff });
+  return t('för {n} dagar sedan', { n: -diff });
 }
 
 export function hoursUntil(iso: string | null | undefined, now: Date = new Date()): number | null {
@@ -74,5 +75,5 @@ export function classInEvent(className: string, eventName: string): string {
 /** Only "idag", "imorgon" or "igår" – the date itself says the rest. */
 export function soon(iso: string | null | undefined, now: Date = new Date()): string {
   const r = relativeDays(iso, now);
-  return r === 'idag' || r === 'imorgon' || r === 'igår' ? r : '';
+  return r === t('idag') || r === t('imorgon') || r === t('igår') ? r : '';
 }

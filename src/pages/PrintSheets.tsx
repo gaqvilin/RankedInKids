@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Go } from '../components/shell';
 import { Logo } from '../components/Logo';
 import { classInEvent, fmtDay, fmtTime } from '../lib/format';
+import { locale, t } from '../lib/i18n';
 import { courtOrder } from '../lib/organizer';
 import { getClasses, getClassPairs, getTournament, getTournamentMatches, type Pair, type TournamentMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
@@ -26,6 +27,7 @@ function classLabel(matches: TournamentMatch[], eventName: string) {
     return (draws.get(m.className)?.size ?? 0) > 1 && m.draw ? `${name} · ${m.draw}` : name;
   };
 }
+const NO_COURT = 'Ingen bana';
 const time = (m: TournamentMatch) => (m.date ? new Date(m.date).getTime() : Number.POSITIVE_INFINITY);
 
 export default function PrintSheets() {
@@ -47,7 +49,7 @@ export default function PrintSheets() {
     return () => document.body.classList.remove('screen-mode');
   }, []);
 
-  const t = header.data;
+  const tour = header.data;
   const all = useMemo(() => [...(matches.data ?? [])].sort((a, b) => time(a) - time(b) || courtOrder(a.court ?? '', b.court ?? '')), [matches.data]);
   const scheduled = all.filter((m) => m.date);
   const title = KINDS.find((k) => k.id === kind)!.label;
@@ -55,18 +57,18 @@ export default function PrintSheets() {
   return (
     <div className="qr-page print-page">
       <div className="qr-toolbar no-print">
-        <Go to={`/tavling/${tid}/ledning?vy=dela`} from="Tävlingen" className="btn btn--ghost btn--small">
-          ‹ Tillbaka
+        <Go to={`/tavling/${tid}/ledning?vy=dela`} from={t('Tävlingen')} className="btn btn--ghost btn--small">
+          ‹ {t('Tillbaka')}
         </Go>
         <span className="chips chips--inline">
           {KINDS.map((k) => (
             <button key={k.id} className={`chip ${kind === k.id ? 'chip--on' : ''}`} onClick={() => setParams({ typ: k.id }, { replace: true })}>
-              {k.label}
+              {t(k.label)}
             </button>
           ))}
         </span>
         <button className="btn btn--primary btn--small" onClick={() => window.print()}>
-          Skriv ut
+          {t('Skriv ut')}
         </button>
       </div>
 
@@ -74,21 +76,21 @@ export default function PrintSheets() {
         <span className="print-logo">
           <Logo size={18} />
         </span>
-        <h1>{t?.name ?? ''}</h1>
+        <h1>{tour?.name ?? ''}</h1>
         <p>
-          {title}
-          {t ? ` · ${fmtDay(t.startDate)}` : ''} · utskrivet {new Date().toLocaleString('sv-SE', { dateStyle: 'short', timeStyle: 'short' })}
+          {t(title)}
+          {tour ? ` · ${fmtDay(tour.startDate)}` : ''} · {t('utskrivet {when}', { when: new Date().toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' }) })}
         </p>
       </header>
 
-      {kind !== 'deltagare' && matches.loading && !matches.data && <p>Hämtar matcher…</p>}
+      {kind !== 'deltagare' && matches.loading && !matches.data && <p>{t('Hämtar matcher…')}</p>}
       {kind !== 'deltagare' && matches.data && scheduled.length === 0 && (
-        <p>Inga matcher med tid än. Lotta och schemalägg först (Tävlingsledning → Lottning), så fylls utskriften i.</p>
+        <p>{t('Inga matcher med tid än. Lotta och schemalägg först (Tävlingsledning → Lottning), så fylls utskriften i.')}</p>
       )}
 
-      {kind === 'schema' && scheduled.length > 0 && <Schedule matches={scheduled} label={classLabel(scheduled, t?.name ?? '')} />}
-      {kind === 'banor' && scheduled.length > 0 && <PerCourt matches={scheduled} label={classLabel(scheduled, t?.name ?? '')} />}
-      {kind === 'deltagare' && (pairs.data ? <CheckIn classes={pairs.data} /> : <p>Hämtar anmälda…</p>)}
+      {kind === 'schema' && scheduled.length > 0 && <Schedule matches={scheduled} label={classLabel(scheduled, tour?.name ?? '')} />}
+      {kind === 'banor' && scheduled.length > 0 && <PerCourt matches={scheduled} label={classLabel(scheduled, tour?.name ?? '')} />}
+      {kind === 'deltagare' && (pairs.data ? <CheckIn classes={pairs.data} /> : <p>{t('Hämtar anmälda…')}</p>)}
     </div>
   );
 }
@@ -99,12 +101,12 @@ function Schedule({ matches, label }: { matches: TournamentMatch[]; label: (m: T
     <table className="print-table">
       <thead>
         <tr>
-          <th>Tid</th>
-          <th>Bana</th>
-          <th>Klass</th>
-          <th>Par</th>
-          <th>Par</th>
-          <th className="print-result">Resultat</th>
+          <th>{t('Tid')}</th>
+          <th>{t('Bana')}</th>
+          <th>{t('Klass')}</th>
+          <th>{t('Par')}</th>
+          <th>{t('Par')}</th>
+          <th className="print-result">{t('Resultat')}</th>
         </tr>
       </thead>
       <tbody>
@@ -125,25 +127,25 @@ function Schedule({ matches, label }: { matches: TournamentMatch[]; label: (m: T
 
 /** One page per court, to put up at the court. */
 function PerCourt({ matches, label }: { matches: TournamentMatch[]; label: (m: TournamentMatch) => string }) {
-  const courts = [...new Set(matches.map((m) => m.court ?? 'Ingen bana'))].sort(courtOrder);
+  const courts = [...new Set(matches.map((m) => m.court ?? NO_COURT))].sort(courtOrder);
   return (
     <>
       {courts.map((c) => (
         <section key={c} className="print-court">
-          <h2>{c}</h2>
+          <h2>{c === NO_COURT ? t(NO_COURT) : c}</h2>
           <table className="print-table">
             <thead>
               <tr>
-                <th>Tid</th>
-                <th>Klass</th>
-                <th>Par</th>
-                <th>Par</th>
-                <th className="print-result">Resultat</th>
+                <th>{t('Tid')}</th>
+                <th>{t('Klass')}</th>
+                <th>{t('Par')}</th>
+                <th>{t('Par')}</th>
+                <th className="print-result">{t('Resultat')}</th>
               </tr>
             </thead>
             <tbody>
               {matches
-                .filter((m) => (m.court ?? 'Ingen bana') === c)
+                .filter((m) => (m.court ?? NO_COURT) === c)
                 .map((m) => (
                   <tr key={m.id}>
                     <td className="print-nowrap">{fmtTime(m.date)}</td>
@@ -167,7 +169,7 @@ function CheckIn({ classes }: { classes: { name: string; pairs: Pair[] }[] }) {
   return (
     <>
       <p className="print-muted">
-        {total} anmälningar i {classes.length} klasser. Bocka av när spelaren är på plats.
+        {t('{n} anmälningar i {classes} klasser. Bocka av när spelaren är på plats.', { n: total, classes: classes.length })}
       </p>
       {classes
         .filter((c) => c.pairs.length > 0)
@@ -179,12 +181,12 @@ function CheckIn({ classes }: { classes: { name: string; pairs: Pair[] }[] }) {
             <table className="print-table">
               <thead>
                 <tr>
-                  <th className="print-tick">Här</th>
-                  <th>Spelare</th>
-                  <th className="print-tick">Här</th>
-                  <th>Partner</th>
-                  <th className="print-tick">Betalt</th>
-                  <th>Anteckning</th>
+                  <th className="print-tick">{t('Här')}</th>
+                  <th>{t('Spelare')}</th>
+                  <th className="print-tick">{t('Här')}</th>
+                  <th>{t('Partner')}</th>
+                  <th className="print-tick">{t('Betalt')}</th>
+                  <th>{t('Anteckning')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -195,12 +197,12 @@ function CheckIn({ classes }: { classes: { name: string; pairs: Pair[] }[] }) {
                       <td className="print-tick">☐</td>
                       <td>
                         {p.players[0]?.name ?? '–'}
-                        {p.players[0] && !p.players[0].hasLicense && <span className="print-flag"> licens?</span>}
+                        {p.players[0] && !p.players[0].hasLicense && <span className="print-flag"> {t('licens?')}</span>}
                       </td>
                       <td className="print-tick">{p.players[1] ? '☐' : ''}</td>
                       <td>
-                        {p.players[1]?.name ?? <em>saknar partner</em>}
-                        {p.players[1] && !p.players[1].hasLicense && <span className="print-flag"> licens?</span>}
+                        {p.players[1]?.name ?? <em>{t('saknar partner')}</em>}
+                        {p.players[1] && !p.players[1].hasLicense && <span className="print-flag"> {t('licens?')}</span>}
                       </td>
                       <td className="print-tick">☐</td>
                       <td />

@@ -14,6 +14,7 @@ import { MoveSheet } from '../components/MoveSheet';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDayTime, fmtTime, isSameDay } from '../lib/format';
+import { t } from '../lib/i18n';
 import { courtBoard, missingResults, partnerSeekers, unlicensed, type CourtState } from '../lib/organizer';
 import { getClasses, getClassPairs, getTournament, getTournamentMatches, rinUrl, type TournamentMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
@@ -38,9 +39,16 @@ export default function Organizer() {
     [user.loggedIn, version, tid],
   );
   const [params, setParams] = useSearchParams();
-  const header = useAsync(() => getTournament(tid), [tid]);
-  const classes = useAsync(() => getClasses(tid), [tid]);
-  const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version]);
+  const header = useAsync(() => getTournament(tid), [tid], `t.${tid}`);
+  const classes = useAsync(() => getClasses(tid), [tid], `tclasses.${tid}`);
+  const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version], `tmatches.${tid}`);
+  // Results queued offline went through: show them.
+  useEffect(() => {
+    const on = () => matches.reload();
+    window.addEventListener('padeladmin:results-sent', on);
+    return () => window.removeEventListener('padeladmin:results-sent', on);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tid]);
   const classKey = (classes.data ?? []).map((c) => c.id).join(',');
   const pairs = useAsync(
     async (fresh) => new Map(await Promise.all((classes.data ?? []).map(async (c) => [c.name, await getClassPairs(tid, c.id, fresh)] as const))),
@@ -50,10 +58,10 @@ export default function Organizer() {
   const [moving, setMoving] = useState<TournamentMatch | null>(null);
   const [now, setNow] = useState(() => new Date());
 
-  const t = header.data;
+  const tour = header.data;
   const all = matches.data ?? [];
   const drawn = all.length > 0;
-  const matchDay = !!t && (isSameDay(t.startDate) || isSameDay(t.endDate));
+  const matchDay = !!tour && (isSameDay(tour.startDate) || isSameDay(tour.endDate));
   const tab = (params.get('vy') as Tab) || (matchDay && drawn ? 'banor' : 'partner');
   const setTab = (v: Tab) => {
     const next = new URLSearchParams(params);
@@ -84,17 +92,17 @@ export default function Organizer() {
   if (header.error) {
     return (
       <>
-        <AppHeader back={`/tavling/${tid}`} backLabel="Tävlingen" />
+        <AppHeader back={`/tavling/${tid}`} backLabel={t('Tävlingen')} />
         <Page>
           <ErrorBox error={header.error} onRetry={() => header.reload()} />
         </Page>
       </>
     );
   }
-  if (!t) {
+  if (!tour) {
     return (
       <>
-        <AppHeader back={`/tavling/${tid}`} backLabel="Tävlingen" />
+        <AppHeader back={`/tavling/${tid}`} backLabel={t('Tävlingen')} />
         <Page>
           <Loading />
         </Page>
@@ -105,17 +113,18 @@ export default function Organizer() {
   const played = all.filter((m) => m.played).length;
   return (
     <>
-      <AppHeader back={`/tavling/${tid}`} backLabel="Tävlingen" title="Tävlingsledning" />
+      <AppHeader back={`/tavling/${tid}`} backLabel={t('Tävlingen')} title={t('Tävlingsledning')} />
       <Page wide>
         <div className="page-title">
           <div>
-            <h1>Tävlingsledning</h1>
+            <h1>{t('Tävlingsledning')}</h1>
             <p className="muted">
-              {t.name} · {fmtDayTime(t.startDate)}
+              {tour.name} · {fmtDayTime(tour.startDate)}
             </p>
             {drawn && (
               <p className="muted small">
-                {played} av {all.length} matcher klara{missing.length ? ` · ${missing.length} resultat saknas` : ''}
+                {t('{n} av {total} matcher klara', { n: played, total: all.length })}
+                {missing.length ? ` · ${missing.length === 1 ? t('1 resultat saknas') : t('{n} resultat saknas', { n: missing.length })}` : ''}
               </p>
             )}
           </div>
@@ -125,22 +134,22 @@ export default function Organizer() {
         <div className="chips chips--wrap" role="tablist">
           {TABS.map((x) => (
             <button key={x.id} role="tab" aria-selected={tab === x.id} className={`chip ${tab === x.id ? 'chip--on' : ''}`} onClick={() => setTab(x.id)}>
-              {x.label}
+              {t(x.label)}
               {x.id === 'resultat' && missing.length > 0 && <span className="count-badge">{missing.length}</span>}
             </button>
           ))}
         </div>
 
         {tab === 'partner' && isOrganiser.data && (classes.data?.length ?? 0) > 0 && (
-          <Section title="Para ihop och dela på par">
-            <p className="small muted">Ändringarna görs direkt i Rankedin, precis som i arrangörsvyn där. Fungerar fram till att klassen är lottad.</p>
+          <Section title={t('Para ihop och dela på par')}>
+            <p className="small muted">{t('Ändringarna görs direkt i Rankedin, precis som i arrangörsvyn där. Fungerar fram till att klassen är lottad.')}</p>
             {classes.data!.map((c) => {
               const singles = pairs.data?.get(c.name)?.filter((p) => p.missingPartner).length ?? 0;
               return (
                 <details key={c.id} className="fold" open={singles > 1}>
                   <summary>
                     {c.name}
-                    {singles > 0 && <span className="muted small"> · {singles} utan partner</span>}
+                    {singles > 0 && <span className="muted small"> · {t('{n} utan partner', { n: singles })}</span>}
                   </summary>
                   <PairingPanel tournamentId={tid} classId={c.id} className={c.name} onChanged={() => pairs.reload()} />
                 </details>
@@ -149,17 +158,17 @@ export default function Organizer() {
           </Section>
         )}
         {tab === 'partner' && user.loggedIn && isOrganiser.data === false && (
-          <Notice>Ditt aktiva konto är inte arrangör för tävlingen. Byt konto under Konton för att para ihop spelare här.</Notice>
+          <Notice>{t('Ditt aktiva konto är inte arrangör för tävlingen. Byt konto under Konton för att para ihop spelare här.')}</Notice>
         )}
         {tab === 'partner' && (
           <PartnerTab
             loading={pairs.loading && !pairs.data}
             seekers={seekers}
             noLicence={noLicence}
-            signInOpen={t.signInOpen}
-            closes={t.closeSignInDate}
+            signInOpen={tour.signInOpen}
+            closes={tour.closeSignInDate}
             classCounts={pairs.data ? [...pairs.data].map(([name, p]) => ({ name, pairs: p.filter((x) => !x.missingPartner).length, singles: p.filter((x) => x.missingPartner).length })) : []}
-            adminUrl={rinUrl(t.url)}
+            adminUrl={rinUrl(tour.url)}
           />
         )}
 
@@ -171,7 +180,7 @@ export default function Organizer() {
               singles={pairs.data ? new Map([...pairs.data].map(([name, p]) => [name, p.filter((x) => x.missingPartner).length])) : undefined}
             />
           ) : (
-            <Notice>Logga in med kontot som administrerar tävlingen för att lotta här.</Notice>
+            <Notice>{t('Logga in med kontot som administrerar tävlingen för att lotta här.')}</Notice>
           ))}
 
         {tab === 'banor' &&
@@ -182,7 +191,7 @@ export default function Organizer() {
               {board.map((c) => (
                 <CourtCard key={c.court} c={c} onReport={setReporting} />
               ))}
-              {board.length === 0 && <Empty>Matcherna har inga banor och tider än. Schemalägg i Rankedin.</Empty>}
+              {board.length === 0 && <Empty>{t('Matcherna har inga banor och tider än. Schemalägg i Rankedin.')}</Empty>}
             </div>
           ))}
 
@@ -190,8 +199,8 @@ export default function Organizer() {
           (!drawn ? (
             <NotDrawn />
           ) : (
-            <Section title="Schema">
-              <p className="muted small section-intro">Alla matcher per klockslag. Tryck Flytta för att byta tid eller bana – bara lediga banor visas.</p>
+            <Section title={t('Schema')}>
+              <p className="muted small section-intro">{t('Alla matcher per klockslag. Tryck Flytta för att byta tid eller bana – bara lediga banor visas.')}</p>
               <MatchBoard matches={all} highlight={[]} showClass onEnterResult={setReporting} onMove={user.loggedIn ? setMoving : undefined} status={status} />
             </Section>
           ))}
@@ -200,15 +209,16 @@ export default function Organizer() {
           (!drawn ? (
             <NotDrawn />
           ) : (
-            <Section title={missing.length ? `Saknar resultat (${missing.length})` : 'Resultat'}>
-              {missing.length === 0 && <Notice tone="ok">Alla matcher som borde vara klara har resultat.</Notice>}
+            <Section title={missing.length ? t('Saknar resultat ({n})', { n: missing.length }) : t('Resultat')}>
+              {missing.length === 0 && <Notice tone="ok">{t('Alla matcher som borde vara klara har resultat.')}</Notice>}
               {missing.length > 0 && !missing.some((m) => m.canEnterResult) && (
-                <Notice tone="warn">Ditt inloggade konto får inte rapportera i den här tävlingen. Logga in med kontot som administrerar tävlingen.</Notice>
+                <Notice tone="warn">{t('Ditt inloggade konto får inte rapportera i den här tävlingen. Logga in med kontot som administrerar tävlingen.')}</Notice>
               )}
               <div className="stack">
                 {missing.map((m) => (
                   <MatchCard
                     key={m.id}
+                    challengeId={m.id}
                     sides={m.sides}
                     sets={m.sets}
                     played={m.played}
@@ -218,17 +228,18 @@ export default function Organizer() {
                     status={status.get(m.id) ?? null}
                     canEnterResult={m.canEnterResult}
                     onEnterResult={() => setReporting(m)}
-                    from="Tävlingsledning"
+                    from={t('Tävlingsledning')}
                   />
                 ))}
               </div>
               {reported.length > 0 && (
                 <details className="fold fold--quiet" open={missing.length === 0}>
-                  <summary>Rapporterade ({reported.length}) – ändra eller ta bort</summary>
+                  <summary>{t('Rapporterade ({n}) – ändra eller ta bort', { n: reported.length })}</summary>
                   <div className="stack">
                     {reported.map((m) => (
                       <MatchCard
                         key={m.id}
+                        challengeId={m.id}
                         sides={m.sides}
                         sets={m.sets}
                         played={m.played}
@@ -239,7 +250,7 @@ export default function Organizer() {
                         // Rankedin hides its button on played matches; as organiser you may still change them, and Rankedin decides on send.
                         canEnterResult={user.loggedIn}
                         onEnterResult={() => setReporting(m)}
-                        from="Tävlingsledning"
+                        from={t('Tävlingsledning')}
                       />
                     ))}
                   </div>
@@ -248,7 +259,7 @@ export default function Organizer() {
             </Section>
           ))}
 
-        {tab === 'dela' && <ShareTab tid={tid} name={t.name} />}
+        {tab === 'dela' && <ShareTab tid={tid} name={tour.name} />}
 
         {matches.error && <ErrorBox error={matches.error} onRetry={() => matches.reload()} />}
       </Page>
@@ -283,7 +294,7 @@ export default function Organizer() {
 }
 
 function NotDrawn() {
-  return <Notice>Inga matcher är lottade än. Lotta, schemalägg och publicera under fliken Lottning – då dyker allt upp här.</Notice>;
+  return <Notice>{t('Inga matcher är lottade än. Lotta, schemalägg och publicera under fliken Lottning – då dyker allt upp här.')}</Notice>;
 }
 
 function CourtCard({ c, onReport }: { c: CourtState; onReport: (m: TournamentMatch) => void }) {
@@ -293,29 +304,29 @@ function CourtCard({ c, onReport }: { c: CourtState; onReport: (m: TournamentMat
       <header className="court-card__head">
         <strong>{c.court}</strong>
         <span className="muted small">
-          {c.done}/{c.total} klara
+          {t('{done}/{total} klara', { done: c.done, total: c.total })}
         </span>
       </header>
       {c.now ? (
         <div className="court-card__now">
           <span className="small muted">
-            Nu · {fmtTime(c.now.date)} · {c.now.className}
-            {c.lateMinutes > 0 && <span className="pill pill--warn">{c.lateMinutes} min sen</span>}
+            {t('Nu')} · {fmtTime(c.now.date)} · {c.now.className}
+            {c.lateMinutes > 0 && <span className="pill pill--warn">{t('{n} min sen', { n: c.lateMinutes })}</span>}
           </span>
           <span className="block">{names(c.now)}</span>
           {c.now.canEnterResult && (
             <button className="btn btn--small" onClick={() => onReport(c.now!)}>
-              Rapportera
+              {t('Rapportera')}
             </button>
           )}
         </div>
       ) : (
-        <p className="muted small">{c.next ? 'Ledig just nu' : 'Klar för dagen'}</p>
+        <p className="muted small">{c.next ? t('Ledig just nu') : t('Klar för dagen')}</p>
       )}
       {c.next && (
         <div className="court-card__next small">
           <span className="muted">
-            Sedan {fmtTime(c.next.date)} · {c.next.className}
+            {t('Sedan {time}', { time: fmtTime(c.next.date) })} · {c.next.className}
           </span>
           <span className="block">{names(c.next)}</span>
         </div>
@@ -340,19 +351,20 @@ function PartnerTab(p: {
     <>
       {p.signInOpen && p.closes && (
         <Notice tone="warn">
-          <strong>Anmälan stänger {fmtDayTime(p.closes)}.</strong> Para ihop de som söker partner innan dess – de kommer annars inte med i lottningen.
+          <strong>{t('Anmälan stänger {date}.', { date: fmtDayTime(p.closes) })}</strong>{' '}
+          {t('Para ihop de som söker partner innan dess – de kommer annars inte med i lottningen.')}
         </Notice>
       )}
-      <Section title={total ? `Söker partner (${total})` : 'Söker partner'}>
-        {total === 0 && <Notice tone="ok">Alla anmälda har en partner.</Notice>}
+      <Section title={total ? t('Söker partner ({n})', { n: total }) : t('Söker partner')}>
+        {total === 0 && <Notice tone="ok">{t('Alla anmälda har en partner.')}</Notice>}
         {p.seekers &&
           [...p.seekers].map(([className, list]) => {
-            const text = `Söker partner i ${className}: ${list.map((s) => s.name).join(', ')}. Hör av er till varandra och anmäl er som par i Rankedin.`;
+            const text = t('Söker partner i {className}: {names}. Hör av er till varandra och anmäl er som par i Rankedin.', { className, names: list.map((s) => s.name).join(', ') });
             return (
               <div key={className} className="seeker-class">
                 <div className="row gap seeker-class__head">
                   <strong>
-                    {className} · {list.length} st
+                    {className} · {t('{n} st', { n: list.length })}
                   </strong>
                   <button
                     className="btn btn--ghost btn--small"
@@ -366,13 +378,13 @@ function PartnerTab(p: {
                       }
                     }}
                   >
-                    {copied === className ? 'Kopierat' : 'Kopiera som meddelande'}
+                    {copied === className ? t('Kopierat') : t('Kopiera som meddelande')}
                   </button>
                 </div>
                 <div className="list">
                   {list.map((s) =>
                     s.rankedinId ? (
-                      <PlayerHitRow key={s.playerId} h={{ id: s.playerId, name: s.name, rankedinId: s.rankedinId }} from="Tävlingsledning" />
+                      <PlayerHitRow key={s.playerId} h={{ id: s.playerId, name: s.name, rankedinId: s.rankedinId }} from={t('Tävlingsledning')} />
                     ) : (
                       <div key={s.playerId} className="item">
                         <strong>{s.name}</strong>
@@ -384,12 +396,12 @@ function PartnerTab(p: {
             );
           })}
         <p className="muted small">
-          Ihopparning görs i Rankedin (anmälan → byt partner) eller av spelarna själva. <ExternalLink href={p.adminUrl}>Öppna tävlingen i Rankedin</ExternalLink>
+          {t('Ihopparning görs i Rankedin (anmälan → byt partner) eller av spelarna själva.')} <ExternalLink href={p.adminUrl}>{t('Öppna tävlingen i Rankedin')}</ExternalLink>
         </p>
       </Section>
 
       {p.noLicence.length > 0 && (
-        <Section title={`Saknar licens (${p.noLicence.length})`}>
+        <Section title={t('Saknar licens ({n})', { n: p.noLicence.length })}>
           <ul className="small">
             {p.noLicence.map((x) => (
               <li key={`${x.className}-${x.name}`}>
@@ -397,17 +409,17 @@ function PartnerTab(p: {
               </li>
             ))}
           </ul>
-          <p className="muted small">Utan giltig tävlingslicens kan spelaren inte delta i sanktionerade klasser.</p>
+          <p className="muted small">{t('Utan giltig tävlingslicens kan spelaren inte delta i sanktionerade klasser.')}</p>
         </Section>
       )}
 
-      <Section title="Anmälda per klass">
+      <Section title={t('Anmälda per klass')}>
         <table className="table">
           <thead>
             <tr>
-              <th>Klass</th>
-              <th>Par</th>
-              <th>Utan partner</th>
+              <th>{t('Klass')}</th>
+              <th>{t('Par')}</th>
+              <th>{t('Utan partner')}</th>
             </tr>
           </thead>
           <tbody>
@@ -433,63 +445,63 @@ function ShareTab({ tid, name }: { tid: number; name: string }) {
   }, [url]);
   return (
     <>
-      <Section title="Utskrifter för dagen">
+      <Section title={t('Utskrifter för dagen')}>
         <div className="list">
-          <Go className="item" to={`/tavling/${tid}/skriv-ut?typ=schema`} from="Tävlingsledning">
+          <Go className="item" to={`/tavling/${tid}/skriv-ut?typ=schema`} from={t('Tävlingsledning')}>
             <span className="item__main">
-              <strong>Dagens schema</strong>
-              <span className="muted small block">Alla matcher i tidsordning med bana, klass och ruta för resultat</span>
+              <strong>{t('Dagens schema')}</strong>
+              <span className="muted small block">{t('Alla matcher i tidsordning med bana, klass och ruta för resultat')}</span>
             </span>
           </Go>
-          <Go className="item" to={`/tavling/${tid}/skriv-ut?typ=deltagare`} from="Tävlingsledning">
+          <Go className="item" to={`/tavling/${tid}/skriv-ut?typ=deltagare`} from={t('Tävlingsledning')}>
             <span className="item__main">
-              <strong>Deltagarlista för avcheckning</strong>
-              <span className="muted small block">Alla anmälda per klass med rutor för på plats och betalt</span>
+              <strong>{t('Deltagarlista för avcheckning')}</strong>
+              <span className="muted small block">{t('Alla anmälda per klass med rutor för på plats och betalt')}</span>
             </span>
           </Go>
-          <Go className="item" to={`/tavling/${tid}/skriv-ut?typ=banor`} from="Tävlingsledning">
+          <Go className="item" to={`/tavling/${tid}/skriv-ut?typ=banor`} from={t('Tävlingsledning')}>
             <span className="item__main">
-              <strong>Spelare per bana</strong>
-              <span className="muted small block">En sida per bana att sätta upp vid banan</span>
+              <strong>{t('Spelare per bana')}</strong>
+              <span className="muted small block">{t('En sida per bana att sätta upp vid banan')}</span>
             </span>
           </Go>
-          <Go className="item" to={`/tavling/${tid}/qr?typ=affisch`} from="Tävlingsledning">
+          <Go className="item" to={`/tavling/${tid}/qr?typ=affisch`} from={t('Tävlingsledning')}>
             <span className="item__main">
-              <strong>QR-kod för resultat</strong>
-              <span className="muted small block">Affisch eller lappar – spelare och föräldrar ser matcher och resultat i mobilen</span>
+              <strong>{t('QR-kod för resultat')}</strong>
+              <span className="muted small block">{t('Affisch eller lappar – spelare och föräldrar ser matcher och resultat i mobilen')}</span>
             </span>
           </Go>
         </div>
       </Section>
-      <Section title="QR-kod till tävlingen">
+      <Section title={t('QR-kod till tävlingen')}>
         <p className="small">
-          Spelare och föräldrar skannar koden och ser direkt sina matcher, tider, banor och resultat i mobilen – ingen app eller inloggning behövs.
-          Sidan uppdateras av sig själv under dagen.
+          {t('Spelare och föräldrar skannar koden och ser direkt sina matcher, tider, banor och resultat i mobilen – ingen app eller inloggning behövs.')}{' '}
+          {t('Sidan uppdateras av sig själv under dagen.')}
         </p>
-        {qr && <img src={qr} alt={`QR-kod till ${name}`} className="qr" width={200} height={200} />}
+        {qr && <img src={qr} alt={t('QR-kod till {name}', { name })} className="qr" width={200} height={200} />}
         <p className="small">
           <a href={url}>{url}</a>
         </p>
         <div className="row gap wrap">
-          <Go className="btn btn--primary btn--small" to={`/tavling/${tid}/qr?typ=lappar`} from="Tävlingsledning">
-            Skriv ut lappar att dela ut
+          <Go className="btn btn--primary btn--small" to={`/tavling/${tid}/qr?typ=lappar`} from={t('Tävlingsledning')}>
+            {t('Skriv ut lappar att dela ut')}
           </Go>
-          <Go className="btn btn--small" to={`/tavling/${tid}/qr?typ=affisch`} from="Tävlingsledning">
-            Skriv ut affisch
+          <Go className="btn btn--small" to={`/tavling/${tid}/qr?typ=affisch`} from={t('Tävlingsledning')}>
+            {t('Skriv ut affisch')}
           </Go>
           {qr && (
             <a className="btn btn--small btn--ghost" href={qr} download={`qr-tavling-${tid}.png`}>
-              Ladda ner bild
+              {t('Ladda ner bild')}
             </a>
           )}
         </div>
-        <p className="muted small">Tips: dela länken eller bilden i klubbens chatt redan innan, så har alla den på morgonen.</p>
+        <p className="muted small">{t('Tips: dela länken eller bilden i klubbens chatt redan innan, så har alla den på morgonen.')}</p>
       </Section>
       <details className="fold">
-        <summary>Har ni en TV eller projektor?</summary>
-        <p className="small muted">Skärmvyn visar varje bana med pågående och nästa match och uppdateras själv.</p>
-        <Go className="btn btn--small" to={`/tavling/${tid}/skarm`} from="Tävlingsledning">
-          Öppna skärmvy
+        <summary>{t('Har ni en TV eller projektor?')}</summary>
+        <p className="small muted">{t('Skärmvyn visar varje bana med pågående och nästa match och uppdateras själv.')}</p>
+        <Go className="btn btn--small" to={`/tavling/${tid}/skarm`} from={t('Tävlingsledning')}>
+          {t('Öppna skärmvy')}
         </Go>
       </details>
     </>
