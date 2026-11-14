@@ -2771,3 +2771,32 @@ button.tabbar__link {
   opacity: 0.6;
   cursor: default;
 }
+
+/* Trainer's group on Översikt */
+.group {
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.group__name {
+  font-size: 20px;
+}
+.group-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.group-row__who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+}
+.group-row__who:hover {
+  text-decoration: none;
+}
+.group-row__action {
+  flex: none;
+}

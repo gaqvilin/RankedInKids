@@ -1,4 +1,5 @@
 import { t } from '../lib/i18n';
+import { MyGroups } from '../components/MyGroups';
 import { PlayerHitRow } from '../components/PlayerHitRow';
 import { usePlayerSearch } from '../lib/usePlayerSearch';
 import { useState } from 'react';
@@ -70,6 +71,8 @@ export default function Home() {
         <div className="page-title">
           <h1>{t('Översikt')}</h1>
         </div>
+
+        <MyGroups saved={shown} />
 
         {shown.length > 0 && (
           <div className="stack alerts">

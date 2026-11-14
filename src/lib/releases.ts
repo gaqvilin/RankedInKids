@@ -9,6 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Grupper för tränare: samla dina spelare i en grupp på Översikt och se vad som behöver göras (söker partner, licens saknas), vilka som spelar den här veckan och resten. Gruppen sparas på ditt konto och kan delas med en länk.',
       'Appen finns på engelska: välj Svenska eller English under Meny. Första gången följer appen telefonens språk.',
       'Spelarsidan visar spelarens profilbild från Rankedin (eller initialen om bild saknas).',
       'Slutresultat: när slutspelet rapporteras visas placeringarna 1–8 i en egen ruta ovanför Slutspel.',

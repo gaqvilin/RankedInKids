@@ -18,6 +18,8 @@ export type Entry = {
   className: string | null;
   partner: string | null;
   missingPartner: boolean;
+  /** False when Rankedin says the player has no valid licence for this entry. */
+  hasLicense: boolean;
 };
 
 export type LeagueTeamSummary = {
@@ -45,7 +47,7 @@ export async function loadEntries(playerId: number, events: PlayerEvent[]): Prom
   const upcoming = events.filter((e) => e.kind === 'tournament' && e.state !== 4);
   return Promise.all(
     upcoming.map(async (event) => {
-      const entry: Entry = { event, closeSignInDate: null, signInOpen: false, className: null, partner: null, missingPartner: false };
+      const entry: Entry = { event, closeSignInDate: null, signInOpen: false, className: null, partner: null, missingPartner: false, hasLicense: true };
       try {
         const [header, classes] = await Promise.all([getTournament(event.id), getClasses(event.id)]);
         entry.closeSignInDate = header.closeSignInDate;
@@ -56,6 +58,7 @@ export async function loadEntries(playerId: number, events: PlayerEvent[]): Prom
           if (pair) {
             entry.className = c.name;
             entry.missingPartner = pair.missingPartner;
+            entry.hasLicense = pair.players.find((x) => x.id === playerId)?.hasLicense ?? true;
             entry.partner = pair.players.find((x) => x.id !== playerId)?.name ?? null;
             break;
           }
