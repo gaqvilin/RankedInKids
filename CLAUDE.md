@@ -11,7 +11,7 @@ spelare, lagledare och arrangörer. All tävlingsdata ligger i Rankedin; vi läs
 - En rad per sak. Inga dubbletter mellan sektioner. Upprepa inte det namnet redan säger (ort, nivå).
 - Samma sak heter samma sak överallt: *speldag* (inte sammandrag/omgång), *lagmatch*, *tävling*, *klass*.
 - Korta texter med en länk ("Lös det") hellre än förklaringar. Datum utan "om N dagar" (bara idag/imorgon/igår).
-- Lugnt och ljust utseende: mjuka kort (radie och skugga från tokens), en accentfärg (`--accent`: primära knappar, aktivt val, "Pågår"), annars färg bara där den betyder något (vinst, varning, fel). Inga färger utöver tokens i `src/styles.css`.
+- Lugnt och ljust utseende: mjuka kort (radie och skugga från tokens), en accentfärg (`--accent`: primära knappar, aktivt val), grönt (`--live`) för "Pågår nu", annars färg bara där den betyder något (vinst, varning, fel). Inga färger utöver tokens i `src/styles.css`.
 - Rörelse är diskret och kort (sidor tonar in, nya resultat tonar in, skelett vid laddning) och stängs av med `prefers-reduced-motion`.
 
 ## Språk
