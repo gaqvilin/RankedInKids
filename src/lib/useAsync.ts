@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export type AsyncState<T> = { data: T | undefined; error: Error | null; loading: boolean; reload: (fresh?: boolean) => void };
+/** at: when data was last fetched successfully in this visit (ms), null before that. */
+export type AsyncState<T> = { data: T | undefined; error: Error | null; loading: boolean; at: number | null; reload: (fresh?: boolean) => void };
 
 const STORE_PREFIX = 'padeladmin.cache.';
 const STORE_MAX_AGE = 24 * 60 * 60 * 1000;
@@ -47,6 +48,7 @@ export function useAsync<T>(fn: (fresh: boolean) => Promise<T>, deps: unknown[],
   const [data, setData] = useState<T | undefined>(() => (storeKey ? readStore<T>(storeKey) : undefined));
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(true);
+  const [at, setAt] = useState<number | null>(null);
   const seq = useRef(0);
 
   // reset: the deps changed (another player, team…) – never show the previous one's data.
@@ -63,6 +65,7 @@ export function useAsync<T>(fn: (fresh: boolean) => Promise<T>, deps: unknown[],
         if (id !== seq.current) return;
         setData(d);
         setError(null);
+        setAt(Date.now());
         if (storeKey) writeStore(storeKey, d);
       })
       .catch((e: Error) => {
@@ -78,5 +81,5 @@ export function useAsync<T>(fn: (fresh: boolean) => Promise<T>, deps: unknown[],
     run(false, true);
   }, [run]);
 
-  return { data, error, loading, reload: (fresh = true) => run(fresh) };
+  return { data, error, loading, at, reload: (fresh = true) => run(fresh) };
 }

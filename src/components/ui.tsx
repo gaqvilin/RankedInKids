@@ -84,9 +84,12 @@ export function Section({ title, action, children }: { title: string; action?: R
 }
 
 export function Loading({ label = 'Hämtar från Rankedin…' }: { label?: string }) {
+  // Grey placeholders in the shape of what is coming; the label is for screen readers.
   return (
-    <div className="loading" role="status">
-      <span className="spinner" aria-hidden="true" /> {label}
+    <div className="skeleton" role="status" aria-label={label}>
+      <div className="skeleton__row" />
+      <div className="skeleton__row" />
+      <div className="skeleton__row" />
     </div>
   );
 }

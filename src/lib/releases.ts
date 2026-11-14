@@ -9,6 +9,8 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Nytt utseende: ljusblå accentfärg, mjukare kort och diskret rörelse. Matcher visar "Pågår nu", dina egna visar Vinst eller Förlust, och tävlingen har en rad överst med hur många matcher som är klara.',
+      'Grupptabellen visar vad placeringen leder till: ettan är markerad (spelar final), och ett tryck på platssiffran säger vad platsen spelar om.',
       'På datorn kan sidomenyn döljas (knappen bredvid loggan) så att sidan, t.ex. tavlan, använder hela skärmen. Samma knapp uppe till vänster tar tillbaka menyn.',
       'Arrangörer kan flytta en match till en annan tid och bana: Tävlingsledning → Schema → Flytta på matchen. Bara lediga banor visas, och spelare som redan spelar den tiden varnas för.',
       'Fel resultat? Tävlingsledning → Resultat → Rapporterade: tryck Ändra resultat på matchen, rätta eller tryck Ta bort resultatet – matchen blir ospelad i Rankedin igen.',

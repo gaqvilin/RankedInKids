@@ -98,6 +98,7 @@ export default function Tournament() {
   const reportable = all.filter((m) => m.canEnterResult && !m.played);
   const filtered = onlyToReport ? all.filter((m) => m.canEnterResult && !m.played) : all;
   const highlight = playerId ? [playerId] : [];
+  const playedCount = all.filter((m) => m.played).length;
   const nextMine = mine.find((m) => !m.played);
 
   return (
@@ -109,6 +110,25 @@ export default function Tournament() {
             {[fmtDay(t.startDate), unlessInName(t.name, t.city), soon(t.startDate)].filter(Boolean).join(' · ')}
           </p>
           <h1>{t.name}</h1>
+          {all.length > 0 && (playedCount > 0 || isSameDay(t.startDate) || isSameDay(t.endDate)) && (
+            <div className="progress">
+              <p className="progress__text">
+                {playedCount === all.length ? (
+                  <strong>Klar</strong>
+                ) : (
+                  <>
+                    <span className="live-dot" aria-hidden="true" />
+                    <strong>Pågår</strong>
+                  </>
+                )}{' '}
+                · {playedCount} av {all.length} matcher klara
+                {matches.at && playedCount < all.length && <span className="muted"> · uppdaterad {fmtTime(new Date(matches.at).toISOString()) || 'nyss'}</span>}
+              </p>
+              <div className="progress__bar" role="progressbar" aria-valuemin={0} aria-valuemax={all.length} aria-valuenow={playedCount}>
+                <div className="progress__fill" style={{ width: `${Math.round((playedCount / all.length) * 100)}%` }} />
+              </div>
+            </div>
+          )}
           {t.signInOpen && t.closeSignInDate && (
             <p className="small">
               Anmälan öppen till{' '}
