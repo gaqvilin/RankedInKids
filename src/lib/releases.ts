@@ -9,7 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
-      'Förklaringar i tabellerna: håll över eller tryck på S, V, F, +/- och P (och A1, B1 i slutspelet) för att se vad de betyder. En rad under Grupper säger hur gruppen avgör slutspelet.',
+      'Förklaringar i tabellerna: håll över eller tryck på S, V, F, +/- och P (och A1, B1 i slutspelet, "Väntar på bekräftelse" och "Licens saknas") för att se vad de betyder. En rad under Grupper säger hur gruppen avgör slutspelet.',
       'Resultat: välj 1 set, 2 set eller bäst av 3 – valet sparas till nästa match. Rankedin kräver en vinnare, så vid 1–1 skrivs supertiebreaket som ett tredje set.',
       'Grupperna ser ut som ett gruppspel i fotboll: tabell (S V F +/- P) och gruppens matcher med tid, bana och resultat. Slutspelet visas under som en rad per match (Final, Om plats 3–4 …) med parens gruppplats (A1, B1) och tid och bana, ifyllt med paren som leder grupperna just nu.',
       'Utskrifterna är kortare: klassen står utan nivån när tävlingens namn redan säger den ("Pojkar 12"), och gruppen bara när klassen har flera. Marginaler runt utskriften i alla webbläsare.',

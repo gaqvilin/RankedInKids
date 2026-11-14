@@ -1,5 +1,6 @@
 import { Go } from './shell';
 import type { Side } from '../lib/rankedin';
+import { Tip } from './ui';
 import { fmtDayTime, fmtTime } from '../lib/format';
 
 type Props = {
@@ -52,7 +53,9 @@ export function MatchCard(p: Props) {
               Hela lagmatchen
             </Go>
           )}
-          {p.awaitingConfirmation && <span className="pill pill--warn">Väntar på bekräftelse</span>}
+          {p.awaitingConfirmation && <span className="pill pill--warn">
+              <Tip tip="Resultatet är rapporterat men inte bekräftat av motståndaren än.">Väntar på bekräftelse</Tip>
+            </span>}
           {p.refereeCode && !p.played && (
             <Go className="btn btn--small" to={`/doma/${encodeURIComponent(p.refereeCode)}`} from={p.from ?? 'Tillbaka'}>
               Döm live

@@ -2353,3 +2353,8 @@ button.tabbar__link {
 .section-intro {
   margin: -4px 0 10px;
 }
+.pill .tip::after,
+.tag .tip::after {
+  left: 0;
+  right: auto;
+}

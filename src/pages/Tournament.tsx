@@ -8,7 +8,7 @@ import { addMyPartner } from '../lib/pairing';
 import { Go } from '../components/shell';
 import { isTournamentAdmin } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
-import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
+import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section, Tip } from '../components/ui';
 import { fmtDay, fmtTime, isSameDay, unlessInName, soon } from '../lib/format';
 import {
   getClasses,
@@ -358,7 +358,9 @@ function ClassBlock(props: {
             <li key={i} className={isMine(pair.players.map((p) => p.id)) ? 'is-mine' : ''}>
               {pair.players.map((p) => p.name).join(' / ')}
               {pair.missingPartner && <span className="pill pill--warn">Söker partner</span>}
-              {!props.finished && pair.players.some((p) => !p.hasLicense) && <span className="pill pill--warn">Licens saknas</span>}
+              {!props.finished && pair.players.some((p) => !p.hasLicense) && <span className="pill pill--warn">
+                  <Tip tip="Spelaren har ingen giltig tävlingslicens i Rankedin för i år.">Licens saknas</Tip>
+                </span>}
             </li>
           ))}
         </ul>
