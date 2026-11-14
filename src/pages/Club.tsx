@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Go } from '../components/shell';
@@ -26,7 +27,7 @@ export default function Club() {
   if (club.error || !club.data) {
     return (
       <>
-        <AppHeader back="/" backLabel="Översikt" />
+        <AppHeader back="/" backLabel={t('Översikt')} />
         <Page>{club.error ? <ErrorBox error={club.error} onRetry={() => club.reload()} /> : <Loading />}</Page>
       </>
     );
@@ -38,23 +39,23 @@ export default function Club() {
 
   return (
     <>
-      <AppHeader back="/" backLabel="Översikt" title={c.name} />
+      <AppHeader back="/" backLabel={t('Översikt')} title={c.name} />
       <Page wide>
         <div className="page-title">
           <div>
             <h1>{c.name}</h1>
             <p className="muted">
-              {[c.city, c.federation ? `medlem i ${c.federation}` : null, c.memberCount ? `${c.memberCount} spelare` : null].filter(Boolean).join(' · ')}
+              {[c.city, c.federation ? t('medlem i {federation}', { federation: c.federation }) : null, c.memberCount ? t('{n} spelare', { n: c.memberCount }) : null].filter(Boolean).join(' · ')}
             </p>
           </div>
         </div>
 
         <div className="columns">
           <div>
-            <Section title="Lag den här säsongen">
+            <Section title={t('Lag den här säsongen')}>
               {!leagues.data && leagues.loading && <Loading />}
               {leagues.error && <ErrorBox error={leagues.error} onRetry={() => leagues.reload()} />}
-              {leagues.data && active.length === 0 && <Empty>Inga lag i pågående serier.</Empty>}
+              {leagues.data && active.length === 0 && <Empty>{t('Inga lag i pågående serier.')}</Empty>}
               {active.map((l) => (
                 <div key={l.id} className="group">
                   <p className="list-label">
@@ -64,11 +65,11 @@ export default function Club() {
                     · {fmtRange(l.startDate, l.endDate)}
                   </p>
                   <div className="list">
-                    {l.teams.map((t) => (
-                      <Go key={t.id} to={`/lag/${t.id}`} from={c.name} className="item">
+                    {l.teams.map((tm) => (
+                      <Go key={tm.id} to={`/lag/${tm.id}`} from={c.name} className="item">
                         <span className="item__main">
-                          <strong>{t.name}</strong>
-                          {t.division && <span className="muted small block">{t.division}</span>}
+                          <strong>{tm.name}</strong>
+                          {tm.division && <span className="muted small block">{tm.division}</span>}
                         </span>
                       </Go>
                     ))}
@@ -77,13 +78,13 @@ export default function Club() {
               ))}
               {past.length > 0 && (
                 <details className="fold">
-                  <summary>Tidigare säsonger ({past.length})</summary>
+                  <summary>{t('Tidigare säsonger ({n})', { n: past.length })}</summary>
                   <div className="list">
                     {past.map((l) => (
                       <Go key={l.id} to={`/liga/${l.id}`} from={c.name} className="item">
                         <span className="item__main">
                           {l.name}
-                          <span className="muted small block">{l.teams.map((t) => t.name).join(', ')}</span>
+                          <span className="muted small block">{l.teams.map((tm) => tm.name).join(', ')}</span>
                         </span>
                       </Go>
                     ))}
@@ -92,41 +93,41 @@ export default function Club() {
               )}
             </Section>
 
-            <Section title="Kommande tävlingar på klubben">
+            <Section title={t('Kommande tävlingar på klubben')}>
               {!tournaments.data && tournaments.loading && <Loading />}
-              {tournaments.data && tournaments.data.length === 0 && <Empty>Inga kommande tävlingar hittades.</Empty>}
+              {tournaments.data && tournaments.data.length === 0 && <Empty>{t('Inga kommande tävlingar hittades.')}</Empty>}
               {tournaments.data && tournaments.data.length > 0 && (
                 <div className="list">
-                  {tournaments.data.map((t) => (
-                    <Go key={t.id} to={`/tavling/${t.id}`} from={c.name} className="item">
+                  {tournaments.data.map((ev) => (
+                    <Go key={ev.id} to={`/tavling/${ev.id}`} from={c.name} className="item">
                       <span className="item__date">
-                        {fmtDay(t.startDate)}
-                        <span className="muted small">{soon(t.startDate)}</span>
+                        {fmtDay(ev.startDate)}
+                        <span className="muted small">{soon(ev.startDate)}</span>
                       </span>
                       <span className="item__main">
-                        <strong>{t.name}</strong>
-                        {t.level !== 'Övrigt' && <span className="muted small block">{t.level}</span>}
+                        <strong>{ev.name}</strong>
+                        {ev.level !== 'Övrigt' && <span className="muted small block">{ev.level}</span>}
                       </span>
                     </Go>
                   ))}
                 </div>
               )}
-              <p className="muted small">Hittas genom att söka på klubbens namn i Rankedin.</p>
+              <p className="muted small">{t('Hittas genom att söka på klubbens namn i Rankedin.')}</p>
             </Section>
           </div>
 
           <div>
-            <Section title="Kontakt">
+            <Section title={t('Kontakt')}>
               <dl className="facts">
                 {c.address && (
                   <>
-                    <dt>Adress</dt>
+                    <dt>{t('Adress')}</dt>
                     <dd>{[c.address, c.city].filter(Boolean).join(', ')}</dd>
                   </>
                 )}
                 {c.website && (
                   <>
-                    <dt>Webb</dt>
+                    <dt>{t('Webb')}</dt>
                     <dd>
                       <ExternalLink href={c.website}>{c.website.replace(/^https?:\/\/(www\.)?/, '')}</ExternalLink>
                     </dd>
@@ -134,7 +135,7 @@ export default function Club() {
                 )}
                 {c.email && (
                   <>
-                    <dt>E-post</dt>
+                    <dt>{t('E-post')}</dt>
                     <dd>
                       <a href={`mailto:${c.email}`}>{c.email}</a>
                     </dd>
@@ -142,7 +143,7 @@ export default function Club() {
                 )}
                 {c.phone && (
                   <>
-                    <dt>Telefon</dt>
+                    <dt>{t('Telefon')}</dt>
                     <dd>
                       <a href={`tel:${c.phone.replace(/\s/g, '')}`}>{c.phone}</a>
                     </dd>
@@ -150,7 +151,7 @@ export default function Club() {
                 )}
                 {c.admins.length > 0 && (
                   <>
-                    <dt>Administratörer</dt>
+                    <dt>{t('Administratörer')}</dt>
                     <dd>
                       {c.admins.map((a, i) => (
                         <span key={a.name}>
@@ -171,9 +172,9 @@ export default function Club() {
             </Section>
 
             <details className="fold">
-              <summary>Medlemmar {members.data ? `(${members.data.length})` : ''}</summary>
+              <summary>{t('Medlemmar')} {members.data ? `(${members.data.length})` : ''}</summary>
               {members.data && members.data.length > 10 && (
-                <input className="input" type="search" placeholder="Sök medlem" value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} />
+                <input className="input" type="search" placeholder={t('Sök medlem')} value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} />
               )}
               {!members.data && <Loading />}
               {members.data && (
@@ -188,7 +189,7 @@ export default function Club() {
             </details>
 
             <p className="small">
-              <ExternalLink href={rinUrl(`/sv/organisation/${c.id}`)}>Klubben på Rankedin</ExternalLink>
+              <ExternalLink href={rinUrl(`/sv/organisation/${c.id}`)}>{t('Klubben på Rankedin')}</ExternalLink>
             </p>
           </div>
         </div>

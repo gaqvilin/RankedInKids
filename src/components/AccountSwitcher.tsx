@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../session';
@@ -6,7 +7,7 @@ import { useSession } from '../session';
  * Shows which Rankedin account an action will be done as, and lets the user
  * switch when several accounts are logged in (e.g. parent and child).
  */
-export function AccountSwitcher({ label = 'Görs som' }: { label?: string }) {
+export function AccountSwitcher({ label = t('Görs som') }: { label?: string }) {
   const { user, switchAccount } = useSession();
   const [busy, setBusy] = useState(false);
   if (!user.loggedIn) return null;
@@ -15,7 +16,7 @@ export function AccountSwitcher({ label = 'Görs som' }: { label?: string }) {
     return (
       <p className="account-line">
         {label} <strong>{user.name}</strong> ·{' '}
-        <Link to="/konto">Lägg till konto</Link>
+        <Link to="/konto">{t('Lägg till konto')}</Link>
       </p>
     );
   }

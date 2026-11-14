@@ -1,5 +1,6 @@
 import type { Fixture } from '../lib/leagues';
 import { fmtDay } from '../lib/format';
+import { t } from '../lib/i18n';
 import { Go } from './shell';
 
 /**
@@ -16,12 +17,12 @@ export function FixtureRow({ f, teamId, from }: { f: Fixture; teamId: number; fr
     <Go to={`/lagmatch/${f.teamMatchId}`} from={from} className="item fixture-row">
       <span className="item__date">{fmtDay(f.date)}</span>
       <span className="item__main">
-        mot <strong>{opp.name}</strong>
-        <span className="muted small"> {home ? 'hemma' : 'borta'}</span>
-        {f.isMyTeamCaptain && f.canEnterResult && <span className="tag tag--warn">Rapportera</span>}
+        {t('mot')} <strong>{opp.name}</strong>
+        <span className="muted small"> {home ? t('hemma') : t('borta')}</span>
+        {f.isMyTeamCaptain && f.canEnterResult && <span className="tag tag--warn">{t('Rapportera')}</span>}
       </span>
       {f.played && (
-        <span className={`fixture-row__result fixture-row__result--${outcome}`} aria-label={`Resultat ${result}`}>
+        <span className={`fixture-row__result fixture-row__result--${outcome}`} aria-label={t('Resultat {result}', { result })}>
           {result}
         </span>
       )}

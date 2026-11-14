@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import { Go } from '../components/shell';
 import { Logo } from '../components/Logo';
 import { fmtDay } from '../lib/format';
+import { t } from '../lib/i18n';
 import { getTournament } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
 
@@ -33,8 +34,8 @@ export default function QrPrint() {
       </span>
       <strong className="qr-title">{name}</strong>
       <span className="qr-sub">{date}</span>
-      {qr && <img src={qr} alt="QR-kod till tävlingen" />}
-      <span className="qr-cta">Skanna för dina matcher, tider, banor och resultat</span>
+      {qr && <img src={qr} alt={t('QR-kod till tävlingen')} />}
+      <span className="qr-cta">{t('Skanna för dina matcher, tider, banor och resultat')}</span>
       <span className="qr-url">{shortUrl}</span>
     </div>
   );
@@ -42,19 +43,19 @@ export default function QrPrint() {
   return (
     <div className="qr-page">
       <div className="qr-toolbar no-print">
-        <Go to={`/tavling/${tid}/ledning?vy=dela`} from="Tävlingen" className="btn btn--ghost btn--small">
-          ‹ Tillbaka
+        <Go to={`/tavling/${tid}/ledning?vy=dela`} from={t('Tävlingen')} className="btn btn--ghost btn--small">
+          ‹ {t('Tillbaka')}
         </Go>
         <span className="chips chips--inline">
           <button className={`chip ${layout === 'lappar' ? 'chip--on' : ''}`} onClick={() => setParams({ typ: 'lappar' }, { replace: true })}>
-            Lappar att dela ut (8 per A4)
+            {t('Lappar att dela ut (8 per A4)')}
           </button>
           <button className={`chip ${layout === 'affisch' ? 'chip--on' : ''}`} onClick={() => setParams({ typ: 'affisch' }, { replace: true })}>
-            Affisch (A4)
+            {t('Affisch (A4)')}
           </button>
         </span>
         <button className="btn btn--primary btn--small" onClick={() => window.print()}>
-          Skriv ut
+          {t('Skriv ut')}
         </button>
       </div>
       {layout === 'affisch' ? card(true) : <div className="qr-sheet">{Array.from({ length: 8 }, (_, i) => <div key={i}>{card(false)}</div>)}</div>}

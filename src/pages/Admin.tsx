@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { AccountSwitcher } from '../components/AccountSwitcher';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Page, Section } from '../components/ui';
@@ -23,65 +24,65 @@ export default function Admin() {
 
   return (
     <>
-      <AppHeader title="Admin" />
+      <AppHeader title={t('Admin')} />
       <Page wide>
         <div className="page-title">
           <div>
-            <h1>Admin</h1>
+            <h1>{t('Admin')}</h1>
             <p className="small">
-              <Go to="/feedback" from="Admin">
-                Feedback och fel ›
+              <Go to="/feedback" from={t('Admin')}>
+                {t('Feedback och fel')} ›
               </Go>
             </p>
-            <p className="muted">Det du administrerar i Rankedin. Öppna ett event här för att rapportera resultat och sätta uppställningar.</p>
+            <p className="muted">{t('Det du administrerar i Rankedin. Öppna ett event här för att rapportera resultat och sätta uppställningar.')}</p>
           </div>
         </div>
 
         {!user.loggedIn ? (
           <Empty>
-            <Go to="/konto" from="Admin">
-              Logga in med ditt Rankedin-konto
+            <Go to="/konto" from={t('Admin')}>
+              {t('Logga in med ditt Rankedin-konto')}
             </Go>{' '}
-            för att se klubbar och event du administrerar.
+            {t('för att se klubbar och event du administrerar.')}
           </Empty>
         ) : (
           <>
-            <AccountSwitcher label="Visar för" />
+            <AccountSwitcher label={t('Visar för')} />
             <div className="columns">
               <div>
-                <Section title="Event du arrangerar">
+                <Section title={t('Event du arrangerar')}>
                   {events.error && <ErrorBox error={events.error} onRetry={() => events.reload()} />}
                   {!events.data && events.loading && <Loading />}
-                  {events.data && all.length === 0 && <Empty>Inga event där du är admin.</Empty>}
+                  {events.data && all.length === 0 && <Empty>{t('Inga event där du är admin.')}</Empty>}
                   {upcoming.length > 0 && <EventList items={upcoming} />}
                   {older.length > 0 && (
                     <details className="fold">
-                      <summary>Äldre event ({older.length})</summary>
+                      <summary>{t('Äldre event ({n})', { n: older.length })}</summary>
                       <EventList items={older} />
                     </details>
                   )}
                 </Section>
               </div>
               <div>
-                <Section title="Klubbar du administrerar">
+                <Section title={t('Klubbar du administrerar')}>
                   {orgs.error && <ErrorBox error={orgs.error} onRetry={() => orgs.reload()} />}
                   {!orgs.data && orgs.loading && <Loading />}
-                  {orgs.data && orgs.data.length === 0 && <Empty>Inga klubbar.</Empty>}
+                  {orgs.data && orgs.data.length === 0 && <Empty>{t('Inga klubbar.')}</Empty>}
                   {orgs.data && orgs.data.length > 0 && (
                     <div className="list">
                       {orgs.data.map((o) => (
                         <div key={o.id} className="item">
                           <span className="item__main">
-                            <Go to={`/klubb/${o.id}`} from="Admin">
+                            <Go to={`/klubb/${o.id}`} from={t('Admin')}>
                               <strong>{o.name}</strong>
                             </Go>
                             <span className="muted small block">
-                              {[o.location, `${o.eventsCount} event`].filter(Boolean).join(' · ')}
+                              {[o.location, t('{n} event', { n: o.eventsCount })].filter(Boolean).join(' · ')}
                             </span>
                           </span>
                           {o.managerUrl && (
                             <span className="item__side small">
-                              <ExternalLink href={rinUrl(o.managerUrl)}>Hantera i Rankedin</ExternalLink>
+                              <ExternalLink href={rinUrl(o.managerUrl)}>{t('Hantera i Rankedin')}</ExternalLink>
                             </span>
                           )}
                         </div>
@@ -90,7 +91,7 @@ export default function Admin() {
                   )}
                 </Section>
                 <p className="muted small">
-                  Att skapa event, lotta och hantera anmälningar görs än så länge i Rankedin. Säg till vad du gör oftast, så bygger vi in det här.
+                  {t('Att skapa event, lotta och hantera anmälningar görs än så länge i Rankedin. Säg till vad du gör oftast, så bygger vi in det här.')}
                 </p>
               </div>
             </div>
@@ -111,7 +112,7 @@ function EventList({ items }: { items: { id: number; name: string; date: string 
             <span className="item__date">{fmtDay(e.date)}</span>
             <span className="item__main">
               {inApp ? (
-                <Go to={inApp} from="Admin">
+                <Go to={inApp} from={t('Admin')}>
                   <strong>{e.name}</strong>
                 </Go>
               ) : (
@@ -122,13 +123,13 @@ function EventList({ items }: { items: { id: number; name: string; date: string 
               <span className="item__side small">
                 {inApp?.startsWith('/tavling/') && (
                   <>
-                    <Go to={`${inApp}/ledning`} from="Admin">
-                      Tävlingsledning
+                    <Go to={`${inApp}/ledning`} from={t('Admin')}>
+                      {t('Tävlingsledning')}
                     </Go>
                     {' · '}
                   </>
                 )}
-                <ExternalLink href={rinUrl(e.adminLink)}>Admin i Rankedin</ExternalLink>
+                <ExternalLink href={rinUrl(e.adminLink)}>{t('Admin i Rankedin')}</ExternalLink>
               </span>
             )}
           </div>

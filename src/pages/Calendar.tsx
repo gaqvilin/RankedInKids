@@ -4,6 +4,7 @@ import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, Loading, Page } from '../components/ui';
 import { CITIES, findCity } from '../lib/cities';
 import { fmtDay, unlessInName, soon } from '../lib/format';
+import { t } from '../lib/i18n';
 import { getClasses, getJuniorCalendar, getProfile, type CalendarLevel } from '../lib/rankedin';
 import { AGE_CLASSES, ageClassFor, eventMatchesAge, type AgeClass } from '../lib/ages';
 import { useKnownPlayers } from '../lib/known';
@@ -14,6 +15,8 @@ type Place = { label: string; lat: number; lng: number } | null;
 const LEVELS: ('Alla' | CalendarLevel)[] = ['Alla', 'Step In', 'Level Up', 'SPT Future', 'USM', 'Övrigt'];
 const RADII = [25, 50, 100, 200];
 const PLACE_KEY = 'padeladmin.calendar.place';
+// Stored as the place's label (and compared against): translated where it is shown.
+const MY_POSITION = 'Min position';
 
 function loadPlace(): Place {
   try {
@@ -103,45 +106,45 @@ export default function Calendar() {
       setPlace({ label: c.name, lat: c.lat, lng: c.lng });
       setGeoMsg(null);
     } else {
-      setGeoMsg(`Hittar inte "${cityInput}". Välj en ort i listan.`);
+      setGeoMsg(t('Hittar inte "{city}". Välj en ort i listan.', { city: cityInput }));
     }
   }
 
   function useMyPosition() {
     setGeoMsg(null);
     if (!navigator.geolocation) {
-      setGeoMsg('Din webbläsare kan inte dela position. Skriv en ort i stället.');
+      setGeoMsg(t('Din webbläsare kan inte dela position. Skriv en ort i stället.'));
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setPlace({ label: 'Min position', lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setCityInput('Min position');
+        setPlace({ label: MY_POSITION, lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setCityInput(MY_POSITION);
       },
-      () => setGeoMsg('Kunde inte hämta din position (kolla platsbehörighet). Skriv en ort i stället.'),
+      () => setGeoMsg(t('Kunde inte hämta din position (kolla platsbehörighet). Skriv en ort i stället.')),
       { maximumAge: 600_000, timeout: 10_000 },
     );
   }
 
   return (
     <>
-      <AppHeader title="Tävlingar" />
+      <AppHeader title={t('Tävlingar')} />
       <Page wide>
         <div className="page-title">
-          <h1>Juniortävlingar</h1>
+          <h1>{t('Juniortävlingar')}</h1>
         </div>
 
         <div className="toolbar">
           <form className="toolbar__group" onSubmit={submitCity}>
             <label className="toolbar__label" htmlFor="city">
-              Nära
+              {t('Nära')}
             </label>
             <input
               id="city"
               className="input input--inline toolbar__city"
               list="cities"
-              placeholder="Ort, t.ex. Varberg"
-              value={cityInput}
+              placeholder={t('Ort, t.ex. Varberg')}
+              value={cityInput === MY_POSITION ? t(MY_POSITION) : cityInput}
               onChange={(e) => applyCity(e.target.value)}
               autoComplete="off"
             />
@@ -150,14 +153,14 @@ export default function Calendar() {
                 <option key={c.name} value={c.name} />
               ))}
             </datalist>
-            <select className="input input--inline" value={radius} onChange={(e) => setRadius(Number(e.target.value))} aria-label="Avstånd" disabled={!place}>
+            <select className="input input--inline" value={radius} onChange={(e) => setRadius(Number(e.target.value))} aria-label={t('Avstånd')} disabled={!place}>
               {RADII.map((r) => (
                 <option key={r} value={r}>
                   {r} km
                 </option>
               ))}
             </select>
-            <span className="chips chips--wrap chips--inline" role="group" aria-label="Område">
+            <span className="chips chips--wrap chips--inline" role="group" aria-label={t('Område')}>
               <button
                 type="button"
                 className={`chip ${!place ? 'chip--on' : ''}`}
@@ -167,63 +170,63 @@ export default function Calendar() {
                   setCityInput('');
                 }}
               >
-                Hela Sverige
+                {t('Hela Sverige')}
               </button>
-              <button type="button" className={`chip chip--icon ${place?.label === 'Min position' ? 'chip--on' : ''}`} aria-pressed={place?.label === 'Min position'} onClick={useMyPosition}>
+              <button type="button" className={`chip chip--icon ${place?.label === MY_POSITION ? 'chip--on' : ''}`} aria-pressed={place?.label === MY_POSITION} onClick={useMyPosition}>
                 <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                   <path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
                 </svg>
-                Min position
+                {t('Min position')}
               </button>
             </span>
           </form>
-          <div className="toolbar__group" role="group" aria-label="Ålder">
+          <div className="toolbar__group" role="group" aria-label={t('Ålder')}>
             <button className={`chip ${age == null ? 'chip--on' : ''}`} onClick={() => setAge(null)}>
-              Alla åldrar
+              {t('Alla åldrar')}
             </button>
             {(myClasses.data ?? []).map((m) => (
               <button key={m.first} className={`chip ${age === m.age ? 'chip--on' : ''}`} onClick={() => setAge(m.age)}>
-                För {m.first} ({m.age})
+                {t('För {name} ({age})', { name: m.first, age: m.age })}
               </button>
             ))}
             {AGE_CLASSES.filter((a) => !(myClasses.data ?? []).some((m) => m.age === a)).map((a) => (
               <button key={a} className={`chip ${age === a ? 'chip--on' : ''}`} onClick={() => setAge(a)}>
-                {a} år
+                {t('{age} år', { age: a })}
               </button>
             ))}
           </div>
           <div className="toolbar__group">
             {LEVELS.map((l) => (
               <button key={l} className={`chip ${level === l ? 'chip--on' : ''}`} onClick={() => setLevel(l)}>
-                {l}
+                {t(l)}
               </button>
             ))}
             <label className="toolbar__check">
-              <input type="checkbox" checked={onlySanctioned} onChange={(e) => setOnlySanctioned(e.target.checked)} /> Bara sanktionerade
+              <input type="checkbox" checked={onlySanctioned} onChange={(e) => setOnlySanctioned(e.target.checked)} /> {t('Bara sanktionerade')}
             </label>
           </div>
         </div>
         {geoMsg && <p className="field-error">{geoMsg}</p>}
 
         <p className="muted small">
-          {events.data ? `${list.length} kommande tävlingar` : ''}
-          {age ? ` med ${age}-årsklass` : ''}
-          {place ? ` inom ${radius} km från ${place.label}` : ' i hela Sverige'}
+          {events.data ? (list.length === 1 ? t('1 kommande tävling') : t('{n} kommande tävlingar', { n: list.length })) : ''}
+          {age ? ` ${t('med {age}-årsklass', { age })}` : ''}
+          {place ? ` ${t('inom {radius} km från {place}', { radius, place: place.label === MY_POSITION ? t(MY_POSITION) : place.label })}` : ` ${t('i hela Sverige')}`}
         </p>
 
         {events.loading && !events.data && <Loading />}
         {events.error && <ErrorBox error={events.error} onRetry={() => events.reload()} />}
-        {age && classNames.loading && !classNames.data && <Loading label="Kollar klasserna…" />}
-        {events.data && list.length === 0 && !(age && classNames.loading) && <Empty>Inga tävlingar matchar. Prova ett större avstånd eller en annan nivå.</Empty>}
+        {age && classNames.loading && !classNames.data && <Loading label={t('Kollar klasserna…')} />}
+        {events.data && list.length === 0 && !(age && classNames.loading) && <Empty>{t('Inga tävlingar matchar. Prova ett större avstånd eller en annan nivå.')}</Empty>}
 
         {list.length > 0 && (
           <table className="table table--rows">
             <thead>
               <tr>
-                <th>Datum</th>
-                <th>Tävling</th>
-                <th>Nivå</th>
-                <th>Ort</th>
+                <th>{t('Datum')}</th>
+                <th>{t('Tävling')}</th>
+                <th>{t('Nivå')}</th>
+                <th>{t('Ort')}</th>
               </tr>
             </thead>
             <tbody>
@@ -234,7 +237,7 @@ export default function Calendar() {
                     <span className="muted small block">{soon(e.startDate)}</span>
                   </td>
                   <td>
-                    <Go to={`/tavling/${e.id}`} from="Tävlingar" className="row-link">
+                    <Go to={`/tavling/${e.id}`} from={t('Tävlingar')} className="row-link">
                       {e.name}
                     </Go>
                     <span className="muted small block only-narrow">
@@ -242,8 +245,8 @@ export default function Calendar() {
                     </span>
                   </td>
                   <td className="only-wide">
-                    {e.level}
-                    {e.sanctioned && <span className="muted small block">Sanktionerad</span>}
+                    {t(e.level)}
+                    {e.sanctioned && <span className="muted small block">{t('Sanktionerad')}</span>}
                   </td>
                   <td className="only-wide">{e.town ?? <span className="muted">–</span>}</td>
                 </tr>
@@ -263,17 +266,17 @@ function RefereeBox() {
   const navigate = useNavigate();
   return (
     <details className="fold">
-      <summary>Har du en domarkod?</summary>
+      <summary>{t('Har du en domarkod?')}</summary>
       <form
         className="row gap"
         onSubmit={(e) => {
           e.preventDefault();
-          if (code.trim()) navigate(`/doma/${encodeURIComponent(code.trim())}`, { state: { from: { label: 'Tävlingar', to: '/tavlingar' } } });
+          if (code.trim()) navigate(`/doma/${encodeURIComponent(code.trim())}`, { state: { from: { label: t('Tävlingar'), to: '/tavlingar' } } });
         }}
       >
-        <input className="input" placeholder="Domarkod" value={code} onChange={(e) => setCode(e.target.value)} autoCapitalize="off" />
+        <input className="input" placeholder={t('Domarkod')} value={code} onChange={(e) => setCode(e.target.value)} autoCapitalize="off" />
         <button className="btn" type="submit" disabled={!code.trim()}>
-          Döm live
+          {t('Döm live')}
         </button>
       </form>
     </details>

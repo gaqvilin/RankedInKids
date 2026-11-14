@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AppHeader, ErrorBox, Loading, Notice, Page } from '../components/ui';
@@ -54,10 +55,10 @@ export default function Referee() {
   if (error && !state) {
     return (
       <>
-        <AppHeader back="history" title="Döma" />
+        <AppHeader back="history" title={t('Döma')} />
         <Page>
           <ErrorBox error={error} onRetry={load} />
-          <p className="muted small">Domarkoden finns på matchen i Rankedin (eller under ”Kommande matcher” här i appen).</p>
+          <p className="muted small">{t('Domarkoden finns på matchen i Rankedin (eller under ”Kommande matcher” här i appen).')}</p>
         </Page>
       </>
     );
@@ -65,9 +66,9 @@ export default function Referee() {
   if (!state) {
     return (
       <>
-        <AppHeader back="history" title="Döma" />
+        <AppHeader back="history" title={t('Döma')} />
         <Page>
-          <Loading label="Ansluter till matchen…" />
+          <Loading label={t('Ansluter till matchen…')} />
         </Page>
       </>
     );
@@ -85,7 +86,7 @@ export default function Referee() {
 
   return (
     <>
-      <AppHeader back="history" title="Döma" />
+      <AppHeader back="history" title={t('Döma')} />
       <Page>
         <p className="muted small center">{state.matchDetails?.eventName}</p>
 
@@ -93,10 +94,10 @@ export default function Referee() {
 
         {askSettings && settings && (
           <div className="card">
-            <h2 className="h3">Matchformat</h2>
+            <h2 className="h3">{t('Matchformat')}</h2>
             {settings.askForMatchGamesCount && (
               <label className="field">
-                <span>Game per set</span>
+                <span>{t('Game per set')}</span>
                 <select
                   className="input"
                   value={settings.matchGamesCount}
@@ -117,7 +118,7 @@ export default function Referee() {
                   checked={settings.useSuperTieBreak}
                   onChange={(e) => act((s) => s.updateSettings({ ...settings, useSuperTieBreak: e.target.checked }))}
                 />
-                <span>Supertiebreak som avgörande set</span>
+                <span>{t('Supertiebreak som avgörande set')}</span>
               </label>
             )}
           </div>
@@ -125,7 +126,7 @@ export default function Referee() {
 
         {needsServe ? (
           <div className="card">
-            <h2 className="h3">Vem servar först?</h2>
+            <h2 className="h3">{t('Vem servar först?')}</h2>
             <div className="serve-grid">
               {[true, false].map((first) => (
                 <button key={String(first)} className="btn btn--block" disabled={busy} onClick={() => act((s) => s.serve(first, false))}>
@@ -153,13 +154,13 @@ export default function Referee() {
                 <div className="scoreboard__points">{view.points[i]}</div>
               </div>
             ))}
-            {view.inTiebreak && <p className="scoreboard__tag">Tiebreak</p>}
+            {view.inTiebreak && <p className="scoreboard__tag">{t('Tiebreak')}</p>}
           </div>
         )}
 
         {ended ? (
           <Notice tone="ok">
-            <strong>Matchen är avslutad</strong> och resultatet ligger i Rankedin.
+            <strong>{t('Matchen är avslutad')}</strong> {t('och resultatet ligger i Rankedin.')}
           </Notice>
         ) : (
           !needsServe && (
@@ -174,11 +175,11 @@ export default function Referee() {
               </div>
               <div className="row gap center">
                 <button className="btn" disabled={busy || notStarted} onClick={() => act((s) => s.undo())}>
-                  Ångra
+                  {t('Ångra')}
                 </button>
                 {!confirmEnd ? (
                   <button className={`btn ${endSuggested ? 'btn--primary' : 'btn--ghost'}`} disabled={busy} onClick={() => setConfirmEnd(true)}>
-                    Avsluta match
+                    {t('Avsluta match')}
                   </button>
                 ) : (
                   <button
@@ -189,11 +190,11 @@ export default function Referee() {
                       act((s) => s.end());
                     }}
                   >
-                    Ja, avsluta och spara
+                    {t('Ja, avsluta och spara')}
                   </button>
                 )}
               </div>
-              {endSuggested && <Notice tone="info">Matchen ser klar ut. Tryck ”Avsluta match” för att spara resultatet, eller ”Ångra”.</Notice>}
+              {endSuggested && <Notice tone="info">{t('Matchen ser klar ut. Tryck ”Avsluta match” för att spara resultatet, eller ”Ångra”.')}</Notice>}
             </>
           )
         )}

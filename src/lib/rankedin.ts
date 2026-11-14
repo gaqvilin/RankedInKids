@@ -1,5 +1,6 @@
 // Rankedin read model: raw PascalCase payloads in, small domain types out.
 import { rin } from './api';
+import { t } from './i18n';
 import { townFromName } from './cities';
 
 export const SPORT_PADEL = 5;
@@ -461,7 +462,7 @@ export async function getTeamMatch(teamMatchId: number, fresh = false): Promise<
   // Lineup slots come from the first block (one match type); results and score from every block.
   const block = rawMatches?.[0]?.matches;
   const allRaw = (rawMatches ?? []).flatMap((b) => b?.matches?.matches ?? []);
-  const emptyTeam = { id: 0, name: 'Okänt lag', players: [], canLineupTeam: false } as unknown as RawLineupTeam;
+  const emptyTeam = { id: 0, name: t('Okänt lag'), players: [], canLineupTeam: false } as unknown as RawLineupTeam;
   const firstTeam = lineups?.firstTeam ?? emptyTeam;
   const secondTeam = lineups?.secondTeam ?? emptyTeam;
   const matchType = (rawMatches[0] as unknown as { settings?: { matchType: number } })?.settings?.matchType ?? 3;
@@ -712,7 +713,7 @@ export async function getClassDraws(classId: number, fresh = false): Promise<Dra
         const ps = players([s.DoublesPlayer1Model, s.DoublesPlayer2Model]);
         return { position: s.Standing, names: ps.map((p) => p.Name), ids: ps.map((p) => p.Id), played: s.Played, wins: s.Wins, draws: s.Draws ?? 0, losses: s.Losses, points: s.MatchPoints, gamesWon: s.GamesWon, gamesLost: s.GamesLost };
       });
-      return { name: rr.Name.replace(/^Group\b/i, 'Grupp'), pairs, cells, standings };
+      return { name: rr.Name.replace(/^Group\b/i, t('Grupp')), pairs, cells, standings };
     })
     .filter((g) => g.pairs.length > 0);
 }
@@ -779,11 +780,19 @@ export async function getClassPlayoff(classId: number, fresh = false): Promise<P
   });
 }
 
+/** A place in a group, for a pair that is not decided yet: "1:a grupp B", "3:e grupp A". */
+function placeInGroup(place: number, group: string): string {
+  if (place === 1) return t('1:a grupp {g}', { g: group });
+  if (place === 2) return t('2:a grupp {g}', { g: group });
+  if (place === 3) return t('3:e grupp {g}', { g: group });
+  return t('{n}:e grupp {g}', { n: place, g: group });
+}
+
 /** "Final", "Om plats 3–4", "Semifinal" … */
 export function playoffRoundName(m: PlayoffMatch): string {
-  if (m.places) return m.places[0] === 1 ? 'Final' : `Om plats ${m.places[0]}–${m.places[1]}`;
+  if (m.places) return m.places[0] === 1 ? t('Final') : t('Om plats {a}–{b}', { a: m.places[0], b: m.places[1] });
   const left = m.maxRound - m.round;
-  return left === 0 ? 'Final' : left === 1 ? 'Semifinal' : left === 2 ? 'Kvartsfinal' : `Omgång ${m.round}`;
+  return left === 0 ? t('Final') : left === 1 ? t('Semifinal') : left === 2 ? t('Kvartsfinal') : t('Omgång {n}', { n: m.round });
 }
 
 /**
@@ -792,7 +801,7 @@ export function playoffRoundName(m: PlayoffMatch): string {
  */
 export function playoffAsMatches(className: string, list: PlayoffMatch[]): TournamentMatch[] {
   const side = (s: PlayoffSide): Side => ({
-    names: s.names.length ? s.names : s.group && s.place ? [`${s.place}:${s.place <= 2 ? 'a' : 'e'} grupp ${s.group}`] : [],
+    names: s.names.length ? s.names : s.group && s.place ? [placeInGroup(s.place, s.group)] : [],
     ids: s.ids,
     isWinner: false,
   });
@@ -840,7 +849,7 @@ export const groupDone = (g: DrawGroup) => g.standings.length > 0 && g.standings
 /** Fill a placeholder side from the group tables: decided → the pair, otherwise the current holder of that place. */
 export function resolvePlayoffSide(s: PlayoffSide, groups: DrawGroup[]): PlayoffSide & { label: string | null; provisional: boolean } {
   if (s.names.length || !s.group || !s.place) return { ...s, label: null, provisional: false };
-  const label = `${s.place}:${s.place <= 2 ? 'a' : 'e'} grupp ${s.group}`;
+  const label = placeInGroup(s.place, s.group);
   const g = groups.find((x) => groupLetter(x.name).toUpperCase() === s.group!.toUpperCase());
   const anyPlayed = !!g && g.standings.some((x) => x.played > 0);
   const st = anyPlayed ? g!.standings.find((x) => x.position === s.place) : undefined;

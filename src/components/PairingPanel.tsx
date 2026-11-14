@@ -1,6 +1,7 @@
 // Organiser: pair up players without partner, or split a pair, per class.
 import { useEffect, useState } from 'react';
 import { getProfile, searchPlayers, type PlayerHit } from '../lib/rankedin';
+import { t } from '../lib/i18n';
 import { getClassEntries, pairPlayers, unpairPlayers, type PairEntry } from '../lib/pairing';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
@@ -14,10 +15,10 @@ export function PairingPanel({ tournamentId, classId, className, onChanged }: { 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
 
-  if (entries.loading && !entries.data) return <Loading label="Hämtar anmälningar…" />;
+  if (entries.loading && !entries.data) return <Loading label={t('Hämtar anmälningar…')} />;
   if (entries.error) {
     const code = (entries.error as { code?: string }).code;
-    return code === 'not_admin' ? null : <Notice tone="warn">{entries.error.message}</Notice>;
+    return code === 'not_admin' ? null : <Notice tone="warn">{t(entries.error.message)}</Notice>;
   }
   const list = entries.data ?? [];
   const singles = list.filter((e) => e.player1 && !e.player2);
@@ -34,7 +35,7 @@ export function PairingPanel({ tournamentId, classId, className, onChanged }: { 
       entries.reload();
       onChanged();
     } catch (e) {
-      setMsg({ tone: 'error', text: (e as Error).message });
+      setMsg({ tone: 'error', text: t((e as Error).message) });
       entries.reload();
     } finally {
       setBusy(false);
@@ -44,13 +45,13 @@ export function PairingPanel({ tournamentId, classId, className, onChanged }: { 
   const name = (id: number) => singles.find((s) => s.player1!.id === id)?.player1?.name ?? '';
   return (
     <div className="pairing">
-      <AccountSwitcher label="Ändras som" />
-      {locked && <Notice tone="warn">{className} är redan lottad – par kan inte ändras här längre.</Notice>}
+      <AccountSwitcher label={t('Ändras som')} />
+      {locked && <Notice tone="warn">{t('{name} är redan lottad – par kan inte ändras här längre.', { name: className })}</Notice>}
       {msg && <Notice tone={msg.tone === 'ok' ? 'ok' : 'error'}>{msg.text}</Notice>}
 
       {!locked && singles.length > 0 && (
         <>
-          <p className="small">{first ? `Välj partner till ${name(first)}:` : 'Tryck på en spelare och sedan på den hen ska spela med.'}</p>
+          <p className="small">{first ? t('Välj partner till {name}:', { name: name(first) }) : t('Tryck på en spelare och sedan på den hen ska spela med.')}</p>
           <div className="chips chips--wrap">
             {singles.map((s) => {
               const id = s.player1!.id;
@@ -63,8 +64,8 @@ export function PairingPanel({ tournamentId, classId, className, onChanged }: { 
                     if (!first) return setFirst(id);
                     if (first === id) return setFirst(null);
                     const a = first;
-                    if (window.confirm(`Para ihop ${name(a)} och ${s.player1!.name} i ${className}? Ändringen görs direkt i Rankedin.`)) {
-                      void run(() => pairPlayers(tournamentId, classId, a, id), `${name(a)} och ${s.player1!.name} är nu ett par.`);
+                    if (window.confirm(t('Para ihop {a} och {b} i {className}? Ändringen görs direkt i Rankedin.', { a: name(a), b: s.player1!.name, className }))) {
+                      void run(() => pairPlayers(tournamentId, classId, a, id), t('{a} och {b} är nu ett par.', { a: name(a), b: s.player1!.name }));
                     }
                   }}
                 >
@@ -82,15 +83,19 @@ export function PairingPanel({ tournamentId, classId, className, onChanged }: { 
                   const a = first;
                   if (
                     window.confirm(
-                      `Lägga till ${h.name} som partner till ${name(a)} i ${className}? ${h.name} är inte anmäld i klassen än – Rankedin lägger in hen direkt. Kontrollera att hen har tävlingslicens.`,
+                      t('Lägga till {b} som partner till {a} i {className}? {b} är inte anmäld i klassen än – Rankedin lägger in hen direkt. Kontrollera att hen har tävlingslicens.', {
+                        a: name(a),
+                        b: h.name,
+                        className,
+                      }),
                     )
                   ) {
-                    void run(() => pairPlayers(tournamentId, classId, a, h.id), `${name(a)} och ${h.name} är nu ett par.`);
+                    void run(() => pairPlayers(tournamentId, classId, a, h.id), t('{a} och {b} är nu ett par.', { a: name(a), b: h.name }));
                   }
                 }}
               />
               <button className="btn btn--ghost btn--small" onClick={() => setFirst(null)}>
-                Avbryt
+                {t('Avbryt')}
               </button>
             </>
           )}
@@ -99,7 +104,7 @@ export function PairingPanel({ tournamentId, classId, className, onChanged }: { 
 
       {pairs.length > 0 && (
         <details className="fold">
-          <summary>Anmälda par ({pairs.length})</summary>
+          <summary>{t('Anmälda par ({n})', { n: pairs.length })}</summary>
           <div className="list">
             {pairs.map((p) => (
               <div key={p.entryId} className="item">
@@ -112,12 +117,12 @@ export function PairingPanel({ tournamentId, classId, className, onChanged }: { 
                       className="btn btn--ghost btn--small"
                       disabled={busy}
                       onClick={() => {
-                        if (window.confirm(`Dela på ${p.player1!.name} och ${p.player2!.name}? Båda ligger kvar i ${className} utan partner.`)) {
-                          void run(() => unpairPlayers(tournamentId, classId, p.entryId), `${p.player1!.name} och ${p.player2!.name} är nu utan partner.`);
+                        if (window.confirm(t('Dela på {a} och {b}? Båda ligger kvar i {className} utan partner.', { a: p.player1!.name, b: p.player2!.name, className }))) {
+                          void run(() => unpairPlayers(tournamentId, classId, p.entryId), t('{a} och {b} är nu utan partner.', { a: p.player1!.name, b: p.player2!.name }));
                         }
                       }}
                     >
-                      Dela på
+                      {t('Dela på')}
                     </button>
                   </span>
                 )}
@@ -126,7 +131,7 @@ export function PairingPanel({ tournamentId, classId, className, onChanged }: { 
           </div>
         </details>
       )}
-      {busy && <Loading label="Ändrar i Rankedin…" />}
+      {busy && <Loading label={t('Ändrar i Rankedin…')} />}
     </div>
   );
 }
@@ -136,7 +141,7 @@ export function OutsidePartner({
   onPick,
   exclude,
   disabled,
-  label = 'Partnern är inte anmäld? Sök på namn:',
+  label = t('Partnern är inte anmäld? Sök på namn:'),
 }: {
   onPick: (h: PlayerHit) => void;
   exclude: number[];
@@ -149,14 +154,14 @@ export function OutsidePartner({
     const q = term.trim();
     if (q.length < 3) return setHits(null);
     let cancelled = false;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       searchPlayers(q)
         .then((h) => !cancelled && setHits(h.filter((x) => !exclude.includes(x.id)).slice(0, 6)))
         .catch(() => !cancelled && setHits([]));
     }, 300);
     return () => {
       cancelled = true;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [term]);
@@ -164,9 +169,9 @@ export function OutsidePartner({
     <div className="outside-partner">
       <label className="field">
         <span className="small">{label}</span>
-        <input className="input" type="search" value={term} onChange={(e) => setTerm(e.target.value)} placeholder="t.ex. Eric FalkBoman" autoComplete="off" />
+        <input className="input" type="search" value={term} onChange={(e) => setTerm(e.target.value)} placeholder={t('t.ex. Eric FalkBoman')} autoComplete="off" />
       </label>
-      {hits && hits.length === 0 && <p className="small muted">Ingen träff.</p>}
+      {hits && hits.length === 0 && <p className="small muted">{t('Ingen träff.')}</p>}
       {hits && hits.length > 0 && (
         <div className="list">
           {hits.map((h) => (
@@ -186,6 +191,6 @@ export function OutsidePartner({
 /** Club and age, to tell namesakes apart. */
 function HitDetails({ rankedinId }: { rankedinId: string }) {
   const p = useAsync(() => getProfile(rankedinId), [rankedinId], `profile.${rankedinId}`);
-  const d = [p.data?.club, p.data?.age ? `${p.data.age} år` : null].filter(Boolean).join(' · ');
+  const d = [p.data?.club, p.data?.age ? t('{n} år', { n: p.data.age }) : null].filter(Boolean).join(' · ');
   return <span className="muted small block">{d || rankedinId}</span>;
 }

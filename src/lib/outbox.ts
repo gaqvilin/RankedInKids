@@ -3,6 +3,7 @@
 // server refuses to overwrite a result someone else reported meanwhile – that becomes a conflict to resolve.
 import { useSyncExternalStore } from 'react';
 import { ApiError, submitResult } from './api';
+import { t } from './i18n';
 
 export type Sets = [number, number][];
 export type Queued = {
@@ -89,7 +90,7 @@ export function flush(send: typeof submitResult = submitResult): Promise<number>
               : err.code === 'conflict'
                 ? { ...x, state: 'conflict', current: err.current ?? [] }
                 : err.code === 'not_logged_in'
-                  ? { ...x, message: 'Logga in igen för att skicka.' } // stays waiting
+                  ? { ...x, message: t('Logga in igen för att skicka.') } // stays waiting
                   : { ...x, state: 'failed', message: err.message },
           ),
         );

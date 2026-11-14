@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getAvailability, setAvailability, STATUS_LABEL, type AvailabilityStatus } from '../lib/availability';
 import { fmtDay } from '../lib/format';
+import { t } from '../lib/i18n';
 import type { LeagueTeamSummary } from '../lib/overview';
 import { getTeamMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
@@ -33,7 +34,7 @@ export function PlayerRound({ team, playerId, rankedinId, from }: { team: League
           const partnerId = ids.find((x) => x > 0 && x !== playerId);
           const m = tm.matches[i];
           const partner = m?.sides[side].names[m.sides[side].ids.indexOf(partnerId ?? -1)] ?? null;
-          out.push(`match ${i + 1} mot ${opp}${partner ? ` med ${partner}` : ''}`);
+          out.push(partner ? t('match {n} mot {opponent} med {partner}', { n: i + 1, opponent: opp, partner }) : t('match {n} mot {opponent}', { n: i + 1, opponent: opp }));
         }
       });
     }
@@ -49,15 +50,15 @@ export function PlayerRound({ team, playerId, rankedinId, from }: { team: League
     <div className="player-round">
       <p className="small">
         <Go to={`/lag/${team.teamId}/omgang/${date}`} from={from}>
-          <strong>Nästa speldag {fmtDay(team.next!.date)}</strong>
+          <strong>{t('Nästa speldag {day}', { day: fmtDay(team.next!.date) })}</strong>
         </Go>{' '}
-        <span className="muted">mot {dayFixtures.map((f) => (f.home.id === team.teamId ? f.away.name : f.home.name)).join(' och ')}</span>
+        <span className="muted">{t('mot {opponent}', { opponent: dayFixtures.map((f) => (f.home.id === team.teamId ? f.away.name : f.home.name)).join(t(' och ')) })}</span>
       </p>
-      {selection.data && selection.data.length > 0 && <p className="small">Uttagen: {selection.data.join(', ')}.</p>}
-      {selection.data && selection.data.length === 0 && <p className="small muted">Inte uttagen än.</p>}
+      {selection.data && selection.data.length > 0 && <p className="small">{t('Uttagen: {matches}.', { matches: selection.data.join(', ') })}</p>}
+      {selection.data && selection.data.length === 0 && <p className="small muted">{t('Inte uttagen än.')}</p>}
       {isMe && (
         <div className="row gap small">
-          <span>Kan du spela?</span>
+          <span>{t('Kan du spela?')}</span>
           <span className="seg" role="group">
             {ORDER.map((s) => (
               <button
@@ -75,7 +76,7 @@ export function PlayerRound({ team, playerId, rankedinId, from }: { team: League
                   }
                 }}
               >
-                {STATUS_LABEL[s]}
+                {t(STATUS_LABEL[s])}
               </button>
             ))}
           </span>

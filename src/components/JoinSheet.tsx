@@ -1,6 +1,7 @@
 // Enter a tournament: pick class and partner, confirm, and the entry is made in Rankedin as the active account.
 // Payment and licences are finished on rankedin.com; withdrawing is also done there.
 import { useState } from 'react';
+import { t } from '../lib/i18n';
 import { getJoinOptions, joinClass, JoinApiError, type JoinClass, type JoinResult } from '../lib/join';
 import type { PlayerHit } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
@@ -34,12 +35,12 @@ export function JoinSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<JoinApiError | null>(null);
   const [done, setDone] = useState<JoinResult | null>(null);
-  const who = user.loggedIn ? user.name : 'Spelaren';
+  const who = user.loggedIn ? user.name : t('Spelaren');
 
   const why = (c: JoinClass) =>
-    c.signedIn ? (c.lookingForPartner ? 'Anmäld – söker partner' : 'Redan anmäld') : !c.doubles ? 'Anmäls på rankedin.com' : !c.signInOpen ? 'Anmälan stängd' : c.blocked ? c.blocked : c.full ? 'Fullt' : null;
+    c.signedIn ? (c.lookingForPartner ? t('Anmäld – söker partner') : t('Redan anmäld')) : !c.doubles ? t('Anmäls på rankedin.com') : !c.signInOpen ? t('Anmälan stängd') : c.blocked ? t(c.blocked) : c.full ? t('Fullt') : null;
   const fee = cls ? fees.find((f) => f.className === cls.name) : undefined;
-  const partnerName = partner === 'none' ? 'utan partner (söker partner)' : partner ? `med ${partner.name}` : '';
+  const partnerName = partner === 'none' ? t('utan partner (söker partner)') : partner ? t('med {name}', { name: partner.name }) : '';
 
   async function send() {
     if (!cls || !partner) return;
@@ -56,31 +57,31 @@ export function JoinSheet({
   }
 
   return (
-    <Sheet label="Anmäl" onClose={onClose}>
-      <h2>Anmäl till tävlingen</h2>
+    <Sheet label={t('Anmäl')} onClose={onClose}>
+      <h2>{t('Anmäl till tävlingen')}</h2>
       {done ? (
         <>
           <p className="notice notice--ok">
-            <strong>{who} är anmäld</strong> i {cls?.name} {partnerName}.
-            {!done.verified && ' Rankedin visar inte anmälan än – kontrollera listan om en stund.'}
+            <strong>{t('{name} är anmäld', { name: who })}</strong> {t('i {cls}', { cls: cls?.name ?? '' })} {partnerName}.
+            {!done.verified && ` ${t('Rankedin visar inte anmälan än – kontrollera listan om en stund.')}`}
           </p>
           {done.paymentUrl && (
             <p>
-              Avgiften betalas i Rankedin: <ExternalLink href={done.paymentUrl}>Betala anmälan</ExternalLink>
+              {t('Avgiften betalas i Rankedin:')} <ExternalLink href={done.paymentUrl}>{t('Betala anmälan')}</ExternalLink>
             </p>
           )}
           <button className="btn btn--primary btn--block" onClick={onClose}>
-            Klar
+            {t('Klar')}
           </button>
         </>
       ) : (
         <>
-          <AccountSwitcher label="Anmäl som" />
+          <AccountSwitcher label={t('Anmäl som')} />
           {options.error && <ErrorBox error={options.error} onRetry={() => options.reload()} />}
-          {!options.data && options.loading && <Loading label="Hämtar klasser…" />}
+          {!options.data && options.loading && <Loading label={t('Hämtar klasser…')} />}
           {options.data && (
             <>
-              <h3 className="h3">Klass</h3>
+              <h3 className="h3">{t('Klass')}</h3>
               <div className="list">
                 {options.data.classes.map((c) => {
                   const reason = why(c);
@@ -103,24 +104,24 @@ export function JoinSheet({
                   );
                 })}
               </div>
-              {options.data.classes.length === 0 && <p className="muted">Tävlingen har inga klasser att anmäla sig till.</p>}
+              {options.data.classes.length === 0 && <p className="muted">{t('Tävlingen har inga klasser att anmäla sig till.')}</p>}
 
               {cls && (
                 <>
-                  <h3 className="h3">Partner</h3>
+                  <h3 className="h3">{t('Partner')}</h3>
                   {partner && partner !== 'none' ? (
                     <p>
                       <strong>{partner.name}</strong>{' '}
                       <button className="link-btn" onClick={() => setPartner(null)}>
-                        Byt
+                        {t('Byt')}
                       </button>
                     </p>
                   ) : (
                     <>
-                      <OutsidePartner label="Sök partnern på namn:" disabled={busy} exclude={[options.data.playerId]} onPick={(h) => setPartner(h)} />
+                      <OutsidePartner label={t('Sök partnern på namn:')} disabled={busy} exclude={[options.data.playerId]} onPick={(h) => setPartner(h)} />
                       <label className="toolbar__check">
-                        <input type="checkbox" checked={partner === 'none'} onChange={(e) => setPartner(e.target.checked ? 'none' : null)} /> Anmäl utan partner
-                        (söker partner)
+                        <input type="checkbox" checked={partner === 'none'} onChange={(e) => setPartner(e.target.checked ? 'none' : null)} />{' '}
+                        {t('Anmäl utan partner (söker partner)')}
                       </label>
                     </>
                   )}
@@ -130,27 +131,27 @@ export function JoinSheet({
               {cls && partner && (
                 <div className="reset-confirm">
                   <p>
-                    <strong>{who}</strong> anmäls till <strong>{tournamentName}</strong>, {cls.name}, {partnerName}.
-                    {fee ? ` Avgift ${fee.price} ${fee.currency === 'SEK' ? 'kr' : fee.currency}.` : ''}
+                    <strong>{who}</strong> {t('anmäls till')} <strong>{tournamentName}</strong>, {cls.name}, {partnerName}.
+                    {fee ? ` ${t('Avgift {fee}.', { fee: `${fee.price} ${fee.currency === 'SEK' ? 'kr' : fee.currency}` })}` : ''}
                   </p>
-                  <p className="muted small">Anmälan görs direkt i Rankedin. Avanmälan görs på rankedin.com.</p>
+                  <p className="muted small">{t('Anmälan görs direkt i Rankedin. Avanmälan görs på rankedin.com.')}</p>
                   <button className="btn btn--primary btn--block" disabled={busy} onClick={send}>
-                    {busy ? 'Anmäler…' : 'Anmäl'}
+                    {busy ? t('Anmäler…') : t('Anmäl')}
                   </button>
                 </div>
               )}
               {error && (
                 <p className="field-error">
-                  {error.message} {error.url && <ExternalLink href={error.url}>Öppna i Rankedin</ExternalLink>}
+                  {t(error.message)} {error.url && <ExternalLink href={error.url}>{t('Öppna i Rankedin')}</ExternalLink>}
                 </p>
               )}
             </>
           )}
           <p className="small">
-            <ExternalLink href={rankedinUrl}>Anmäl på rankedin.com i stället</ExternalLink>
+            <ExternalLink href={rankedinUrl}>{t('Anmäl på rankedin.com i stället')}</ExternalLink>
           </p>
           <button className="btn btn--ghost btn--block" onClick={onClose}>
-            Avbryt
+            {t('Avbryt')}
           </button>
         </>
       )}

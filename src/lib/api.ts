@@ -1,4 +1,5 @@
 // Thin client for our own /api functions.
+import { t } from './i18n';
 
 export class ApiError extends Error {
   constructor(
@@ -79,7 +80,7 @@ export async function rin<T>(path: string, opts: { fresh?: boolean; auth?: boole
         credentials: 'same-origin',
         headers: opts.auth ? accountHeaders() : {},
       });
-      if (!res.ok) throw new ApiError(`Rankedin svarade ${res.status}`, res.status);
+      if (!res.ok) throw new ApiError(t('Rankedin svarade {status}', { status: res.status }), res.status);
       return (await res.json()) as T;
     } finally {
       setInFlight(-1);
@@ -134,7 +135,7 @@ export async function login(userName: string, password: string): Promise<void> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new ApiError(
-      data.error === 'invalid_credentials' ? 'Fel e-post eller lösenord.' : data.error === 'rate_limited' ? data.message : 'Kunde inte logga in just nu.',
+      data.error === 'invalid_credentials' ? t('Fel e-post eller lösenord.') : t((data.error === 'rate_limited' && data.message) || 'Kunde inte logga in just nu.'),
       res.status,
       data.error,
     );
@@ -149,7 +150,7 @@ async function sessionAction(body: { action: string; playerId?: number }): Promi
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new ApiError('Kunde inte byta konto.', res.status);
+  if (!res.ok) throw new ApiError(t('Kunde inte byta konto.'), res.status);
   clearCache();
 }
 
@@ -171,12 +172,12 @@ export async function saveLineup(
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const messages: Record<string, string> = {
-      not_logged_in: 'Du behöver logga in först.',
-      not_allowed: 'Du kan inte sätta uppställning för det här laget (bara lagkapten).',
-      invalid_lineup: data.message || 'Uppställningen är inte giltig.',
-      rejected: 'Rankedin tog inte emot uppställningen.',
+      not_logged_in: t('Du behöver logga in först.'),
+      not_allowed: t('Du kan inte sätta uppställning för det här laget (bara lagkapten).'),
+      invalid_lineup: t(data.message || 'Uppställningen är inte giltig.'),
+      rejected: t('Rankedin tog inte emot uppställningen.'),
     };
-    throw new ApiError(messages[data.error] || 'Något gick fel.', res.status, data.error);
+    throw new ApiError(messages[data.error] || t('Något gick fel.'), res.status, data.error);
   }
   clearCache();
 }
@@ -203,13 +204,13 @@ export async function submitResult(
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const messages: Record<string, string> = {
-      not_logged_in: 'Du behöver logga in först.',
-      not_allowed: 'Rankedin tillåter inte att du rapporterar den här matchen.',
-      invalid_score: data.message || 'Ogiltigt resultat.',
-      rejected: 'Rankedin tog inte emot resultatet.',
-      conflict: 'Rankedin har redan ett annat resultat för matchen.',
+      not_logged_in: t('Du behöver logga in först.'),
+      not_allowed: t('Rankedin tillåter inte att du rapporterar den här matchen.'),
+      invalid_score: t(data.message || 'Ogiltigt resultat.'),
+      rejected: t('Rankedin tog inte emot resultatet.'),
+      conflict: t('Rankedin har redan ett annat resultat för matchen.'),
     };
-    const err = new ApiError(messages[data.error] || 'Något gick fel.', res.status, data.error);
+    const err = new ApiError(messages[data.error] || t('Något gick fel.'), res.status, data.error);
     (err as ApiError & { current?: unknown }).current = data.current;
     throw err;
   }

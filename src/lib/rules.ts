@@ -1,6 +1,7 @@
 // Rules per series, from SPF's documents:
 // - SPL: "SPL – Särskilda tävlingsbestämmelser seriespel" (2024/25)
 // - Klubbligan: "Tävlingsbestämmelser Klubbligan" (2026)
+import { t } from './i18n';
 import { checkSplLineup, divisionLevel, isSplLeague, lineupRules as splLineupRules, type PairInput } from './spl';
 
 export type SeriesKind = 'spl' | 'klubbligan-young' | 'klubbligan' | 'other';
@@ -28,26 +29,26 @@ export function seriesRules(kind: SeriesKind, division?: string | null): SeriesR
     const level = divisionLevel(division);
     const r = splLineupRules(level);
     return {
-      summary: r?.summary ?? 'Uppställningen läggs in i Rankedin av lagledaren.',
+      summary: r?.summary ?? t('Uppställningen läggs in i Rankedin av lagledaren.'),
       waves: level != null && level >= 2 ? [[1, 2], [3]] : [[1, 2, 3]],
-      invitationDeadline: 'senast måndag samma vecka',
-      notes: ['Uppställningen ska vara inlagd 15 min före första matchen.', 'Vinnande lag rapporterar resultaten löpande i Rankedin.'],
+      invitationDeadline: t('senast måndag samma vecka'),
+      notes: [t('Uppställningen ska vara inlagd 15 min före första matchen.'), t('Vinnande lag rapporterar resultaten löpande i Rankedin.')],
     };
   }
   if (kind === 'klubbligan-young') {
     return {
-      summary: 'Minst 4 spelare. Samma par bör inte spela flera matcher. Spelare som kommit längst spelar match 1.',
+      summary: t('Minst 4 spelare. Samma par bör inte spela flera matcher. Spelare som kommit längst spelar match 1.'),
       waves: [[1, 2], [3, 4], [5, 6]],
-      invitationDeadline: 'senast 10 dagar före speldagen',
-      notes: ['Coachning är inte tillåten – lagledaren får bara stötta vid behov.', 'Spelarna dömer själva.', 'Arrangören rapporterar resultaten efter lagmatcherna.'],
+      invitationDeadline: t('senast 10 dagar före speldagen'),
+      notes: [t('Coachning är inte tillåten – lagledaren får bara stötta vid behov.'), t('Spelarna dömer själva.'), t('Arrangören rapporterar resultaten efter lagmatcherna.')],
     };
   }
   if (kind === 'klubbligan') {
     return {
-      summary: 'Minst 4 spelare. Samma par får inte spela flera matcher. Spelare som kommit längst spelar match 1.',
+      summary: t('Minst 4 spelare. Samma par får inte spela flera matcher. Spelare som kommit längst spelar match 1.'),
       waves: [[1, 2], [3]],
-      invitationDeadline: 'senast 10 dagar före speldagen',
-      notes: ['Coachning är inte tillåten – lagledaren får bara stötta vid behov.', 'Spelarna dömer själva.', '1 poäng per vunnen match. Inga SPF-rankingpoäng.'],
+      invitationDeadline: t('senast 10 dagar före speldagen'),
+      notes: [t('Coachning är inte tillåten – lagledaren får bara stötta vid behov.'), t('Spelarna dömer själva.'), t('1 poäng per vunnen match. Inga SPF-rankingpoäng.')],
     };
   }
   return null;
@@ -60,7 +61,7 @@ export function checkLineup(kind: SeriesKind, division: string | null | undefine
   const warnings: string[] = [];
   const chosen = pairs.flatMap((p) => p.playerIds.filter((id) => id > 0));
   const complete = pairs.length > 0 && pairs.every((p) => p.playerIds.filter((id) => id > 0).length === 2);
-  if (complete && new Set(chosen).size < 4) warnings.push(`Lagmatchen ska ha minst 4 olika spelare (nu ${new Set(chosen).size}).`);
+  if (complete && new Set(chosen).size < 4) warnings.push(t('Lagmatchen ska ha minst {min} olika spelare (nu {n}).', { min: 4, n: new Set(chosen).size }));
   const seen = new Map<string, number>();
   pairs.forEach((p, i) => {
     const ids = p.playerIds.filter((id) => id > 0);
@@ -69,8 +70,8 @@ export function checkLineup(kind: SeriesKind, division: string | null | undefine
     if (seen.has(key)) {
       warnings.push(
         kind === 'klubbligan'
-          ? `Samma par spelar match ${seen.get(key)! + 1} och ${i + 1} – det är inte tillåtet i den här klassen.`
-          : `Samma par spelar match ${seen.get(key)! + 1} och ${i + 1} – SPF rekommenderar olika par.`,
+          ? t('Samma par spelar match {a} och {b} – det är inte tillåtet i den här klassen.', { a: seen.get(key)! + 1, b: i + 1 })
+          : t('Samma par spelar match {a} och {b} – SPF rekommenderar olika par.', { a: seen.get(key)! + 1, b: i + 1 }),
       );
     } else seen.set(key, i);
   });

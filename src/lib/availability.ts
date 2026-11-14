@@ -1,5 +1,6 @@
 // Client for /api/availability.
 import { ApiError } from './api';
+import { t } from './i18n';
 
 export type AvailabilityStatus = 'yes' | 'no' | 'maybe';
 export type AvailabilityEntry = { playerId: number; status: AvailabilityStatus; comment: string; updatedAt: string; updatedBy: string };
@@ -12,10 +13,10 @@ export async function getAvailability(teamId: number, date: string): Promise<Ava
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const messages: Record<string, string> = {
-      not_logged_in: 'Logga in med ett Rankedin-konto som finns i laget för att se och svara.',
-      not_in_team: 'Inget av dina inloggade konton finns i det här laget.',
+      not_logged_in: t('Logga in med ett Rankedin-konto som finns i laget för att se och svara.'),
+      not_in_team: t('Inget av dina inloggade konton finns i det här laget.'),
     };
-    throw new ApiError(messages[data.error] || 'Kunde inte hämta tillgänglighet.', res.status, data.error);
+    throw new ApiError(messages[data.error] || t('Kunde inte hämta tillgänglighet.'), res.status, data.error);
   }
   return data as Availability;
 }
@@ -29,6 +30,6 @@ export async function setAvailability(teamId: number, date: string, playerId: nu
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new ApiError(data.error === 'not_allowed' ? 'Du kan bara svara för dig själv (lagledare kan svara för alla).' : 'Kunde inte spara svaret.', res.status, data.error);
+    throw new ApiError(data.error === 'not_allowed' ? t('Du kan bara svara för dig själv (lagledare kan svara för alla).') : t('Kunde inte spara svaret.'), res.status, data.error);
   }
 }

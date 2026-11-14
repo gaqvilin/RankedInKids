@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { fmtDay, soon } from '../lib/format';
 import type { AgendaItem } from '../lib/overview';
 import { Go } from './shell';
@@ -24,9 +25,9 @@ export function Agenda({ items, playerId, from, limit }: { items: AgendaItem[]; 
               <span className="item__main">
                 <strong>{e.event.name}</strong>
                 <span className="small block">
-                  Tävling · {e.className ?? 'klass okänd'}
-                  {e.partner ? ` · med ${e.partner}` : ''}
-                  {e.missingPartner && <span className="tag tag--warn">Partner saknas</span>}
+                  {t('Tävling')} · {e.className ?? t('klass okänd')}
+                  {e.partner ? ` · ${t('med {name}', { name: e.partner })}` : ''}
+                  {e.missingPartner && <span className="tag tag--warn">{t('Partner saknas')}</span>}
                 </span>
               </span>
             </Go>
@@ -42,10 +43,10 @@ export function Agenda({ items, playerId, from, limit }: { items: AgendaItem[]; 
             </span>
             <span className="item__main">
               <strong>
-                {it.team.teamName} mot {opps.join(' och ')}
+                {t('{team} mot {opponents}', { team: it.team.teamName, opponents: opps.join(` ${t('och')} `) })}
               </strong>
               <span className="small block">
-                Speldag · {it.team.leagueName.replace(/\s*\b(HT|VT)\s*\d{2}\b.*$/i, '')}
+                {t('Speldag')} · {it.team.leagueName.replace(/\s*\b(HT|VT)\s*\d{2}\b.*$/i, '')}
               </span>
             </span>
           </Go>

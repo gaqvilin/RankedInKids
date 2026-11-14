@@ -1,5 +1,6 @@
 // Enter a tournament class as the logged-in player (see api/_lib/join.ts).
 import { accountHeaders } from './api';
+import { t } from './i18n';
 
 export type JoinClass = {
   classId: number;
@@ -28,7 +29,7 @@ export class JoinApiError extends Error {
 export async function getJoinOptions(tournamentId: number): Promise<JoinOptions> {
   const res = await fetch(`/api/join-partner?tournamentId=${tournamentId}`, { credentials: 'same-origin', headers: accountHeaders() });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new JoinApiError(data.error ?? 'error', data.message ?? 'Kunde inte hämta anmälan från Rankedin.');
+  if (!res.ok) throw new JoinApiError(data.error ?? 'error', t(data.message ?? 'Kunde inte hämta anmälan från Rankedin.'));
   return data as JoinOptions;
 }
 
@@ -40,6 +41,6 @@ export async function joinClass(tournamentId: number, classId: number, partnerId
     body: JSON.stringify({ action: 'join', tournamentId, classId, partnerId }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new JoinApiError(data.error ?? 'error', data.message ?? 'Något gick fel.', typeof data.url === 'string' ? data.url : undefined);
+  if (!res.ok) throw new JoinApiError(data.error ?? 'error', t(data.message ?? 'Något gick fel.'), typeof data.url === 'string' ? data.url : undefined);
   return { paymentUrl: data.paymentUrl ?? null, verified: !!data.verified };
 }

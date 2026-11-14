@@ -2,6 +2,8 @@
 // Source: SPF "SPL – Särskilda tävlingsbestämmelser seriespel" 2024/25 and
 // the 2026/27 series text in Rankedin. Klubbligan has none of these rules.
 
+import { locale, t } from './i18n';
+
 /** "Div 1 Sydväst" → 1, "Elitserien"/"Klubblags-SM" → 0, Klubbligan/unknown → null. */
 export function divisionLevel(division: string | null | undefined): number | null {
   if (!division) return null;
@@ -43,12 +45,12 @@ export type LineupRules = {
 export function lineupRules(level: number | null): LineupRules | null {
   if (level == null) return null;
   if (level <= 1) {
-    return { minDistinctPlayers: 6, rankedMatches: [1, 2, 3], summary: '6 olika spelare. Högst rankade paret spelar match 1, näst högst match 2 osv.' };
+    return { minDistinctPlayers: 6, rankedMatches: [1, 2, 3], summary: t('6 olika spelare. Högst rankade paret spelar match 1, näst högst match 2 osv.') };
   }
   return {
     minDistinctPlayers: 4,
     rankedMatches: [1, 2],
-    summary: 'Minst 4 olika spelare. Högst rankade paret spelar match 1, nästa par match 2. Fri uppställning i match 3.',
+    summary: t('Minst 4 olika spelare. Högst rankade paret spelar match 1, nästa par match 2. Fri uppställning i match 3.'),
   };
 }
 
@@ -66,10 +68,10 @@ export function checkSplLineup(pairs: PairInput[], points: Map<number, number | 
   const distinct = new Set(chosen).size;
   const complete = pairs.every((p) => p.playerIds.filter((id) => id > 0).length === 2);
   if (complete && distinct < rules.minDistinctPlayers) {
-    warnings.push(`Lagmatchen ska ha minst ${rules.minDistinctPlayers} olika spelare (nu ${distinct}).`);
+    warnings.push(t('Lagmatchen ska ha minst {min} olika spelare (nu {n}).', { min: rules.minDistinctPlayers, n: distinct }));
   }
   if (level != null && level <= 1 && chosen.length !== distinct) {
-    warnings.push('I division 1 får en spelare bara spela en match per lagmatch.');
+    warnings.push(t('I division 1 får en spelare bara spela en match per lagmatch.'));
   }
   const sum = (p: PairInput) => {
     const vals = p.playerIds.filter((id) => id > 0).map((id) => points.get(id));
@@ -83,13 +85,20 @@ export function checkSplLineup(pairs: PairInput[], points: Map<number, number | 
     const sa = sum(a);
     const sb = sum(b);
     if (sa != null && sb != null && sb > sa) {
-      warnings.push(`Match ${rules.rankedMatches[i + 1]} har högre rankingpoäng (${fmt(sb)}) än match ${rules.rankedMatches[i]} (${fmt(sa)}). Högst rankade paret ska spela tidigare.`);
+      warnings.push(
+        t('Match {later} har högre rankingpoäng ({laterPoints}) än match {earlier} ({earlierPoints}). Högst rankade paret ska spela tidigare.', {
+          later: rules.rankedMatches[i + 1],
+          laterPoints: fmt(sb),
+          earlier: rules.rankedMatches[i],
+          earlierPoints: fmt(sa),
+        }),
+      );
     }
   }
   return warnings;
 }
 
-const fmt = (n: number) => (n >= 100 ? String(Math.round(n)) : n.toFixed(1).replace('.', ','));
+const fmt = (n: number) => (n >= 100 ? String(Math.round(n)) : n.toFixed(1).replace('.', locale() === 'sv-SE' ? ',' : '.'));
 
 /** Lineup must be in Rankedin 15 minutes before the first match. */
 export function lineupDeadline(firstMatchStart: string | null): Date | null {

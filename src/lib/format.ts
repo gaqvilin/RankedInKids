@@ -75,5 +75,5 @@ export function classInEvent(className: string, eventName: string): string {
 /** Only "idag", "imorgon" or "igår" – the date itself says the rest. */
 export function soon(iso: string | null | undefined, now: Date = new Date()): string {
   const r = relativeDays(iso, now);
-  return r === 'idag' || r === 'imorgon' || r === 'igår' ? r : '';
+  return r === t('idag') || r === t('imorgon') || r === t('igår') ? r : '';
 }

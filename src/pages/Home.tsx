@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { PlayerHitRow } from '../components/PlayerHitRow';
 import { usePlayerSearch } from '../lib/usePlayerSearch';
 import { useState } from 'react';
@@ -26,10 +27,10 @@ function PlayerAlerts({ p, showName }: { p: SavedPlayer; showName: boolean }) {
     <>
       {missing.map((e) => (
         <Notice key={e.event.id} tone="error">
-          <strong>{showName ? `${first}: partner saknas` : 'Partner saknas'}</strong> till {e.event.name.split(/\s[\/–-]\s/)[0]} – anmälan stänger{' '}
-          {relativeDays(e.closeSignInDate)}.{' '}
-          <Go to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`} from="Översikt">
-            Lös det
+          <strong>{showName ? t('{name}: partner saknas', { name: first }) : t('Partner saknas')}</strong>{' '}
+          {t('till {event} – anmälan stänger {when}.', { event: e.event.name.split(/\s[\/–-]\s/)[0], when: relativeDays(e.closeSignInDate) })}{' '}
+          <Go to={`/tavling/${e.event.id}?spelare=${p.id}${e.className ? `&klass=${encodeURIComponent(e.className)}` : ''}`} from={t('Översikt')}>
+            {t('Lös det')}
           </Go>
         </Notice>
       ))}
@@ -45,7 +46,7 @@ function PlayerAlerts({ p, showName }: { p: SavedPlayer; showName: boolean }) {
           highlightIds={[p.id]}
           refereeCode={next.refereeCode}
           teamMatchPath={next.teamMatchId ? `/lagmatch/${next.teamMatchId}?spelare=${p.id}` : undefined}
-          from="Översikt"
+          from={t('Översikt')}
         />
       )}
     </>
@@ -57,17 +58,17 @@ export default function Home() {
   const known = useKnownPlayers();
   const mine = useMine();
   const shown = [...saved, ...known.filter((k) => !saved.some((s) => s.rankedinId === k.rankedinId))];
-  const { term, setTerm, hits, error, loading } = usePlayerSearch('Översikt', '/');
+  const { term, setTerm, hits, error, loading } = usePlayerSearch(t('Översikt'), '/');
   // Name who it's for only when items belong to different players.
   const multiWho = new Set((mine.data?.upcoming ?? []).flatMap((u) => u.who)).size > 1;
 
 
   return (
     <>
-      <AppHeader title="Översikt" />
+      <AppHeader title={t('Översikt')} />
       <Page wide>
         <div className="page-title">
-          <h1>Översikt</h1>
+          <h1>{t('Översikt')}</h1>
         </div>
 
         {shown.length > 0 && (
@@ -79,20 +80,20 @@ export default function Home() {
         )}
 
         {shown.length > 0 && (
-          <Section title="På gång">
+          <Section title={t('På gång')}>
             {!mine.data && <Loading />}
-            {mine.data && mine.data.upcoming.length === 0 && <Empty>Inget inbokat just nu.</Empty>}
+            {mine.data && mine.data.upcoming.length === 0 && <Empty>{t('Inget inbokat just nu.')}</Empty>}
             {mine.data && mine.data.upcoming.length > 0 && (
               <div className="list">
                 {mine.data.upcoming.map((u) => (
-                  <Go key={u.to} to={u.to} from="Översikt" className="item">
+                  <Go key={u.to} to={u.to} from={t('Översikt')} className="item">
                     <span className="item__date">
                       {fmtDay(`${u.date}T12:00:00`)}
                       <span className="muted small">{soon(`${u.date}T12:00:00`)}</span>
                     </span>
                     <span className="item__main">
                       <strong>{u.title}</strong>
-                      <span className={`small block ${/partner saknas/.test(u.detail) ? 'text-warn' : 'muted'}`}>
+                      <span className={`small block ${u.missingPartner ? 'text-warn' : 'muted'}`}>
                         {u.detail}
                         {multiWho ? ` · ${u.who.join(', ')}` : ''}
                       </span>
@@ -106,16 +107,16 @@ export default function Home() {
 
         {shown.length > 0 && (
           <Section
-            title="Mina spelare"
+            title={t('Mina spelare')}
             action={
-              <Go className="btn btn--ghost btn--small" to="/sok" from="Översikt">
-                + Lägg till
+              <Go className="btn btn--ghost btn--small" to="/sok" from={t('Översikt')}>
+                {t('+ Lägg till')}
               </Go>
             }
           >
             <div className="list">
               {shown.map((p) => (
-                <Go key={p.rankedinId} to={`/spelare/${p.rankedinId}`} from="Översikt" className="item">
+                <Go key={p.rankedinId} to={`/spelare/${p.rankedinId}`} from={t('Översikt')} className="item">
                   <span className="item__main">
                     <strong>{p.name}</strong>
                   </span>
@@ -126,23 +127,23 @@ export default function Home() {
         )}
 
         {shown.length === 0 ? (
-        <Section title="Hitta ditt barn">
-          {true && <p className="muted">Sök på namn och spara spelaren, så samlas allt viktigt här.</p>}
+        <Section title={t('Hitta ditt barn')}>
+          {true && <p className="muted">{t('Sök på namn och spara spelaren, så samlas allt viktigt här.')}</p>}
           <input
             className="input"
             type="search"
-            placeholder="Namn, R-nummer eller Rankedin-länk"
+            placeholder={t('Namn, R-nummer eller Rankedin-länk')}
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             autoComplete="off"
           />
-          {loading && <Loading label="Söker…" />}
+          {loading && <Loading label={t('Söker…')} />}
           {error && <ErrorBox error={error} />}
-          {hits && hits.length === 0 && <Empty>Ingen spelare hittades.</Empty>}
+          {hits && hits.length === 0 && <Empty>{t('Ingen spelare hittades.')}</Empty>}
           {hits && hits.length > 0 && (
             <div className="list">
               {hits.map((h) => (
-                <PlayerHitRow key={h.id} h={h} from="Översikt" />
+                <PlayerHitRow key={h.id} h={h} from={t('Översikt')} />
               ))}
             </div>
           )}

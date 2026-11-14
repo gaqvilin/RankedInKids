@@ -1,5 +1,6 @@
 // Shows when there is no connection, and results waiting to be sent to Rankedin (with conflicts to resolve).
 import { useEffect, useState } from 'react';
+import { t } from '../lib/i18n';
 import { discard, flush, overwrite, useOutbox } from '../lib/outbox';
 
 export function useOnline(): boolean {
@@ -17,7 +18,7 @@ export function useOnline(): boolean {
   return online;
 }
 
-const fmt = (sets: [number, number][] | null | undefined) => (sets === null ? 'inget resultat' : sets && sets.length ? sets.map(([a, b]) => `${a}–${b}`).join(' ') : 'ospelad');
+const fmt = (sets: [number, number][] | null | undefined) => (sets === null ? t('inget resultat') : sets && sets.length ? sets.map(([a, b]) => `${a}–${b}`).join(' ') : t('ospelad'));
 
 export function OfflineBar() {
   const online = useOnline();
@@ -28,11 +29,11 @@ export function OfflineBar() {
   if (online && queue.length === 0) return null;
   return (
     <div className={`offline-bar ${online ? '' : 'is-offline'}`} role="status">
-      {!online && <p>Ingen anslutning – du ser det som senast hämtades. Resultat sparas i telefonen och skickas när nätet är tillbaka.</p>}
+      {!online && <p>{t('Ingen anslutning – du ser det som senast hämtades. Resultat sparas i telefonen och skickas när nätet är tillbaka.')}</p>}
       {waiting.length > 0 && (
         <p>
-          {waiting.length === 1 ? '1 resultat väntar' : `${waiting.length} resultat väntar`} på att skickas till Rankedin
-          {waiting.some((w) => w.message) ? ` – ${waiting.find((w) => w.message)!.message}` : '.'}{' '}
+          {waiting.length === 1 ? t('1 resultat väntar på att skickas till Rankedin') : t('{n} resultat väntar på att skickas till Rankedin', { n: waiting.length })}
+          {waiting.some((w) => w.message) ? ` – ${t(waiting.find((w) => w.message)!.message!)}` : '.'}{' '}
           {online && (
             <button
               className="link-btn"
@@ -42,7 +43,7 @@ export function OfflineBar() {
                 void flush().finally(() => setBusy(false));
               }}
             >
-              {busy ? 'Skickar…' : 'Skicka nu'}
+              {busy ? t('Skickar…') : t('Skicka nu')}
             </button>
           )}
         </p>
@@ -52,17 +53,17 @@ export function OfflineBar() {
           <p>
             <strong>{q.title}</strong>:{' '}
             {q.state === 'conflict'
-              ? `Rankedin har redan ${fmt(q.current)}, du skrev ${fmt(q.sets)}.`
-              : `kunde inte skickas (${q.message ?? 'okänt fel'}).`}
+              ? t('Rankedin har redan {current}, du skrev {mine}.', { current: fmt(q.current), mine: fmt(q.sets) })
+              : t('kunde inte skickas ({reason}).', { reason: q.message ? t(q.message) : t('okänt fel') })}
           </p>
           <div className="row gap">
             {q.state === 'conflict' && (
               <button className="btn btn--small" onClick={() => overwrite(q.challengeId)}>
-                Skicka mitt ({fmt(q.sets)})
+                {t('Skicka mitt ({score})', { score: fmt(q.sets) })}
               </button>
             )}
             <button className="btn btn--ghost btn--small" onClick={() => discard(q.challengeId)}>
-              {q.state === 'conflict' ? 'Behåll Rankedins' : 'Släng'}
+              {q.state === 'conflict' ? t('Behåll Rankedins') : t('Släng')}
             </button>
           </div>
         </div>
