@@ -8,6 +8,8 @@ import { PairingPanel } from '../components/PairingPanel';
 import { PlayerHitRow } from '../components/PlayerHitRow';
 import { isTournamentAdmin } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
+import { MatchBoard } from '../components/MatchBoard';
+import { MoveSheet } from '../components/MoveSheet';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDayTime, fmtTime, isSameDay } from '../lib/format';
@@ -16,11 +18,12 @@ import { getClasses, getClassPairs, getTournament, getTournamentMatches, rinUrl,
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 
-type Tab = 'partner' | 'lottning' | 'banor' | 'resultat' | 'dela';
+type Tab = 'partner' | 'lottning' | 'banor' | 'schema' | 'resultat' | 'dela';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'partner', label: 'Före lottning' },
   { id: 'lottning', label: 'Lottning' },
   { id: 'banor', label: 'Banor' },
+  { id: 'schema', label: 'Schema' },
   { id: 'resultat', label: 'Resultat' },
   { id: 'dela', label: 'Skriv ut' },
 ];
@@ -43,6 +46,7 @@ export default function Organizer() {
     [tid, classKey],
   );
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
+  const [moving, setMoving] = useState<TournamentMatch | null>(null);
   const [now, setNow] = useState(() => new Date());
 
   const t = header.data;
@@ -180,6 +184,16 @@ export default function Organizer() {
             </div>
           ))}
 
+        {tab === 'schema' &&
+          (!drawn ? (
+            <NotDrawn />
+          ) : (
+            <Section title="Schema">
+              <p className="muted small section-intro">Alla matcher per klockslag. Tryck Flytta för att byta tid eller bana – bara lediga banor visas.</p>
+              <MatchBoard matches={all} highlight={[]} showClass onEnterResult={setReporting} onMove={user.loggedIn ? setMoving : undefined} />
+            </Section>
+          ))}
+
         {tab === 'resultat' &&
           (!drawn ? (
             <NotDrawn />
@@ -235,6 +249,19 @@ export default function Organizer() {
 
         {matches.error && <ErrorBox error={matches.error} onRetry={() => matches.reload()} />}
       </Page>
+
+      {moving && (
+        <MoveSheet
+          tournamentId={tid}
+          match={moving}
+          all={all}
+          onClose={() => setMoving(null)}
+          onDone={() => {
+            setMoving(null);
+            matches.reload();
+          }}
+        />
+      )}
 
       {reporting && (
         <ResultSheet
