@@ -639,3 +639,62 @@ export async function getLeagueRegulations(id: number): Promise<string[]> {
   const regs = await rin<string | null>(`TeamLeague/GetRegulationsAsync?id=${id}&language=sv`).catch(() => null);
   return htmlToParagraphs(typeof regs === 'string' ? regs : null);
 }
+
+// ---------- Draws (groups) ----------
+
+export type DrawPair = { index: number; names: string[]; ids: number[] };
+export type DrawCell = { matchId: number; challengeId: number; date: string | null; court: string | null; played: boolean };
+export type DrawStanding = { position: number; names: string[]; ids: number[]; played: number; wins: number; losses: number; points: number; gamesWon: number; gamesLost: number };
+export type DrawGroup = { name: string; pairs: DrawPair[]; cells: Map<string, DrawCell>; standings: DrawStanding[] };
+
+/** Rankedin's group draws for a class: pairs, the match grid (row vs column) and the official standings. */
+export async function getClassDraws(classId: number, fresh = false): Promise<DrawGroup[]> {
+  type RP = { Id: number; Name: string } | null;
+  type Cell = {
+    CellType: string;
+    ParticipantCell: { Index: number; Rotated: boolean; Players: RP[] } | null;
+    MatchCell: { MatchId: number; ChallengeId: number; Date: string | null; Court: string | null; ShowDate: boolean; MatchResults: { IsPlayed: boolean } | null } | null;
+  };
+  type St = {
+    DoublesPlayer1Model: RP;
+    DoublesPlayer2Model: RP;
+    Standing: number;
+    Played: number;
+    Wins: number;
+    Losses: number;
+    MatchPoints: number;
+    GamesWon: number;
+    GamesLost: number;
+  };
+  const raw = await rin<{ BaseType: string; RoundRobin: { Name: string; Pool: Cell[][]; Standings: St[] } | null }[]>(
+    `tournament/GetDrawsForStageAndStrengthAsync?tournamentClassId=${classId}&drawStrength=0&drawStage=0&isReadonly=true&language=sv`,
+    fresh ? { fresh: true, auth: true } : {},
+  );
+  const players = (list: RP[]) => list.filter((p): p is NonNullable<RP> => !!p && p.Id > 0);
+  return (raw || [])
+    .filter((d) => d.RoundRobin && Array.isArray(d.RoundRobin.Pool))
+    .map((d) => {
+      const rr = d.RoundRobin!;
+      const pairs: DrawPair[] = [];
+      const cells = new Map<string, DrawCell>();
+      rr.Pool.forEach((row, r) => {
+        row.forEach((cell, c) => {
+          // Row headers (first column) list the pairs in order.
+          if (cell.CellType === 'ParticipantCell' && c === 0 && cell.ParticipantCell && !cell.ParticipantCell.Rotated) {
+            const ps = players(cell.ParticipantCell.Players);
+            pairs.push({ index: cell.ParticipantCell.Index, names: ps.map((p) => p.Name), ids: ps.map((p) => p.Id) });
+          }
+          if (cell.CellType === 'MatchCell' && cell.MatchCell) {
+            const m = cell.MatchCell;
+            cells.set(`${r}-${c}`, { matchId: m.MatchId, challengeId: m.ChallengeId, date: m.ShowDate ? m.Date : null, court: m.Court, played: !!m.MatchResults?.IsPlayed });
+          }
+        });
+      });
+      const standings = (rr.Standings || []).map((s) => {
+        const ps = players([s.DoublesPlayer1Model, s.DoublesPlayer2Model]);
+        return { position: s.Standing, names: ps.map((p) => p.Name), ids: ps.map((p) => p.Id), played: s.Played, wins: s.Wins, losses: s.Losses, points: s.MatchPoints, gamesWon: s.GamesWon, gamesLost: s.GamesLost };
+      });
+      return { name: rr.Name.replace(/^Group\b/i, 'Grupp'), pairs, cells, standings };
+    })
+    .filter((g) => g.pairs.length > 0);
+}

@@ -2162,3 +2162,55 @@ button.tabbar__link {
 .qr-card .qr-logo .logo {
   font-size: 9pt;
 }
+
+/* ---------- Groups (draws) ---------- */
+.draw-groups {
+  display: grid;
+  gap: 18px;
+}
+@media (min-width: 960px) {
+  .draw-groups {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.draw-group .h3 {
+  margin: 0 0 6px;
+}
+.draw-table td:nth-child(n + 3),
+.draw-table th:nth-child(n + 3) {
+  text-align: center;
+  white-space: nowrap;
+}
+.draw-grid {
+  font-size: 13px;
+}
+.draw-grid th,
+.draw-grid td {
+  text-align: center;
+  white-space: nowrap;
+}
+.draw-grid .draw-grid__name {
+  text-align: left;
+  font-weight: 600;
+}
+.draw-grid__self {
+  background: var(--subtle);
+}
+.draw-grid__won {
+  color: var(--win);
+  font-weight: 600;
+}
+
+.draw-grid__court {
+  display: block;
+  font-size: 11px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.draw-table td:nth-child(2) {
+  white-space: normal;
+}
+.draw-group {
+  min-width: 0; /* let the tables scroll inside instead of widening the page */
+}
