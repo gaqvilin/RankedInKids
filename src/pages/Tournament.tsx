@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { DrawGroups } from '../components/DrawGroups';
+import { matchStatus, type MatchStatus } from '../lib/matchStatus';
 import { MatchBoard, MatchViewToggle, useMatchView, type MatchView } from '../components/MatchBoard';
 import { AccountSwitcher } from '../components/AccountSwitcher';
 import { OutsidePartner } from '../components/PairingPanel';
@@ -105,7 +106,10 @@ export default function Tournament() {
   // Playoff matches Rankedin has scheduled but does not list yet (a pair is still "1:a grupp B"): show them with time and court.
   const listed = matches.data || [];
   const listedIds = new Set(listed.map((m) => m.id));
-  const all = [...listed, ...(playoffs.data ?? []).filter((m) => !listedIds.has(m.id))];
+  const rounds = new Map((playoffs.data ?? []).map((m) => [m.id, m.playoff]));
+  // Listed matches that belong to the playoff keep the playoff mark.
+  const all = [...listed.map((m) => (rounds.has(m.id) ? { ...m, playoff: rounds.get(m.id) } : m)), ...(playoffs.data ?? []).filter((m) => !listedIds.has(m.id))];
+  const status = matchStatus(all);
   const mine = playerId ? all.filter((m) => m.sides.some((s) => s.ids.includes(playerId))) : [];
   const showMine = onlyMine && mine.length > 0;
   const reportable = all.filter((m) => m.canEnterResult && !m.played);
@@ -256,6 +260,8 @@ export default function Tournament() {
                 date={m.date}
                 court={m.court}
                 label={m.className}
+                playoff={m.playoff}
+                        status={status.get(m.id) ?? null}
                 highlightIds={highlight}
                 canEnterResult={m.canEnterResult}
                 awaitingConfirmation={m.awaitingConfirmation}
@@ -296,6 +302,7 @@ export default function Tournament() {
                       highlight={highlight}
                       showClass
                       onEnterResult={setReporting}
+                      status={status}
                     />
                   ) : (
                     byTime(filtered).map((m) => (
@@ -306,7 +313,9 @@ export default function Tournament() {
                         played={m.played}
                         date={m.date}
                         court={m.court}
-                        label={m.upcoming ? `${m.draw} · ${m.className}` : m.className}
+                        label={m.className}
+                        playoff={m.playoff}
+                        status={status.get(m.id) ?? null}
                         highlightIds={highlight}
                         canEnterResult={m.canEnterResult}
                         awaitingConfirmation={m.awaitingConfirmation}
@@ -333,6 +342,7 @@ export default function Tournament() {
                   hideMatches={showAll}
                   view={view}
                   onViewChange={setView}
+                  status={status}
                   action={i === 0 ? <RefreshButton onClick={() => matches.reload()} loading={matches.loading} /> : undefined}
                 />
               ))}
@@ -364,6 +374,7 @@ const byTime = (ms: TournamentMatch[]) =>
 function ClassBlock(props: {
   view: MatchView;
   onViewChange: (v: MatchView) => void;
+  status: Map<number, MatchStatus>;
   title: string | null;
   matches: TournamentMatch[];
   pairs: Pair[] | undefined;
@@ -439,7 +450,7 @@ function ClassBlock(props: {
           }
         >
           {props.view === 'tavla' ? (
-            <MatchBoard matches={matches} highlight={highlight} showClass={false} onEnterResult={props.onEnterResult} />
+            <MatchBoard matches={matches} highlight={highlight} showClass={false} onEnterResult={props.onEnterResult} status={props.status} />
           ) : (
             matches.map((m) => (
               <MatchCard
@@ -449,7 +460,8 @@ function ClassBlock(props: {
                 played={m.played}
                 date={m.date}
                 court={m.court}
-                label={m.upcoming ? m.draw : undefined}
+                playoff={m.playoff}
+                status={props.status.get(m.id) ?? null}
                 highlightIds={highlight}
                 canEnterResult={m.canEnterResult}
                 awaitingConfirmation={m.awaitingConfirmation}

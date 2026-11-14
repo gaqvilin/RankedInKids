@@ -276,6 +276,8 @@ export type TournamentMatch = {
   awaitingConfirmation: boolean;
   /** A playoff match Rankedin has scheduled but not listed yet: at least one pair is still "1:a grupp B". */
   upcoming?: boolean;
+  /** Set on playoff matches: the round ("Final", "Om plats 3–4"). */
+  playoff?: string;
 };
 
 export async function getTournamentMatches(tournamentId: number, fresh = false): Promise<TournamentMatch[]> {
@@ -805,6 +807,7 @@ export function playoffAsMatches(className: string, list: PlayoffMatch[]): Tourn
     canEnterResult: false,
     awaitingConfirmation: false,
     upcoming: true,
+    playoff: playoffRoundName(m),
   }));
 }
 

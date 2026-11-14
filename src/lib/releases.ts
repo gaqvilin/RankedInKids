@@ -9,6 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      '"Pågår nu" syns även på tavlan, och bara på matcher som kan ha börjat: om spelarna eller banan fortfarande är upptagna i en tidigare match utan resultat står det "Väntar på förra matchen".',
       'Slutspelet syns i matchlistan och på tavlan direkt, med tid och bana, även innan paren är klara ("1:a grupp B").',
       'Nytt utseende: blå accentfärg, mjukare kort och diskret rörelse. Matcher visar "Pågår nu" i grönt, dina egna visar Vinst eller Förlust, och tävlingen har en rad överst med hur många matcher som är klara.',
       'Grupptabellen visar vad placeringen leder till: ettan är markerad (spelar final), och ett tryck på platssiffran säger vad platsen spelar om.',

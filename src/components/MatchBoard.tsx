@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { fmtTime } from '../lib/format';
 import type { TournamentMatch } from '../lib/rankedin';
+import type { MatchStatus } from '../lib/matchStatus';
 import { MatchCard } from './MatchCard';
 
 export type MatchView = 'lista' | 'tavla';
@@ -58,12 +59,15 @@ export function MatchBoard({
   showClass,
   onEnterResult,
   onMove,
+  status,
 }: {
   matches: TournamentMatch[];
   highlight: number[];
   showClass: boolean;
   onEnterResult: (m: TournamentMatch) => void;
   onMove?: (m: TournamentMatch) => void;
+  /** Live/waiting per match id, from matchStatus() over all the day's matches. */
+  status?: Map<number, MatchStatus>;
 }) {
   return (
     <div className="board">
@@ -83,9 +87,12 @@ export function MatchBoard({
                 sides={m.sides}
                 sets={m.sets}
                 played={m.played}
-                date={null}
+                date={m.date}
+                hideTime
+                status={status ? (status.get(m.id) ?? null) : undefined}
                 court={m.court}
-                label={[m.upcoming ? m.draw : null, showClass ? m.className : null].filter(Boolean).join(' · ') || undefined}
+                label={showClass ? m.className : undefined}
+                playoff={m.playoff}
                 highlightIds={highlight}
                 canEnterResult={m.canEnterResult}
                 awaitingConfirmation={m.awaitingConfirmation}
