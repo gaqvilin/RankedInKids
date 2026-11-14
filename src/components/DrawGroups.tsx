@@ -109,28 +109,19 @@ function Group({ g, matches, mine }: { g: DrawGroup; matches: TournamentMatch[];
   );
 }
 
-type FixtureSide = { names: string[]; ids: number[]; won: boolean; label?: string | null; provisional?: boolean };
+type FixtureSide = { names: string[]; ids: number[]; won: boolean };
 
-function Fixture({ left, right, match, date, court, mine, title }: {
+function Fixture({ left, right, match, date, court, mine }: {
   left: FixtureSide;
   right: FixtureSide;
   match: TournamentMatch | undefined;
   date: string | null;
   court: string | null;
   mine: (ids: number[]) => boolean;
-  title?: string;
 }) {
   const played = !!match?.played && match.sets.length > 0;
-  const meta = [title, fmtTime(match?.date ?? date), match?.court ?? court].filter(Boolean).join(' · ');
-  const name = (s: FixtureSide) =>
-    s.names.length ? (
-      <>
-        <span className={s.provisional ? 'muted' : ''}>{short(s.names)}</span>
-        {s.label && <span className="fixture__label">{s.provisional ? `${s.label} just nu` : s.label}</span>}
-      </>
-    ) : (
-      <span className="muted">{s.label || 'Ej klart'}</span>
-    );
+  const meta = [fmtTime(match?.date ?? date), match?.court ?? court].filter(Boolean).join(' · ');
+  const name = (s: FixtureSide) => <span>{short(s.names)}</span>;
   return (
     <li className={`fixture ${mine([...left.ids, ...right.ids]) ? 'is-mine' : ''}`}>
       {meta && <div className="fixture__meta">{meta}</div>}
@@ -150,26 +141,40 @@ function Playoff({ list, groups, matches, mine }: { list: PlayoffMatch[]; groups
     return left === 0 ? 'Final' : left === 1 ? 'Semifinal' : left === 2 ? 'Kvartsfinal' : `Omgång ${m.round}`;
   };
   const sorted = [...list].sort((a, b) => a.round - b.round || a.order - b.order);
+  const rows = sorted.map((p) => {
+    const m = matches.find((x) => x.id === p.matchId || x.id === p.challengeId);
+    const sides = p.sides.map((s) => resolvePlayoffSide(s, groups));
+    return { p, m, sides };
+  });
+  const provisional = rows.some((r) => r.sides.some((s) => s.provisional));
   return (
     <Section title="Slutspel">
-      <ul className="fixtures">
-        {sorted.map((p) => {
-          const m = matches.find((x) => x.id === p.matchId || x.id === p.challengeId);
-          const [l, r] = p.sides.map((s) => resolvePlayoffSide(s, groups));
+      {provisional && <p className="muted small playoff-note">Preliminärt – paren fylls i från grupptabellerna just nu. A1 = etta i grupp A.</p>}
+      <div className="playoff">
+        {rows.map(({ p, m, sides }) => {
+          const played = !!m?.played && m.sets.length > 0;
+          const side = (i: 0 | 1) => {
+            const s = sides[i];
+            const seed = s.group && s.place ? `${s.group}${s.place}` : null;
+            const won = played && !!m?.sides[i].isWinner;
+            return (
+              <div className={`playoff__side ${i === 0 ? 'playoff__side--left' : ''} ${won ? 'is-won' : ''} ${mine(s.ids) ? 'is-mine' : ''}`}>
+                {seed && <span className="seed">{seed}</span>}
+                <span className={s.names.length ? '' : 'muted'}>{s.names.length ? short(s.names) : 'Ej klart'}</span>
+              </div>
+            );
+          };
           return (
-            <Fixture
-              key={p.matchId}
-              title={roundName(p)}
-              left={{ ...l, won: !!m?.sides[0].isWinner }}
-              right={{ ...r, won: !!m?.sides[1].isWinner }}
-              match={m}
-              date={p.date}
-              court={p.court}
-              mine={mine}
-            />
+            <div key={p.matchId} className={`playoff__row ${mine([...sides[0].ids, ...sides[1].ids]) ? 'is-mine' : ''} ${roundName(p) === 'Final' ? 'is-final' : ''}`}>
+              <div className="playoff__title">{roundName(p)}</div>
+              {side(0)}
+              <div className="playoff__score">{played ? m!.sets.map(([x, y]) => `${x}–${y}`).join(' ') : '–'}</div>
+              {side(1)}
+              <div className="playoff__when">{[fmtTime(m?.date ?? p.date), m?.court ?? p.court].filter(Boolean).join(' · ')}</div>
+            </div>
           );
         })}
-      </ul>
+      </div>
     </Section>
   );
 }

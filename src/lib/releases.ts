@@ -10,7 +10,7 @@ export const RELEASES: Release[] = [
     title: 'Tävlingsledning för arrangörer',
     items: [
       'Resultat: välj 1 set, 2 set eller bäst av 3 – valet sparas till nästa match. Rankedin kräver en vinnare, så vid 1–1 skrivs supertiebreaket som ett tredje set.',
-      'Grupperna ser ut som ett gruppspel i fotboll: tabell (S V F +/- P) och gruppens matcher med tid, bana och resultat. Slutspelet visas under, och "1:a grupp A" fylls i med paret som leder gruppen just nu.',
+      'Grupperna ser ut som ett gruppspel i fotboll: tabell (S V F +/- P) och gruppens matcher med tid, bana och resultat. Slutspelet visas under som en rad per match (Final, Om plats 3–4 …) med parens gruppplats (A1, B1) och tid och bana, ifyllt med paren som leder grupperna just nu.',
       'Utskrifterna är kortare: klassen står utan nivån när tävlingens namn redan säger den ("Pojkar 12"), och gruppen bara när klassen har flera. Marginaler runt utskriften i alla webbläsare.',
       'Rättat: utskriftssidan (schema, deltagarlista, banlistor och QR) kunde sluta reagera i mobilen efter en utskrift.',
       'Alla klasser på tävlingssidan visar nu alla matcher i en lista efter tid, med klassen på varje match. Tidigare låg en klass långt ner under en annan.',
