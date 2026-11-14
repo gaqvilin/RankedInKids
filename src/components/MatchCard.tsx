@@ -94,7 +94,7 @@ export function MatchCard(p: Props) {
             <span className="match__names">{s.names.length ? s.names.map(sideName).join(' / ') : t('Ej uttagna')}</span>
             <span className="match__sets">
               {p.sets.map((set, j) => (
-                <span key={j} className={set[i] > set[1 - i] ? 'set set--won' : 'set'}>
+                <span key={j} className={`set ${set[i] > set[1 - i] ? 'set--won' : ''} ${Math.max(set[0], set[1]) >= 10 ? 'set--wide' : ''}`}>
                   {set[i]}
                 </span>
               ))}

@@ -50,4 +50,21 @@ export const groups: Record<string, string> = {
   'Kunde inte spara gruppen just nu.': 'Could not save the group right now.',
   'Grupper för tränare: samla dina spelare i en grupp på Översikt och se vad som behöver göras (söker partner, licens saknas), vilka som spelar den här veckan och resten. Gruppen sparas på ditt konto och kan delas med en länk.':
     'Groups for coaches: put your players in a group on Overview and see what needs doing (looking for a partner, licence missing), who plays this week and the rest. The group is saved on your account and can be shared with a link.',
+  // Watched tournaments and result shortcuts
+  '1 anmält par': '1 entered pair',
+  '{n} anmälda par': '{n} entered pairs',
+  '1 ny anmälan': '1 new entry',
+  '{n} nya anmälningar': '{n} new entries',
+  'Bevakade tävlingar': 'Watched tournaments',
+  'Inga kommande tävlingar bevakas.': 'No upcoming tournaments are watched.',
+  'anmälan stängd': 'entry closed',
+  'anmälan stänger {day}': 'entry closes {day}',
+  '{n} söker partner': '{n} looking for a partner',
+  Bevaka: 'Watch',
+  Bevakas: 'Watching',
+  'Bevaka en tävling: tryck Bevaka på tävlingen, så visar Översikt hur många par som är anmälda, vad som är nytt sedan du tittade sist och när anmälan stänger.':
+    'Watch a tournament: tap Watch on the tournament, and Overview shows how many pairs have entered, what is new since you last looked and when entry closes.',
+  'Snabbknappar: Resultat överst på tävlingen hoppar till tabeller och slutresultat. Arrangören har en knapp som alltid syns när resultat saknas.':
+    'Shortcuts: Results at the top of the tournament jumps to the tables and the final result. The organiser has a button that is always visible when results are missing.',
+  'Tightare resultat på matchkorten och enklare språkväljare.': 'Tighter scores on the match cards and a simpler language switch.',
 };

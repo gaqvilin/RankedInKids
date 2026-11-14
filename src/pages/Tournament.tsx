@@ -4,6 +4,8 @@ import { MatchCard } from '../components/MatchCard';
 import { DrawGroups } from '../components/DrawGroups';
 import { matchStatus, type MatchStatus } from '../lib/matchStatus';
 import { JoinSheet } from '../components/JoinSheet';
+import { isWatched, toggleWatch } from '../lib/watch';
+import { missingResults } from '../lib/organizer';
 import { Sheet } from '../components/Sheet';
 import { MatchBoard, MatchViewToggle, useMatchView, type MatchView } from '../components/MatchBoard';
 import { AccountSwitcher } from '../components/AccountSwitcher';
@@ -55,6 +57,7 @@ export default function Tournament() {
   const [onlyToReport, setOnlyToReport] = useState(false);
   const [view, setView] = useMatchView();
   const [joining, setJoining] = useState(false);
+  const [watching, setWatching] = useState(() => isWatched(tid));
 
   const myClass = useMemo(() => {
     if (!playerId || !matches.data) return null;
@@ -130,6 +133,7 @@ export default function Tournament() {
   const highlight = playerId ? [playerId] : [];
   const playedCount = all.filter((m) => m.played).length;
   const nextMine = mine.find((m) => !m.played);
+  const missing = missingResults(all).length;
 
   return (
     <>
@@ -170,6 +174,20 @@ export default function Tournament() {
           {tour.signInOpen && (
             <button className="btn btn--primary btn--small" onClick={() => setJoining(true)}>
               {t('Anmäl')}
+            </button>
+          )}{' '}
+          {playedCount > 0 && (
+            <button className="btn btn--small" onClick={() => document.querySelector('.results-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+              {t('Resultat')}
+            </button>
+          )}{' '}
+          {tour.state !== 4 && playedCount === 0 && (
+            <button
+              className="btn btn--small"
+              aria-pressed={watching}
+              onClick={() => setWatching(toggleWatch({ id: tid, name: tour.name, startDate: tour.startDate }))}
+            >
+              {watching ? t('Bevakas') : t('Bevaka')}
             </button>
           )}{' '}
           {isOrganiser.data && (
@@ -370,6 +388,12 @@ export default function Tournament() {
           )
         )}
       </Page>
+
+      {isOrganiser.data && missing > 0 && (
+        <Go className="fab" to={`/tavling/${tid}/ledning?vy=resultat`} from={tour.name}>
+          {missing === 1 ? t('1 resultat saknas') : t('{n} resultat saknas', { n: missing })}
+        </Go>
+      )}
 
       {joining &&
         (user.loggedIn ? (

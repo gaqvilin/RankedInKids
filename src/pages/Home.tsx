@@ -1,5 +1,6 @@
 import { t } from '../lib/i18n';
 import { MyGroups } from '../components/MyGroups';
+import { WatchedTournaments } from '../components/WatchedTournaments';
 import { PlayerHitRow } from '../components/PlayerHitRow';
 import { usePlayerSearch } from '../lib/usePlayerSearch';
 import { useState } from 'react';
@@ -107,6 +108,8 @@ export default function Home() {
             )}
           </Section>
         )}
+
+        <WatchedTournaments />
 
         {shown.length > 0 && (
           <Section

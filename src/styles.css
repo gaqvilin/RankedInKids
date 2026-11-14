@@ -815,13 +815,17 @@ a.match:hover {
 }
 .match__sets {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   font-variant-numeric: tabular-nums;
 }
+/* One digit wide, so the score sits tight; a set with a two-digit score (supertiebreak) is two wide in both rows. */
 .set {
   color: var(--muted);
-  min-width: 14px;
+  min-width: 1ch;
   text-align: right;
+}
+.set--wide {
+  min-width: 2ch;
 }
 .set--won {
   color: var(--text);
@@ -2840,4 +2844,38 @@ button.tabbar__link {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+/* Jump target for the "Resultat" shortcut: stops below the sticky header. */
+.results-anchor {
+  display: block;
+  scroll-margin-top: 70px;
+}
+/* Organiser shortcut that is always in reach: results that are missing. */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  z-index: 15;
+  background: var(--accent);
+  color: var(--primary-text);
+  font-weight: 650;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.25);
+}
+.fab:hover {
+  text-decoration: none;
+}
+@media (min-width: 960px) {
+  .fab {
+    bottom: 24px;
+    right: 24px;
+  }
+}
+@media print {
+  .fab {
+    display: none;
+  }
 }
