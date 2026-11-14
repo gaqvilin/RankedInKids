@@ -16,6 +16,7 @@ export const RELEASES: Release[] = [
       'Slutspelet syns i matchlistan och på tavlan direkt, med tid och bana, även innan paren är klara ("1:a grupp B").',
       'Nytt utseende: blå accentfärg, mjukare kort och diskret rörelse. Matcher visar "Pågår nu" i grönt, dina egna visar Vinst eller Förlust, och tävlingen har en rad överst med hur många matcher som är klara.',
       'Grupptabellen visar vad placeringen leder till: ettan är markerad (spelar final), och ett tryck på platssiffran säger vad platsen spelar om.',
+      'Fungerar utan nät: appen öppnas och visar det som senast hämtades. Resultat du rapporterar utan nät sparas i telefonen och skickas till Rankedin när nätet är tillbaka – har någon annan hunnit rapportera något annat får du välja vilket som gäller.',
       'På datorn kan sidomenyn döljas (knappen bredvid loggan) så att sidan, t.ex. tavlan, använder hela skärmen. Samma knapp uppe till vänster tar tillbaka menyn.',
       'Arrangörer kan flytta en match till en annan tid och bana: Tävlingsledning → Schema → Flytta på matchen. Bara lediga banor visas, och spelare som redan spelar den tiden varnas för.',
       'Fel resultat? Tävlingsledning → Resultat → Rapporterade: tryck Ändra resultat på matchen, rätta eller tryck Ta bort resultatet – matchen blir ospelad i Rankedin igen.',

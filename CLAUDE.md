@@ -60,6 +60,11 @@ Innan push: `npm run typecheck && npm test` ska vara gröna. Kontrollera gärna 
 - Håll PR:er små och slå ihop ofta, så krockar ni inte med varandra. Hämta senaste `main` (`git pull`) innan ni börjar något nytt.
 - Förhandsversioner använder samma Rankedin som produktion. Skrivningar (resultat, lottning) i en förhandsversion är alltså skarpa.
 
+## Offline
+- `public/sw.js` sparar bara själva appen (sidor nätverk först, `/assets/` cache först). Data sparas av appen (`useAsync` med `storeKey`).
+- Resultat utan nät köas i `src/lib/outbox.ts` och skickas med `expected` (det telefonen såg), så servern vägrar skriva över ett annat resultat (409 `conflict`).
+- Nödstopp om service workern ställer till det: sätt `KILL = true` i `public/sw.js` och driftsätt – telefonerna tar bort den vid nästa besök.
+
 ## Konventioner
 - Formattering: enkla citattecken, ~150 tecken per rad (som befintlig kod). Kör inte prettier med standardinställningar på hela filer.
 - `useAsync(fn, deps, storeKey?)` för datahämtning; `storeKey` cachar på enheten (stale-while-revalidate).

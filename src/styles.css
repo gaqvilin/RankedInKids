@@ -2456,6 +2456,27 @@ button.tabbar__link {
   }
 }
 
+/* Offline and results waiting to be sent. */
+.offline-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 16px;
+  font-size: 14px;
+}
+.offline-bar.is-offline {
+  border-bottom-color: var(--warn);
+}
+.offline-bar p {
+  margin: 2px 0;
+}
+.offline-bar__problem {
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.offline-bar__problem p {
+  color: var(--warn);
+}
+
 /* ---------- Look: soft cards, accent, status and motion ---------- */
 .match,
 .list,

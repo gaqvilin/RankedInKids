@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { submitResult } from '../lib/api';
+import { accountId, submitResult } from '../lib/api';
+import { enqueue, isNetworkError } from '../lib/outbox';
 import { summarizeSets, type SetScore } from '../../api/_lib/result';
 import type { Side } from '../lib/rankedin';
 import { useSession } from '../session';
@@ -65,26 +66,42 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
   };
 
   async function reset() {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return queue(null);
     setBusy(true);
     setError(null);
     try {
       await submitResult(challengeId, null);
       onDone();
     } catch (e) {
+      if (isNetworkError(e)) return queue(null);
       setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
 
+  // No connection: keep it on the phone and send when the connection is back (see lib/outbox).
+  const queue = (value: [number, number][] | null) => {
+    enqueue({
+      challengeId,
+      sets: value,
+      expected: initial && initial.length ? initial.map((x) => [Number(x[0]), Number(x[1])] as [number, number]) : [],
+      account: accountId(),
+      title: sides.map((x) => x.names.map((n) => n.split(' ')[0]).join(' / ')).join(' – '),
+    });
+    onDone();
+  };
+
   async function send() {
     if (!summary) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return queue(parsed);
     setBusy(true);
     setError(null);
     try {
       await submitResult(challengeId, parsed);
       onDone();
     } catch (e) {
+      if (isNetworkError(e)) return queue(parsed);
       setError((e as Error).message);
     } finally {
       setBusy(false);
@@ -178,7 +195,7 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
             )}
             {error && <p className="field-error">{error}</p>}
             <button className="btn btn--primary btn--block" disabled={!summary || busy} onClick={send}>
-              {busy ? 'Skickar…' : 'Skicka till Rankedin'}
+              {busy ? 'Skickar…' : typeof navigator !== 'undefined' && navigator.onLine === false ? 'Spara – skickas när nätet är tillbaka' : 'Skicka till Rankedin'}
             </button>
             {hasResult &&
               (confirmReset ? (

@@ -181,13 +181,24 @@ export async function saveLineup(
   clearCache();
 }
 
-/** Sends a result to Rankedin; `null` clears the match's result (Rankedin's "Reset result"). */
-export async function submitResult(challengeId: number, sets: [number, number][] | null): Promise<void> {
+export const accountId = () => activeAccountId;
+
+/**
+ * Sends a result to Rankedin; `null` clears the match's result (Rankedin's "Reset result").
+ * opts.expected (sets the phone saw, [] = unplayed) makes the server refuse to overwrite a different result (409 conflict).
+ * opts.account sends as that account (results queued offline go out as the account that entered them).
+ */
+export async function submitResult(
+  challengeId: number,
+  sets: [number, number][] | null,
+  opts: { expected?: [number, number][]; account?: number } = {},
+): Promise<void> {
+  const account = opts.account ?? activeAccountId;
   const res = await fetch('/api/submit-result', {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', ...accountHeaders() },
-    body: JSON.stringify(sets ? { challengeId, sets } : { challengeId, reset: true }),
+    headers: { 'Content-Type': 'application/json', ...(account ? { 'x-rk-account': String(account) } : {}) },
+    body: JSON.stringify({ challengeId, ...(sets ? { sets } : { reset: true }), ...(opts.expected ? { expected: opts.expected } : {}) }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -196,8 +207,11 @@ export async function submitResult(challengeId: number, sets: [number, number][]
       not_allowed: 'Rankedin tillåter inte att du rapporterar den här matchen.',
       invalid_score: data.message || 'Ogiltigt resultat.',
       rejected: 'Rankedin tog inte emot resultatet.',
+      conflict: 'Rankedin har redan ett annat resultat för matchen.',
     };
-    throw new ApiError(messages[data.error] || 'Något gick fel.', res.status, data.error);
+    const err = new ApiError(messages[data.error] || 'Något gick fel.', res.status, data.error);
+    (err as ApiError & { current?: unknown }).current = data.current;
+    throw err;
   }
   clearCache();
 }

@@ -1,6 +1,7 @@
 import { Go } from './shell';
 import type { Side } from '../lib/rankedin';
 import { Tip } from './ui';
+import { useOutbox } from '../lib/outbox';
 import { fmtDayTime, fmtTime } from '../lib/format';
 
 type Props = {
@@ -24,6 +25,8 @@ type Props = {
   onEnterResult?: () => void;
   /** Organiser: move the match to another time/court. */
   onMove?: () => void;
+  /** Rankedin challenge id: shows a result waiting to be sent from this phone. */
+  challengeId?: number;
   /** Link to the whole team match (team leagues). */
   teamMatchPath?: string;
   /** Label for "back" on pages opened from this card. */
@@ -38,6 +41,8 @@ export function MatchCard(p: Props) {
   const start = p.date ? Date.parse(p.date) : NaN;
   const live = p.status !== undefined ? p.status === 'live' : !p.played && Number.isFinite(start) && Date.now() >= start && Date.now() < start + 90 * 60_000;
   const won = isMine && p.played ? p.sides.some((s) => mine(s) && s.isWinner) : null;
+  const outbox = useOutbox();
+  const waiting = p.challengeId ? outbox.find((q) => q.challengeId === p.challengeId) : undefined;
   return (
     <article className={`match ${isMine ? 'match--mine' : ''} ${live ? 'match--live' : ''} ${p.played ? 'match--played' : ''}`}>
       <div className="match__meta">
@@ -57,6 +62,15 @@ export function MatchCard(p: Props) {
         )}
         {won !== null && <span className={`pill ${won ? 'pill--win' : 'pill--loss'}`}>{won ? 'Vinst' : 'Förlust'}</span>}
         {p.label && <span className="match__label">{p.label}</span>}
+        {waiting && (
+          <span className="pill pill--warn">
+            {waiting.state === 'conflict'
+              ? 'Krock med Rankedin'
+              : waiting.sets
+                ? `Väntar på nät: ${waiting.sets.map(([a, b]) => `${a}–${b}`).join(' ')}`
+                : 'Väntar på nät: ta bort resultat'}
+          </span>
+        )}
       </div>
       <div className="match__body">
         {p.sides.map((s, i) => (

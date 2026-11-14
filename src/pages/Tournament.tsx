@@ -33,12 +33,20 @@ export default function Tournament() {
   const [params, setParams] = useSearchParams();
   const playerId = Number(params.get('spelare')) || null;
 
-  const header = useAsync(() => getTournament(tid), [tid]);
-  const classes = useAsync(() => getClasses(tid), [tid]);
+  // Remembered on the device (storeKey) so the page works offline on match day.
+  const header = useAsync(() => getTournament(tid), [tid], `t.${tid}`);
+  const classes = useAsync(() => getClasses(tid), [tid], `tclasses.${tid}`);
   const details = useAsync(() => getTournamentDetails(tid).catch(() => null), [tid], `tdetails.${tid}`);
   const { version, user } = useSession();
   const isOrganiser = useAsync(() => (user.loggedIn ? isTournamentAdmin(tid) : Promise.resolve(false)), [user.loggedIn, version, tid]);
-  const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version]);
+  const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version], `tmatches.${tid}`);
+  // Results queued offline went through: show them.
+  useEffect(() => {
+    const on = () => matches.reload();
+    window.addEventListener('padeladmin:results-sent', on);
+    return () => window.removeEventListener('padeladmin:results-sent', on);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tid]);
   const [onlyMine, setOnlyMine] = useState(!!playerId);
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
   const [onlyToReport, setOnlyToReport] = useState(false);
@@ -254,6 +262,7 @@ export default function Tournament() {
             {mine.map((m) => (
               <MatchCard
                 key={m.id}
+                challengeId={m.id}
                 sides={m.sides}
                 sets={m.sets}
                 played={m.played}
@@ -308,6 +317,7 @@ export default function Tournament() {
                     byTime(filtered).map((m) => (
                       <MatchCard
                         key={m.id}
+                        challengeId={m.id}
                         sides={m.sides}
                         sets={m.sets}
                         played={m.played}
@@ -455,6 +465,7 @@ function ClassBlock(props: {
             matches.map((m) => (
               <MatchCard
                 key={m.id}
+                challengeId={m.id}
                 sides={m.sides}
                 sets={m.sets}
                 played={m.played}

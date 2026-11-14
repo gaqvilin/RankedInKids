@@ -3,6 +3,7 @@ import { FeedbackSheet } from './FeedbackSheet';
 import { AccountSwitcher } from './AccountSwitcher';
 import { InstallButton } from './InstallButton';
 import { Sheet } from './Sheet';
+import { OfflineBar } from './OfflineBar';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, type LinkProps } from 'react-router-dom';
 import { onLoadingChange } from '../lib/api';
@@ -294,6 +295,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Sidebar onHide={() => setFull(true)} />
       )}
       <div className="shell__main">
+        <OfflineBar />
         {children}
       </div>
       <TabBar />

@@ -38,9 +38,16 @@ export default function Organizer() {
     [user.loggedIn, version, tid],
   );
   const [params, setParams] = useSearchParams();
-  const header = useAsync(() => getTournament(tid), [tid]);
-  const classes = useAsync(() => getClasses(tid), [tid]);
-  const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version]);
+  const header = useAsync(() => getTournament(tid), [tid], `t.${tid}`);
+  const classes = useAsync(() => getClasses(tid), [tid], `tclasses.${tid}`);
+  const matches = useAsync((fresh) => getTournamentMatches(tid, fresh), [tid, version], `tmatches.${tid}`);
+  // Results queued offline went through: show them.
+  useEffect(() => {
+    const on = () => matches.reload();
+    window.addEventListener('padeladmin:results-sent', on);
+    return () => window.removeEventListener('padeladmin:results-sent', on);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tid]);
   const classKey = (classes.data ?? []).map((c) => c.id).join(',');
   const pairs = useAsync(
     async (fresh) => new Map(await Promise.all((classes.data ?? []).map(async (c) => [c.name, await getClassPairs(tid, c.id, fresh)] as const))),
@@ -209,6 +216,7 @@ export default function Organizer() {
                 {missing.map((m) => (
                   <MatchCard
                     key={m.id}
+                    challengeId={m.id}
                     sides={m.sides}
                     sets={m.sets}
                     played={m.played}
@@ -229,6 +237,7 @@ export default function Organizer() {
                     {reported.map((m) => (
                       <MatchCard
                         key={m.id}
+                        challengeId={m.id}
                         sides={m.sides}
                         sets={m.sets}
                         played={m.played}

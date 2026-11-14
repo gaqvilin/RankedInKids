@@ -84,6 +84,7 @@ export function MatchBoard({
             {col.matches.map((m) => (
               <MatchCard
                 key={m.id}
+                challengeId={m.id}
                 sides={m.sides}
                 sets={m.sets}
                 played={m.played}
