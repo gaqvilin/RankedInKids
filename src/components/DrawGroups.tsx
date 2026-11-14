@@ -5,8 +5,8 @@ import { useAsync } from '../lib/useAsync';
 import { Section } from './ui';
 
 export function DrawGroups({ classId, matches, highlight, refreshKey }: { classId: number; matches: TournamentMatch[]; highlight: number[]; refreshKey: string }) {
-  const draws = useAsync((fresh) => getClassDraws(classId, fresh), [classId, refreshKey], `draws.${classId}`);
-  if (!draws.data?.length) return null;
+  const draws = useAsync((fresh) => getClassDraws(classId, fresh), [classId, refreshKey], `draws.v2.${classId}`);
+  if (!Array.isArray(draws.data) || !draws.data.length) return null;
   return (
     <Section title={draws.data.length > 1 ? 'Grupper' : 'Grupp'}>
       <div className="draw-groups">
@@ -93,7 +93,7 @@ function Group({ g, matches, highlight }: { g: DrawGroup; matches: TournamentMat
                   {g.pairs.map((col, c) => {
                     if (r === c) return <td key={col.index} className="draw-grid__self" />;
                     // Pool rows/columns are offset by the header row and column.
-                    const cell = g.cells.get(`${r + 1}-${c + 1}`);
+                    const cell = g.cells?.[`${r + 1}-${c + 1}`];
                     if (!cell) return <td key={col.index} />;
                     const res = result(row.ids, cell);
                     return (
