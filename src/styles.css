@@ -2763,6 +2763,7 @@ button.tabbar__link {
 }
 .page-title__who > div {
   min-width: 0;
+}
 .item--button.is-on {
   background: var(--accent-soft);
 }
