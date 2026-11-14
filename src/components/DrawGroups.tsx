@@ -32,7 +32,7 @@ function Group({ g, matches, mine }: { g: DrawGroup; matches: TournamentMatch[];
   const anyPlayed = g.standings.some((s) => s.played > 0);
   const rows = anyPlayed
     ? g.standings
-    : g.pairs.map((p) => ({ position: 0, names: p.names, ids: p.ids, played: 0, wins: 0, losses: 0, points: 0, gamesWon: 0, gamesLost: 0 }));
+    : g.pairs.map((p) => ({ position: 0, names: p.names, ids: p.ids, played: 0, wins: 0, draws: 0, losses: 0, points: 0, gamesWon: 0, gamesLost: 0 }));
 
   // Each match sits twice in Rankedin's grid (row vs column and back); take the upper half.
   // Pool rows/columns are offset by one for the header row and column.
@@ -52,6 +52,7 @@ function Group({ g, matches, mine }: { g: DrawGroup; matches: TournamentMatch[];
               <th>Par</th>
               <th title="Spelade">S</th>
               <th title="Vunna">V</th>
+              <th title="Oavgjorda">O</th>
               <th title="Förlorade">F</th>
               <th title="Game-skillnad">+/-</th>
               <th title="Poäng">P</th>
@@ -69,6 +70,7 @@ function Group({ g, matches, mine }: { g: DrawGroup; matches: TournamentMatch[];
                   </td>
                   <td>{s.played}</td>
                   <td>{s.wins}</td>
+                  <td>{s.draws}</td>
                   <td>{s.losses}</td>
                   <td>{diff > 0 ? `+${diff}` : diff}</td>
                   <td>

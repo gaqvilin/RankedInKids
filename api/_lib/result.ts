@@ -15,7 +15,7 @@ function pick(obj: ChallengeResult, name: string): unknown {
   return key ? obj[key] : undefined;
 }
 
-/** Validates a list of set scores and returns sets won by each side. */
+/** Validates a list of set scores and returns sets won by each side. Two played sets may end 1–1 (Step In plays 2 sets). */
 export function summarizeSets(sets: SetScore[]): { p1: number; p2: number } {
   if (!Array.isArray(sets) || sets.length === 0) throw new Error('Ange minst ett set.');
   if (sets.length > 5) throw new Error('För många set.');
@@ -31,7 +31,7 @@ export function summarizeSets(sets: SetScore[]): { p1: number; p2: number } {
     if (a > b) p1++;
     else p2++;
   }
-  if (p1 === p2) throw new Error('Matchen måste ha en vinnare.');
+  if (p1 === p2 && sets.length !== 2) throw new Error('Matchen måste ha en vinnare.');
   return { p1, p2 };
 }
 
