@@ -1,0 +1,72 @@
+[
+ {
+  "BaseType": "Elimination",
+  "RoundRobin": null,
+  "Elimination": {
+   "DrawCells": [
+    {
+     "Round": 1,
+     "MaxRound": 1,
+     "MatchOrder": 1,
+     "MatchId": 7064302,
+     "ChallengeId": 7064227,
+     "Date": "2026-11-14T14:00:00",
+     "CourtName": "Ludz",
+     "ShouldShowSchedule": true,
+     "ChallengerParticipant": {
+      "FirstPlayer": {
+       "Id": 0,
+       "Name": "Group A#1"
+      },
+      "SecondPlayer": {
+       "Id": 0,
+       "Name": null
+      }
+     },
+     "ChallengedParticipant": {
+      "FirstPlayer": {
+       "Id": 0,
+       "Name": "Group B#1"
+      },
+      "SecondPlayer": {
+       "Id": 0,
+       "Name": null
+      }
+     }
+    },
+    {
+     "Round": 1,
+     "MaxRound": 1,
+     "MatchOrder": 2,
+     "MatchId": 7064303,
+     "ChallengeId": 7064228,
+     "Date": "2026-11-14T14:00:00",
+     "CourtName": "Bana 5",
+     "ShouldShowSchedule": true,
+     "ChallengerParticipant": {
+      "FirstPlayer": {
+       "Id": 0,
+       "Name": "Group A#2"
+      },
+      "SecondPlayer": {
+       "Id": 0,
+       "Name": null
+      }
+     },
+     "ChallengedParticipant": {
+      "FirstPlayer": {
+       "Id": 0,
+       "Name": "Group B#2"
+      },
+      "SecondPlayer": {
+       "Id": 0,
+       "Name": null
+      }
+     }
+    }
+   ],
+   "Consolation": 1,
+   "PlacesStartPos": 1
+  }
+ }
+]
