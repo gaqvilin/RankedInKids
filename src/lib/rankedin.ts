@@ -274,6 +274,8 @@ export type TournamentMatch = {
   played: boolean;
   canEnterResult: boolean;
   awaitingConfirmation: boolean;
+  /** A playoff match Rankedin has scheduled but not listed yet: at least one pair is still "1:a grupp B". */
+  upcoming?: boolean;
 };
 
 export async function getTournamentMatches(tournamentId: number, fresh = false): Promise<TournamentMatch[]> {
@@ -772,6 +774,38 @@ export async function getClassPlayoff(classId: number, fresh = false): Promise<P
       sides: [side(c.ChallengerParticipant), side(c.ChallengedParticipant)] as [PlayoffSide, PlayoffSide],
     }));
   });
+}
+
+/** "Final", "Om plats 3–4", "Semifinal" … */
+export function playoffRoundName(m: PlayoffMatch): string {
+  if (m.places) return m.places[0] === 1 ? 'Final' : `Om plats ${m.places[0]}–${m.places[1]}`;
+  const left = m.maxRound - m.round;
+  return left === 0 ? 'Final' : left === 1 ? 'Semifinal' : left === 2 ? 'Kvartsfinal' : `Omgång ${m.round}`;
+}
+
+/**
+ * Playoff matches as match cards, so the schedule shows them (time and court) before Rankedin lists them.
+ * A pair that is not decided yet is named by its place: "1:a grupp B".
+ */
+export function playoffAsMatches(className: string, list: PlayoffMatch[]): TournamentMatch[] {
+  const side = (s: PlayoffSide): Side => ({
+    names: s.names.length ? s.names : s.group && s.place ? [`${s.place}:${s.place <= 2 ? 'a' : 'e'} grupp ${s.group}`] : [],
+    ids: s.ids,
+    isWinner: false,
+  });
+  return list.map((m) => ({
+    id: m.challengeId,
+    date: m.date,
+    className,
+    draw: playoffRoundName(m),
+    court: m.court,
+    sides: [side(m.sides[0]), side(m.sides[1])],
+    sets: [],
+    played: false,
+    canEnterResult: false,
+    awaitingConfirmation: false,
+    upcoming: true,
+  }));
 }
 
 /** Group letter from our group name ("Grupp A" → "A"). */

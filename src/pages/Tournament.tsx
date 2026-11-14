@@ -14,6 +14,8 @@ import { fmtDay, fmtTime, isSameDay, unlessInName, soon } from '../lib/format';
 import {
   getClasses,
   getClassPairs,
+  getClassPlayoff,
+  playoffAsMatches,
   getTournament,
   getTournamentDetails,
   getTournamentMatches,
@@ -54,6 +56,14 @@ export default function Tournament() {
     [tid, classKey],
   );
 
+  const allClassKey = (classes.data || []).map((c) => c.id).join(',');
+  const playedSoFar = (matches.data || []).filter((m) => m.played).length;
+  const playoffs = useAsync(
+    async (fresh) =>
+      (await Promise.all((classes.data || []).map(async (c) => playoffAsMatches(c.name, await getClassPlayoff(c.id, fresh).catch(() => []))))).flat(),
+    [tid, allClassKey, playedSoFar],
+  );
+
   const selectClass = (name: string) => {
     setOnlyMine(false);
     const next = new URLSearchParams(params);
@@ -92,11 +102,15 @@ export default function Tournament() {
   }
 
   const t = header.data;
-  const all = matches.data || [];
+  // Playoff matches Rankedin has scheduled but does not list yet (a pair is still "1:a grupp B"): show them with time and court.
+  const listed = matches.data || [];
+  const listedIds = new Set(listed.map((m) => m.id));
+  const all = [...listed, ...(playoffs.data ?? []).filter((m) => !listedIds.has(m.id))];
   const mine = playerId ? all.filter((m) => m.sides.some((s) => s.ids.includes(playerId))) : [];
   const showMine = onlyMine && mine.length > 0;
   const reportable = all.filter((m) => m.canEnterResult && !m.played);
-  const filtered = onlyToReport ? all.filter((m) => m.canEnterResult && !m.played) : all;
+  // "Bara matcher att rapportera" keeps the coming playoff matches too, so the day can be planned.
+  const filtered = onlyToReport ? all.filter((m) => (m.canEnterResult || m.upcoming) && !m.played) : all;
   const highlight = playerId ? [playerId] : [];
   const playedCount = all.filter((m) => m.played).length;
   const nextMine = mine.find((m) => !m.played);
@@ -292,7 +306,7 @@ export default function Tournament() {
                         played={m.played}
                         date={m.date}
                         court={m.court}
-                        label={m.className}
+                        label={m.upcoming ? `${m.draw} · ${m.className}` : m.className}
                         highlightIds={highlight}
                         canEnterResult={m.canEnterResult}
                         awaitingConfirmation={m.awaitingConfirmation}
@@ -435,6 +449,7 @@ function ClassBlock(props: {
                 played={m.played}
                 date={m.date}
                 court={m.court}
+                label={m.upcoming ? m.draw : undefined}
                 highlightIds={highlight}
                 canEnterResult={m.canEnterResult}
                 awaitingConfirmation={m.awaitingConfirmation}
