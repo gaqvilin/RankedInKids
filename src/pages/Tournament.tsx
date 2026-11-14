@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { DrawGroups } from '../components/DrawGroups';
-import { MoveSheet } from '../components/MoveSheet';
 import { MatchBoard, MatchViewToggle, useMatchView, type MatchView } from '../components/MatchBoard';
 import { AccountSwitcher } from '../components/AccountSwitcher';
 import { OutsidePartner } from '../components/PairingPanel';
@@ -41,7 +40,6 @@ export default function Tournament() {
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
   const [onlyToReport, setOnlyToReport] = useState(false);
   const [view, setView] = useMatchView();
-  const [moving, setMoving] = useState<TournamentMatch | null>(null);
 
   const myClass = useMemo(() => {
     if (!playerId || !matches.data) return null;
@@ -264,7 +262,6 @@ export default function Tournament() {
                       highlight={highlight}
                       showClass
                       onEnterResult={setReporting}
-                      onMove={isOrganiser.data ? setMoving : undefined}
                     />
                   ) : (
                     byTime(filtered).map((m) => (
@@ -280,7 +277,6 @@ export default function Tournament() {
                         canEnterResult={m.canEnterResult}
                         awaitingConfirmation={m.awaitingConfirmation}
                         onEnterResult={() => setReporting(m)}
-                        onMove={isOrganiser.data ? () => setMoving(m) : undefined}
                       />
                     ))
                   )}
@@ -303,7 +299,6 @@ export default function Tournament() {
                   hideMatches={showAll}
                   view={view}
                   onViewChange={setView}
-                  onMove={isOrganiser.data ? setMoving : undefined}
                   action={i === 0 ? <RefreshButton onClick={() => matches.reload()} loading={matches.loading} /> : undefined}
                 />
               ))}
@@ -311,19 +306,6 @@ export default function Tournament() {
           )
         )}
       </Page>
-
-      {moving && (
-        <MoveSheet
-          tournamentId={tid}
-          match={moving}
-          all={all}
-          onClose={() => setMoving(null)}
-          onDone={() => {
-            setMoving(null);
-            matches.reload();
-          }}
-        />
-      )}
 
       {reporting && (
         <ResultSheet
@@ -348,7 +330,6 @@ const byTime = (ms: TournamentMatch[]) =>
 function ClassBlock(props: {
   view: MatchView;
   onViewChange: (v: MatchView) => void;
-  onMove?: (m: TournamentMatch) => void;
   title: string | null;
   matches: TournamentMatch[];
   pairs: Pair[] | undefined;
@@ -424,7 +405,7 @@ function ClassBlock(props: {
           }
         >
           {props.view === 'tavla' ? (
-            <MatchBoard matches={matches} highlight={highlight} showClass={false} onEnterResult={props.onEnterResult} onMove={props.onMove} />
+            <MatchBoard matches={matches} highlight={highlight} showClass={false} onEnterResult={props.onEnterResult} />
           ) : (
             matches.map((m) => (
               <MatchCard
@@ -438,7 +419,6 @@ function ClassBlock(props: {
                 canEnterResult={m.canEnterResult}
                 awaitingConfirmation={m.awaitingConfirmation}
                 onEnterResult={() => props.onEnterResult(m)}
-                onMove={props.onMove ? () => props.onMove!(m) : undefined}
               />
             ))
           )}
