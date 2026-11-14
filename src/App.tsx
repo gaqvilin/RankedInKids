@@ -23,11 +23,14 @@ import Tournament from './pages/Tournament';
 import { AppShell } from './components/shell';
 import Leagues from './pages/Leagues';
 import { SessionProvider } from './session';
+import { useLang } from './lib/i18n';
 
 export default function App() {
+  // The key remounts every page when the language changes, so all texts are read again.
+  const lang = useLang();
   return (
     <SessionProvider>
-      <AppShell>
+      <AppShell key={lang}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/spelare/:rid" element={<Player />} />

@@ -4,6 +4,7 @@ import { AccountSwitcher } from './AccountSwitcher';
 import { InstallButton } from './InstallButton';
 import { Sheet } from './Sheet';
 import { OfflineBar } from './OfflineBar';
+import { LangSwitch } from './ui';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, type LinkProps } from 'react-router-dom';
 import { onLoadingChange } from '../lib/api';
@@ -179,6 +180,7 @@ function Sidebar({ onHide }: { onHide: () => void }) {
             </span>
           </NavLink>
         </nav>
+        <LangSwitch />
         <ReleasesLink className="sidebar__releases small" />
       </div>
     </aside>
@@ -260,6 +262,9 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
             <strong>Ge feedback</strong>
           </button>
         </nav>
+        <p className="center">
+          <LangSwitch />
+        </p>
         <p className="center">
           <InstallButton />
         </p>

@@ -1,4 +1,5 @@
 import { Logo } from './Logo';
+import { setLang, t, useLang } from '../lib/i18n';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { From } from './shell';
@@ -158,6 +159,20 @@ export function Avatar({ name, imageUrl, large }: { name: string; imageUrl?: str
   return (
     <span className={`avatar ${large ? 'avatar--large' : ''}`} aria-hidden="true">
       {imageUrl && !broken ? <img src={imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} /> : name.trim()[0]}
+    </span>
+  );
+}
+
+/** Svenska | English. The choice is remembered on the device. */
+export function LangSwitch() {
+  const lang = useLang();
+  return (
+    <span className="seg" role="group" aria-label={t('Språk')}>
+      {(['sv', 'en'] as const).map((l) => (
+        <button key={l} className={`seg__btn ${lang === l ? 'is-on' : ''}`} aria-pressed={lang === l} onClick={() => setLang(l)} lang={l}>
+          {l === 'sv' ? 'Svenska' : 'English'}
+        </button>
+      ))}
     </span>
   );
 }
