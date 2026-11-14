@@ -1,5 +1,6 @@
 // Rankedin read model: raw PascalCase payloads in, small domain types out.
 import { rin } from './api';
+import { townFromName } from './cities';
 
 export const SPORT_PADEL = 5;
 export const COUNTRY_SWEDEN = 152;
@@ -388,7 +389,7 @@ export async function getJuniorCalendar(opts: { lat?: number; lng?: number; radi
       startDate: e.StartDate,
       endDate: e.EndDate,
       address: e.Address,
-      town: townFromAddress(e.Address),
+      town: townFromAddress(e.Address) ?? townFromName(e.EventName),
       level: levelFromName(e.EventName),
       sanctioned: /SPF/i.test(e.OrganisationName || ''),
     }))
