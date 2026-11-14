@@ -9,6 +9,7 @@ import { PlayerHitRow } from '../components/PlayerHitRow';
 import { isTournamentAdmin } from '../lib/clubs';
 import { ResultSheet } from '../components/ResultSheet';
 import { MatchBoard } from '../components/MatchBoard';
+import { matchStatus } from '../lib/matchStatus';
 import { MoveSheet } from '../components/MoveSheet';
 import { Go } from '../components/shell';
 import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
@@ -75,6 +76,7 @@ export default function Organizer() {
   const board = useMemo(() => courtBoard(all, now), [all, now]);
   const missing = useMemo(() => missingResults(all, now), [all, now]);
   // Played matches, latest first, so a wrong result is easy to find and fix.
+  const status = useMemo(() => matchStatus(all, now.getTime()), [all, now]);
   const reported = useMemo(() => all.filter((m) => m.played).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [all]);
   const seekers = useMemo(() => (pairs.data ? partnerSeekers(pairs.data) : null), [pairs.data]);
   const noLicence = useMemo(() => (pairs.data ? unlicensed(pairs.data) : []), [pairs.data]);
@@ -190,7 +192,7 @@ export default function Organizer() {
           ) : (
             <Section title="Schema">
               <p className="muted small section-intro">Alla matcher per klockslag. Tryck Flytta för att byta tid eller bana – bara lediga banor visas.</p>
-              <MatchBoard matches={all} highlight={[]} showClass onEnterResult={setReporting} onMove={user.loggedIn ? setMoving : undefined} />
+              <MatchBoard matches={all} highlight={[]} showClass onEnterResult={setReporting} onMove={user.loggedIn ? setMoving : undefined} status={status} />
             </Section>
           ))}
 
@@ -213,6 +215,7 @@ export default function Organizer() {
                     date={m.date}
                     court={m.court}
                     label={`${m.className}${m.draw ? ` · ${m.draw}` : ''}`}
+                    status={status.get(m.id) ?? null}
                     canEnterResult={m.canEnterResult}
                     onEnterResult={() => setReporting(m)}
                     from="Tävlingsledning"

@@ -14,6 +14,10 @@ type Props = {
   playoff?: string;
   highlightIds?: number[];
   showDay?: boolean;
+  /** The time is shown elsewhere (board column): hide it on the card. */
+  hideTime?: boolean;
+  /** From matchStatus() when the page knows all matches (players/court busy in an earlier match = waiting). Left out: the card decides from its own time. */
+  status?: 'live' | 'waiting' | null;
   refereeCode?: string | null;
   canEnterResult?: boolean;
   awaitingConfirmation?: boolean;
@@ -28,11 +32,11 @@ type Props = {
 
 export function MatchCard(p: Props) {
   const mine = (s: Side) => !!p.highlightIds?.some((id) => s.ids.includes(id));
-  const when = p.showDay ? fmtDayTime(p.date) : fmtTime(p.date);
+  const when = p.hideTime ? '' : p.showDay ? fmtDayTime(p.date) : fmtTime(p.date);
   const isMine = p.sides.some(mine);
   // "Pågår nu": started within the last 90 minutes and no result yet.
   const start = p.date ? Date.parse(p.date) : NaN;
-  const live = !p.played && Number.isFinite(start) && Date.now() >= start && Date.now() < start + 90 * 60_000;
+  const live = p.status !== undefined ? p.status === 'live' : !p.played && Number.isFinite(start) && Date.now() >= start && Date.now() < start + 90 * 60_000;
   const won = isMine && p.played ? p.sides.some((s) => mine(s) && s.isWinner) : null;
   return (
     <article className={`match ${isMine ? 'match--mine' : ''} ${live ? 'match--live' : ''} ${p.played ? 'match--played' : ''}`}>
@@ -44,6 +48,11 @@ export function MatchCard(p: Props) {
           <span className="pill pill--live">
             <span className="live-dot" aria-hidden="true" />
             Pågår nu
+          </span>
+        )}
+        {p.status === 'waiting' && (
+          <span className="pill pill--loss">
+            <Tip tip="Spelare eller bana är upptagna i en tidigare match som inte har resultat än.">Väntar på förra matchen</Tip>
           </span>
         )}
         {won !== null && <span className={`pill ${won ? 'pill--win' : 'pill--loss'}`}>{won ? 'Vinst' : 'Förlust'}</span>}
