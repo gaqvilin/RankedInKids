@@ -2666,3 +2666,25 @@ button.tabbar__link {
   background: var(--accent-soft);
   border-color: transparent;
 }
+
+/* Board cards: always the same two rows – court and class first, then the marks (playoff, live, waiting). */
+.board .match__meta > * {
+  order: 4;
+}
+.board .match__meta > .pill:not([class*='pill--']) {
+  order: 1;
+}
+.board .match__meta > .match__label {
+  order: 2;
+  flex: 1 1 110px; /* next to the court when it fits, else on its own row – never cut to "Po…" */
+}
+.board .match__meta::after {
+  content: '';
+  order: 3;
+  flex-basis: 100%;
+  height: 0;
+  margin-top: -8px; /* the row gap is enough when there are no marks */
+}
+.board .match__meta {
+  row-gap: 4px;
+}
