@@ -132,7 +132,17 @@ export function PairingPanel({ tournamentId, classId, className, onChanged }: { 
 }
 
 /** Find a partner who is not entered in the class yet. */
-export function OutsidePartner({ onPick, exclude, disabled }: { onPick: (h: PlayerHit) => void; exclude: number[]; disabled: boolean }) {
+export function OutsidePartner({
+  onPick,
+  exclude,
+  disabled,
+  label = 'Partnern är inte anmäld? Sök på namn:',
+}: {
+  onPick: (h: PlayerHit) => void;
+  exclude: number[];
+  disabled: boolean;
+  label?: string;
+}) {
   const [term, setTerm] = useState('');
   const [hits, setHits] = useState<PlayerHit[] | null>(null);
   useEffect(() => {
@@ -153,7 +163,7 @@ export function OutsidePartner({ onPick, exclude, disabled }: { onPick: (h: Play
   return (
     <div className="outside-partner">
       <label className="field">
-        <span className="small">Partnern är inte anmäld? Sök på namn:</span>
+        <span className="small">{label}</span>
         <input className="input" type="search" value={term} onChange={(e) => setTerm(e.target.value)} placeholder="t.ex. Eric FalkBoman" autoComplete="off" />
       </label>
       {hits && hits.length === 0 && <p className="small muted">Ingen träff.</p>}

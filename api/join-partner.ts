@@ -2,8 +2,49 @@
 // "Lägg till partner" (addPartnerAfterJoin → tournament/JoinDoublePartnerAsync),
 // done with the player's own login. No organiser rights needed.
 // POST /api/join-partner { tournamentId, classId, partnerId }
+//
+// The same function also handles entering a class (kept here to stay within the function limit):
+// GET  /api/join-partner?tournamentId                                  -> which classes the player can enter
+// POST /api/join-partner { action: 'join', tournamentId, classId, partnerId|null }  (see _lib/join.ts)
 import { RIN_API, getSessionCookie, isSameOriginJson, json, rinHeaders } from './_lib/rankedin.js';
 import { clientIp, memoryLimit, tooMany } from './_lib/ratelimit.js';
+import { JoinError, joinDoubles, loadOptions } from './_lib/join.js';
+import type { Call } from './_lib/pairing.js';
+
+const callWith =
+  (session: string): Call =>
+  async (method, path, body) => {
+    const res = await fetch(`${RIN_API}/${path}`, {
+      method,
+      headers: rinHeaders(session, method === 'POST'),
+      body: method === 'POST' ? JSON.stringify(body ?? {}) : undefined,
+    });
+    const text = await res.text();
+    let data: unknown = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
+    }
+    return { ok: res.ok, status: res.status, data };
+  };
+
+function joinFail(e: unknown): Response {
+  if (e instanceof JoinError) return json({ error: e.code, message: e.message, ...e.extra }, e.code === 'not_logged_in' ? 401 : e.code === 'upstream' ? 502 : 409);
+  return json({ error: 'upstream', message: 'Kunde inte nå Rankedin just nu.' }, 502);
+}
+
+export async function GET(request: Request): Promise<Response> {
+  const session = getSessionCookie(request);
+  if (!session) return json({ error: 'not_logged_in', message: 'Logga in med spelarens konto först.' }, 401);
+  const t = Number(new URL(request.url).searchParams.get('tournamentId'));
+  if (!Number.isInteger(t) || t <= 0) return json({ error: 'bad_request' }, 400);
+  try {
+    return json(await loadOptions(callWith(session), t));
+  } catch (e) {
+    return joinFail(e);
+  }
+}
 
 const STATUS: Record<number, string> = {
   1: 'Sista anmälningsdag har passerat.',
@@ -25,6 +66,16 @@ export async function POST(request: Request): Promise<Response> {
     b = await request.json();
   } catch {
     return json({ error: 'bad_request' }, 400);
+  }
+  if (b.action === 'join') {
+    const [tid, cid] = [b.tournamentId, b.classId].map(Number);
+    const pid = b.partnerId === null || b.partnerId === undefined ? null : Number(b.partnerId);
+    if (![tid, cid].every((n) => Number.isInteger(n) && n > 0) || (pid !== null && !(Number.isInteger(pid) && pid > 0))) return json({ error: 'bad_request' }, 400);
+    try {
+      return json(await joinDoubles(callWith(session), tid, cid, pid));
+    } catch (e) {
+      return joinFail(e);
+    }
   }
   const [tournamentId, classId, partnerId] = [b.tournamentId, b.classId, b.partnerId].map(Number);
   if (![tournamentId, classId, partnerId].every((n) => Number.isInteger(n) && n > 0)) return json({ error: 'bad_request' }, 400);

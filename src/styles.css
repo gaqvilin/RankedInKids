@@ -2763,4 +2763,10 @@ button.tabbar__link {
 }
 .page-title__who > div {
   min-width: 0;
+.item--button.is-on {
+  background: var(--accent-soft);
+}
+.item--button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }

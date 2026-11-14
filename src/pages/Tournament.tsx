@@ -3,6 +3,8 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { DrawGroups } from '../components/DrawGroups';
 import { matchStatus, type MatchStatus } from '../lib/matchStatus';
+import { JoinSheet } from '../components/JoinSheet';
+import { Sheet } from '../components/Sheet';
 import { MatchBoard, MatchViewToggle, useMatchView, type MatchView } from '../components/MatchBoard';
 import { AccountSwitcher } from '../components/AccountSwitcher';
 import { OutsidePartner } from '../components/PairingPanel';
@@ -51,6 +53,7 @@ export default function Tournament() {
   const [reporting, setReporting] = useState<TournamentMatch | null>(null);
   const [onlyToReport, setOnlyToReport] = useState(false);
   const [view, setView] = useMatchView();
+  const [joining, setJoining] = useState(false);
 
   const myClass = useMemo(() => {
     if (!playerId || !matches.data) return null;
@@ -163,6 +166,11 @@ export default function Tournament() {
               </strong>
             </p>
           )}
+          {t.signInOpen && (
+            <button className="btn btn--primary btn--small" onClick={() => setJoining(true)}>
+              Anmäl
+            </button>
+          )}{' '}
           {isOrganiser.data && (
             <Go className="btn btn--primary btn--small" to={`/tavling/${tid}/ledning`} from={t.name}>
               Tävlingsledning
@@ -360,6 +368,29 @@ export default function Tournament() {
           )
         )}
       </Page>
+
+      {joining &&
+        (user.loggedIn ? (
+          <JoinSheet
+            tournamentId={tid}
+            tournamentName={t.name}
+            rankedinUrl={rinUrl(t.url)}
+            fees={details.data?.fees ?? []}
+            onClose={() => setJoining(false)}
+            onDone={() => pairs.reload()}
+          />
+        ) : (
+          <Sheet label="Anmäl" onClose={() => setJoining(false)}>
+            <h2>Anmäl till tävlingen</h2>
+            <p>Anmälan görs med spelarens eget Rankedin-konto. Logga in med det först.</p>
+            <Go className="btn btn--primary btn--block" to="/konto" from={t.name}>
+              Logga in
+            </Go>
+            <button className="btn btn--ghost btn--block" onClick={() => setJoining(false)}>
+              Avbryt
+            </button>
+          </Sheet>
+        ))}
 
       {reporting && (
         <ResultSheet

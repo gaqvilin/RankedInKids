@@ -11,6 +11,7 @@ export const RELEASES: Release[] = [
     items: [
       'Spelarsidan visar spelarens profilbild från Rankedin (eller initialen om bild saknas).',
       'Slutresultat: när slutspelet rapporteras visas placeringarna 1–8 i en egen ruta ovanför Slutspel.',
+      'Anmäl till en tävling direkt i PadelAdmin: tryck Anmäl på tävlingen, välj klass och partner (eller "söker partner") och bekräfta. Betalning och avanmälan görs i Rankedin.',
       'Tävlingslistan visar ort även när Rankedin saknar adress – orten hämtas då från tävlingens namn (t.ex. "… SKURUP").',
       '"Pågår nu" syns även på tavlan, och bara på matcher som kan ha börjat: om spelarna eller banan fortfarande är upptagna i en tidigare match utan resultat står det "Väntar på förra matchen".',
       'Slutspelet syns i matchlistan och på tavlan direkt, med tid och bana, även innan paren är klara ("1:a grupp B").',
