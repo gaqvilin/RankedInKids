@@ -70,6 +70,8 @@ export default function Organizer() {
 
   const board = useMemo(() => courtBoard(all, now), [all, now]);
   const missing = useMemo(() => missingResults(all, now), [all, now]);
+  // Played matches, latest first, so a wrong result is easy to find and fix.
+  const reported = useMemo(() => all.filter((m) => m.played).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [all]);
   const seekers = useMemo(() => (pairs.data ? partnerSeekers(pairs.data) : null), [pairs.data]);
   const noLicence = useMemo(() => (pairs.data ? unlicensed(pairs.data) : []), [pairs.data]);
 
@@ -203,6 +205,29 @@ export default function Organizer() {
                   />
                 ))}
               </div>
+              {reported.length > 0 && (
+                <details className="fold fold--quiet" open={missing.length === 0}>
+                  <summary>Rapporterade ({reported.length}) – ändra eller ta bort</summary>
+                  <div className="stack">
+                    {reported.map((m) => (
+                      <MatchCard
+                        key={m.id}
+                        sides={m.sides}
+                        sets={m.sets}
+                        played={m.played}
+                        date={m.date}
+                        court={m.court}
+                        label={`${m.className}${m.draw ? ` · ${m.draw}` : ''}`}
+                        awaitingConfirmation={m.awaitingConfirmation}
+                        // Rankedin hides its button on played matches; as organiser you may still change them, and Rankedin decides on send.
+                        canEnterResult={user.loggedIn}
+                        onEnterResult={() => setReporting(m)}
+                        from="Tävlingsledning"
+                      />
+                    ))}
+                  </div>
+                </details>
+              )}
             </Section>
           ))}
 

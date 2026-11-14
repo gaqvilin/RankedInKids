@@ -9,7 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
-      'Fel resultat? Öppna Ändra resultat och tryck Ta bort resultatet – matchen blir ospelad i Rankedin igen.',
+      'Fel resultat? Tävlingsledning → Resultat → Rapporterade: tryck Ändra resultat på matchen, rätta eller tryck Ta bort resultatet – matchen blir ospelad i Rankedin igen.',
       'Matcherna kan visas som en tavla: en kolumn per klockslag med banorna under och hur många som är spelade. Växla mellan Lista och Tavla vid rubriken Matcher – valet sparas.',
       'Förklaringar i tabellerna: håll över eller tryck på S, V, F, +/- och P (och A1, B1 i slutspelet, "Väntar på bekräftelse" och "Licens saknas") för att se vad de betyder. En rad under Grupper säger hur gruppen avgör slutspelet.',
       'Resultat: välj 1 set, 2 set eller bäst av 3 – valet sparas till nästa match. Rankedin kräver en vinnare, så vid 1–1 skrivs supertiebreaket som ett tredje set.',
