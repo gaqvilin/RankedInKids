@@ -644,7 +644,18 @@ export async function getLeagueRegulations(id: number): Promise<string[]> {
 
 export type DrawPair = { index: number; names: string[]; ids: number[] };
 export type DrawCell = { matchId: number; challengeId: number; date: string | null; court: string | null; played: boolean };
-export type DrawStanding = { position: number; names: string[]; ids: number[]; played: number; wins: number; losses: number; points: number; gamesWon: number; gamesLost: number };
+export type DrawStanding = {
+  position: number;
+  names: string[];
+  ids: number[];
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  points: number;
+  gamesWon: number;
+  gamesLost: number;
+};
 /** cells is a plain object ("row-col" → cell), not a Map, so it survives the device cache (JSON). */
 export type DrawGroup = { name: string; pairs: DrawPair[]; cells: Record<string, DrawCell>; standings: DrawStanding[] };
 
@@ -662,6 +673,7 @@ export async function getClassDraws(classId: number, fresh = false): Promise<Dra
     Standing: number;
     Played: number;
     Wins: number;
+    Draws?: number;
     Losses: number;
     MatchPoints: number;
     GamesWon: number;
@@ -693,7 +705,7 @@ export async function getClassDraws(classId: number, fresh = false): Promise<Dra
       });
       const standings = (rr.Standings || []).map((s) => {
         const ps = players([s.DoublesPlayer1Model, s.DoublesPlayer2Model]);
-        return { position: s.Standing, names: ps.map((p) => p.Name), ids: ps.map((p) => p.Id), played: s.Played, wins: s.Wins, losses: s.Losses, points: s.MatchPoints, gamesWon: s.GamesWon, gamesLost: s.GamesLost };
+        return { position: s.Standing, names: ps.map((p) => p.Name), ids: ps.map((p) => p.Id), played: s.Played, wins: s.Wins, draws: s.Draws ?? 0, losses: s.Losses, points: s.MatchPoints, gamesWon: s.GamesWon, gamesLost: s.GamesLost };
       });
       return { name: rr.Name.replace(/^Group\b/i, 'Grupp'), pairs, cells, standings };
     })

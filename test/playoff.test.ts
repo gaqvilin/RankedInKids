@@ -9,6 +9,7 @@ const row = (position: number, ids: number[], played: number, names = ids.map((i
   ids,
   played,
   wins: 0,
+  draws: 0,
   losses: 0,
   points: 0,
   gamesWon: 0,

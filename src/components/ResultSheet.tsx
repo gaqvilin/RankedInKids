@@ -15,14 +15,33 @@ type Props = {
 };
 
 const PRESETS: { label: string; sets: number }[] = [
-  { label: '1 set / supertiebreak', sets: 1 },
+  { label: '1 set', sets: 1 },
+  { label: '2 set', sets: 2 },
   { label: 'Bäst av 3', sets: 3 },
 ];
+
+// The organiser enters many results in a row in the same format: remember the last choice on this device.
+const FORMAT_KEY = 'padeladmin.resultSets';
+function savedSets(): number {
+  try {
+    const n = Number(localStorage.getItem(FORMAT_KEY));
+    return PRESETS.some((p) => p.sets === n) ? n : 1;
+  } catch {
+    return 1;
+  }
+}
+function saveSets(n: number) {
+  try {
+    localStorage.setItem(FORMAT_KEY, String(n));
+  } catch {
+    /* private mode */
+  }
+}
 
 export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Props) {
   const { user } = useSession();
   const [sets, setSets] = useState<(string | number)[][]>(
-    initial && initial.length ? initial.map((s) => [s[0], s[1]]) : [['', '']],
+    initial && initial.length ? initial.map((s) => [s[0], s[1]]) : Array.from({ length: savedSets() }, () => ['', '']),
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +96,10 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
                 <button
                   key={p.sets}
                   className={`chip ${sets.length === p.sets ? 'chip--on' : ''}`}
-                  onClick={() => setSets(Array.from({ length: p.sets }, (_, i) => sets[i] ?? ['', '']))}
+                  onClick={() => {
+                    saveSets(p.sets);
+                    setSets(Array.from({ length: p.sets }, (_, i) => sets[i] ?? ['', '']));
+                  }}
                 >
                   {p.label}
                 </button>
@@ -127,7 +149,15 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
             {parsed.length > 0 && validation && <p className="field-error">{validation}</p>}
             {summary && (
               <p className="result-summary">
-                Vinnare: <strong>{(summary.p1 > summary.p2 ? sides[0] : sides[1]).names.join(' / ')}</strong> ({summary.p1}–{summary.p2} i set)
+                {summary.p1 === summary.p2 ? (
+                  <>
+                    <strong>Oavgjort</strong> ({summary.p1}–{summary.p2} i set)
+                  </>
+                ) : (
+                  <>
+                    Vinnare: <strong>{(summary.p1 > summary.p2 ? sides[0] : sides[1]).names.join(' / ')}</strong> ({summary.p1}–{summary.p2} i set)
+                  </>
+                )}
               </p>
             )}
             {error && <p className="field-error">{error}</p>}

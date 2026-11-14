@@ -9,6 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Resultat: välj 1 set, 2 set eller bäst av 3 – valet sparas till nästa match. Med 2 set kan matchen sluta oavgjort (1–1), och tabellen visar oavgjorda (O).',
       'Grupperna ser ut som ett gruppspel i fotboll: tabell (S V F +/- P) och gruppens matcher med tid, bana och resultat. Slutspelet visas under, och "1:a grupp A" fylls i med paret som leder gruppen just nu.',
       'Utskrifterna är kortare: klassen står utan nivån när tävlingens namn redan säger den ("Pojkar 12"), och gruppen bara när klassen har flera. Marginaler runt utskriften i alla webbläsare.',
       'Rättat: utskriftssidan (schema, deltagarlista, banlistor och QR) kunde sluta reagera i mobilen efter en utskrift.',
