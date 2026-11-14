@@ -2392,3 +2392,12 @@ button.tabbar__link {
   font-size: 14px;
   padding: 8px 10px;
 }
+.reset-confirm {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+.reset-confirm p {
+  margin: 0 0 8px;
+}

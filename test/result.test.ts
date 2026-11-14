@@ -45,3 +45,24 @@ describe('buildSubmitPayload', () => {
     expect([p.participant1ID, p.participant2ID, p.currPlayerId]).toEqual([5, 6, 9]);
   });
 });
+
+import { buildResetPayload } from '../api/_lib/result';
+
+describe('buildResetPayload', () => {
+  it('mirrors Rankedin reset: reset true, empty score, current player kept', () => {
+    expect(buildResetPayload(7064231, { CurrentPlayerId: 42 })).toEqual({
+      challengeId: 7064231,
+      participant1CancellationType: 0,
+      participant2CancellationType: 0,
+      reset: true,
+      participant1Score: 0,
+      participant2Score: 0,
+      participant1Games: '',
+      participant2Games: '',
+      setDuration: '',
+      duration: false,
+      games: false,
+      currPlayerId: 42,
+    });
+  });
+});
