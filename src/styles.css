@@ -2214,3 +2214,13 @@ button.tabbar__link {
 .draw-group {
   min-width: 0; /* let the tables scroll inside instead of widening the page */
 }
+
+.draw-grid__col {
+  font-weight: 600;
+  line-height: 1.25;
+  vertical-align: bottom;
+}
+.draw-grid__col.is-mine,
+.draw-grid tr.is-mine th {
+  color: var(--text);
+}

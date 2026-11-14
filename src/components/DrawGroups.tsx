@@ -78,8 +78,12 @@ function Group({ g, matches, highlight }: { g: DrawGroup; matches: TournamentMat
               <tr>
                 <th />
                 {g.pairs.map((p) => (
-                  <th key={p.index} title={p.names.join(' / ')}>
-                    {p.index}
+                  <th key={p.index} title={p.names.join(' / ')} className={`draw-grid__col ${mine(p.ids) ? 'is-mine' : ''}`}>
+                    {p.names.map((n) => (
+                      <span key={n} className="block">
+                        {n.split(' ')[0]}
+                      </span>
+                    ))}
                   </th>
                 ))}
               </tr>
@@ -88,7 +92,7 @@ function Group({ g, matches, highlight }: { g: DrawGroup; matches: TournamentMat
               {g.pairs.map((row, r) => (
                 <tr key={row.index} className={mine(row.ids) ? 'is-mine' : ''}>
                   <th className="draw-grid__name">
-                    {row.index}. {short(row.names)}
+                    {short(row.names)}
                   </th>
                   {g.pairs.map((col, c) => {
                     if (r === c) return <td key={col.index} className="draw-grid__self" />;
