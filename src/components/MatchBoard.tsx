@@ -57,11 +57,13 @@ export function MatchBoard({
   highlight,
   showClass,
   onEnterResult,
+  onMove,
 }: {
   matches: TournamentMatch[];
   highlight: number[];
   showClass: boolean;
   onEnterResult: (m: TournamentMatch) => void;
+  onMove?: (m: TournamentMatch) => void;
 }) {
   return (
     <div className="board">
@@ -88,6 +90,7 @@ export function MatchBoard({
                 canEnterResult={m.canEnterResult}
                 awaitingConfirmation={m.awaitingConfirmation}
                 onEnterResult={() => onEnterResult(m)}
+                onMove={onMove ? () => onMove(m) : undefined}
               />
             ))}
           </section>

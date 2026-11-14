@@ -47,3 +47,16 @@ export async function drawAction(tournamentId: number, action: string, extra: Re
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new DrawApiError(data.error ?? 'error', data.message ?? 'Något gick fel.');
 }
+
+/** Rankedin's court planner for the play day: courts, slots ("10:00") and which court/time cells are taken. */
+export type Planner = { date: string; slots: string[]; courts: { id: number; name: string }[]; busy: { courtId: number; time: string; challengeId: number }[] };
+
+export async function getPlanner(tournamentId: number): Promise<Planner> {
+  const res = await fetch(`/api/draws?tournamentId=${tournamentId}&planner=1`, { credentials: 'same-origin', headers: accountHeaders() });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new DrawApiError(data.error ?? 'error', data.message ?? 'Kunde inte hämta banplaneringen från Rankedin.');
+  return data as Planner;
+}
+
+export const moveMatch = (tournamentId: number, challengeId: number, courtId: number, time: string) =>
+  drawAction(tournamentId, 'moveMatch', { challengeId, courtId, time });

@@ -1,5 +1,6 @@
 // Organiser: draw, courts, times, schedule and publish for a tournament.
 // GET  /api/draws?tournamentId              -> status per class and for the tournament
+// GET  /api/draws?tournamentId&planner=1    -> courts, slots and taken cells (court planner)
 // POST /api/draws { action, tournamentId, classId?, ... } -> one step (see _lib/draws.ts)
 import { RIN_API, getSessionCookie, isSameOriginJson, json, rinHeaders } from './_lib/rankedin.js';
 import type { Call } from './_lib/pairing.js';
@@ -37,6 +38,7 @@ export async function GET(request: Request): Promise<Response> {
   const t = Number(new URL(request.url).searchParams.get('tournamentId'));
   if (!pos(t)) return json({ error: 'bad_request' }, 400);
   try {
+    if (new URL(request.url).searchParams.get('planner') === '1') return json(await D.loadPlanner(callWith(session), t));
     return json(await D.loadStatus(callWith(session), t));
   } catch (e) {
     return fail(e);
@@ -97,6 +99,12 @@ export async function POST(request: Request): Promise<Response> {
       case 'unpublish':
         await D.unpublish(call, t);
         break;
+      case 'moveMatch': {
+        const time = String(b.time ?? '');
+        if (!pos(b.challengeId) || !pos(b.courtId) || !/^\d{2}:\d{2}$/.test(time)) return json({ error: 'bad_request' }, 400);
+        await D.moveMatch(call, t, Number(b.challengeId), Number(b.courtId), time);
+        break;
+      }
       default:
         return json({ error: 'bad_request' }, 400);
     }
