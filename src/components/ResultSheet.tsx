@@ -146,18 +146,19 @@ export function ResultSheet({ challengeId, sides, initial, onClose, onDone }: Pr
               )}
             </div>
             <p className="muted small">Supertiebreak skrivs som ett eget set, t.ex. 10–8.</p>
-            {parsed.length > 0 && validation && <p className="field-error">{validation}</p>}
+            {parsed.length > 0 && validation && (
+              <p className="field-error">
+                {validation}{' '}
+                {sets.length === parsed.length && sets.length < 5 && /supertiebreak/.test(validation) && (
+                  <button className="link-btn" onClick={() => setSets([...sets, ['', '']])}>
+                    Lägg till set
+                  </button>
+                )}
+              </p>
+            )}
             {summary && (
               <p className="result-summary">
-                {summary.p1 === summary.p2 ? (
-                  <>
-                    <strong>Oavgjort</strong> ({summary.p1}–{summary.p2} i set)
-                  </>
-                ) : (
-                  <>
-                    Vinnare: <strong>{(summary.p1 > summary.p2 ? sides[0] : sides[1]).names.join(' / ')}</strong> ({summary.p1}–{summary.p2} i set)
-                  </>
-                )}
+                Vinnare: <strong>{(summary.p1 > summary.p2 ? sides[0] : sides[1]).names.join(' / ')}</strong> ({summary.p1}–{summary.p2} i set)
               </p>
             )}
             {error && <p className="field-error">{error}</p>}

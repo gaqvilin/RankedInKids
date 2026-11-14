@@ -52,7 +52,6 @@ function Group({ g, matches, mine }: { g: DrawGroup; matches: TournamentMatch[];
               <th>Par</th>
               <th title="Spelade">S</th>
               <th title="Vunna">V</th>
-              <th title="Oavgjorda">O</th>
               <th title="Förlorade">F</th>
               <th title="Game-skillnad">+/-</th>
               <th title="Poäng">P</th>
@@ -70,7 +69,6 @@ function Group({ g, matches, mine }: { g: DrawGroup; matches: TournamentMatch[];
                   </td>
                   <td>{s.played}</td>
                   <td>{s.wins}</td>
-                  <td>{s.draws}</td>
                   <td>{s.losses}</td>
                   <td>{diff > 0 ? `+${diff}` : diff}</td>
                   <td>
