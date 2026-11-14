@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
+import { DrawGroups } from '../components/DrawGroups';
 import { AccountSwitcher } from '../components/AccountSwitcher';
 import { OutsidePartner } from '../components/PairingPanel';
 import { addMyPartner } from '../lib/pairing';
@@ -19,7 +20,6 @@ import {
   type Pair,
   type TournamentMatch,
 } from '../lib/rankedin';
-import { standings } from '../lib/standings';
 import { useAsync } from '../lib/useAsync';
 import { useSession } from '../session';
 
@@ -209,6 +209,7 @@ export default function Tournament() {
         )}
 
         {showMine ? (
+          <>
           <Section title="Mina matcher" action={<RefreshButton onClick={() => matches.reload()} loading={matches.loading} />}>
             {mine.map((m) => (
               <MatchCard
@@ -226,6 +227,19 @@ export default function Tournament() {
               />
             ))}
           </Section>
+          {(() => {
+            const cls = classes.data?.find((c) => c.name === myClass);
+            const clsMatches = all.filter((m) => m.className === myClass);
+            return cls ? (
+              <DrawGroups
+                classId={cls.id}
+                matches={clsMatches}
+                highlight={highlight}
+                refreshKey={`${clsMatches.length}-${clsMatches.filter((m) => m.played).length}`}
+              />
+            ) : null;
+          })()}
+          </>
         ) : (
           matches.data && (
             <>
@@ -309,7 +323,6 @@ function ClassBlock(props: {
   action?: ReactNode;
 }) {
   const { matches, pairs, highlight } = props;
-  const table = standings(matches);
   const isMine = (ids: number[]) => highlight.some((h) => ids.includes(h));
   const drawn = matches.length > 0;
   const pairsSection = (
@@ -375,38 +388,13 @@ function ClassBlock(props: {
         </Section>
       )}
 
-      {table.length > 1 && (
-        <Section title="Tabell">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Par</th>
-                <th title="Matcher">M</th>
-                <th title="Vunna">V</th>
-                <th title="Set">Set</th>
-                <th title="Game">Game</th>
-              </tr>
-            </thead>
-            <tbody>
-              {table.map((r, i) => (
-                <tr key={r.key} className={isMine(r.ids) ? 'is-mine' : ''}>
-                  <td>{i + 1}</td>
-                  <td>{r.names.join(' / ')}</td>
-                  <td>{r.played}</td>
-                  <td>{r.won}</td>
-                  <td>
-                    {r.setsFor}–{r.setsAgainst}
-                  </td>
-                  <td>
-                    {r.gamesFor}–{r.gamesAgainst}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="muted small">Uträknad från resultaten. Arrangörens tabell i Rankedin gäller.</p>
-        </Section>
+      {drawn && (
+        <DrawGroups
+          classId={props.classId}
+          matches={matches}
+          highlight={highlight}
+          refreshKey={`${matches.length}-${matches.filter((m) => m.played).length}`}
+        />
       )}
 
       {drawn && pairsSection}
