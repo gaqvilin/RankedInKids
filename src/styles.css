@@ -2661,3 +2661,8 @@ button.tabbar__link {
     transition: none;
   }
 }
+.pill--playoff {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: transparent;
+}

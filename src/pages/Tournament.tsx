@@ -105,7 +105,9 @@ export default function Tournament() {
   // Playoff matches Rankedin has scheduled but does not list yet (a pair is still "1:a grupp B"): show them with time and court.
   const listed = matches.data || [];
   const listedIds = new Set(listed.map((m) => m.id));
-  const all = [...listed, ...(playoffs.data ?? []).filter((m) => !listedIds.has(m.id))];
+  const rounds = new Map((playoffs.data ?? []).map((m) => [m.id, m.playoff]));
+  // Listed matches that belong to the playoff keep the playoff mark.
+  const all = [...listed.map((m) => (rounds.has(m.id) ? { ...m, playoff: rounds.get(m.id) } : m)), ...(playoffs.data ?? []).filter((m) => !listedIds.has(m.id))];
   const mine = playerId ? all.filter((m) => m.sides.some((s) => s.ids.includes(playerId))) : [];
   const showMine = onlyMine && mine.length > 0;
   const reportable = all.filter((m) => m.canEnterResult && !m.played);
@@ -256,6 +258,7 @@ export default function Tournament() {
                 date={m.date}
                 court={m.court}
                 label={m.className}
+                playoff={m.playoff}
                 highlightIds={highlight}
                 canEnterResult={m.canEnterResult}
                 awaitingConfirmation={m.awaitingConfirmation}
@@ -306,7 +309,8 @@ export default function Tournament() {
                         played={m.played}
                         date={m.date}
                         court={m.court}
-                        label={m.upcoming ? `${m.draw} · ${m.className}` : m.className}
+                        label={m.className}
+                        playoff={m.playoff}
                         highlightIds={highlight}
                         canEnterResult={m.canEnterResult}
                         awaitingConfirmation={m.awaitingConfirmation}
@@ -449,7 +453,7 @@ function ClassBlock(props: {
                 played={m.played}
                 date={m.date}
                 court={m.court}
-                label={m.upcoming ? m.draw : undefined}
+                playoff={m.playoff}
                 highlightIds={highlight}
                 canEnterResult={m.canEnterResult}
                 awaitingConfirmation={m.awaitingConfirmation}

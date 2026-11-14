@@ -10,6 +10,8 @@ type Props = {
   date: string | null;
   court: string | null;
   label?: string;
+  /** Playoff round ("Final", "Om plats 3–4"): the card is marked as playoff. */
+  playoff?: string;
   highlightIds?: number[];
   showDay?: boolean;
   refereeCode?: string | null;
@@ -37,6 +39,7 @@ export function MatchCard(p: Props) {
       <div className="match__meta">
         {when && <span className="match__time">{when}</span>}
         {p.court && <span className="pill">{p.court}</span>}
+        {p.playoff && <span className="pill pill--playoff">Slutspel · {p.playoff}</span>}
         {live && (
           <span className="pill pill--live">
             <span className="live-dot" aria-hidden="true" />
