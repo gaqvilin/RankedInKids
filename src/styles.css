@@ -2321,3 +2321,35 @@ button.tabbar__link {
     grid-column: 1;
   }
 }
+
+/* Abbreviation with its explanation on hover / tap. */
+.tip {
+  position: relative;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+  outline: none;
+}
+.tip:hover::after,
+.tip:focus::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  max-width: 200px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-bg);
+  color: var(--primary-text);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+}
+.section-intro {
+  margin: -4px 0 10px;
+}

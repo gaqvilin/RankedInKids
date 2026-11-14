@@ -139,3 +139,12 @@ export function RefreshButton({ onClick, loading }: { onClick: () => void; loadi
     </button>
   );
 }
+
+/** A short label with its explanation on hover, or on tap on a phone (the tip shows while focused). */
+export function Tip({ tip, children }: { tip: string; children: ReactNode }) {
+  return (
+    <abbr className="tip" data-tip={tip} tabIndex={0} aria-label={tip}>
+      {children}
+    </abbr>
+  );
+}

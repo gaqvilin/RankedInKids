@@ -2,7 +2,7 @@
 import { fmtTime } from '../lib/format';
 import { getClassDraws, getClassPlayoff, resolvePlayoffSide, type DrawGroup, type PlayoffMatch, type TournamentMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
-import { Section } from './ui';
+import { Section, Tip } from './ui';
 
 type Props = { classId: number; matches: TournamentMatch[]; highlight: number[]; refreshKey: string };
 
@@ -17,6 +17,7 @@ export function DrawGroups({ classId, matches, highlight, refreshKey }: Props) {
   return (
     <>
       <Section title={groups.length > 1 ? 'Grupper' : 'Grupp'}>
+        <p className="muted small section-intro">{groupsIntro(playoff.data)}</p>
         <div className="draw-groups">
           {groups.map((g) => (
             <Group key={g.name} g={g} matches={matches} mine={mine} />
@@ -26,6 +27,15 @@ export function DrawGroups({ classId, matches, highlight, refreshKey }: Props) {
       {Array.isArray(playoff.data) && playoff.data.length > 0 && <Playoff list={playoff.data} groups={groups} matches={matches} mine={mine} />}
     </>
   );
+}
+
+/** One line on what the group table decides. */
+function groupsIntro(playoff: PlayoffMatch[] | null | undefined): string {
+  const base = 'Alla möter alla i gruppen.';
+  if (!Array.isArray(playoff)) return base;
+  if (!playoff.length) return `${base} Tabellen är slutresultatet.`;
+  if (playoff.every((m) => m.places)) return `${base} Placeringen avgör slutspelet: ettorna spelar final, tvåorna om plats 3–4 och så vidare.`;
+  return `${base} De bästa i varje grupp går vidare till slutspelet.`;
 }
 
 function Group({ g, matches, mine }: { g: DrawGroup; matches: TournamentMatch[]; mine: (ids: number[]) => boolean }) {
@@ -50,11 +60,21 @@ function Group({ g, matches, mine }: { g: DrawGroup; matches: TournamentMatch[];
             <tr>
               <th />
               <th>Par</th>
-              <th title="Spelade">S</th>
-              <th title="Vunna">V</th>
-              <th title="Förlorade">F</th>
-              <th title="Game-skillnad">+/-</th>
-              <th title="Poäng">P</th>
+              <th>
+                <Tip tip="Spelade matcher">S</Tip>
+              </th>
+              <th>
+                <Tip tip="Vunna matcher">V</Tip>
+              </th>
+              <th>
+                <Tip tip="Förlorade matcher">F</Tip>
+              </th>
+              <th>
+                <Tip tip="Game vunna minus game förlorade">+/-</Tip>
+              </th>
+              <th>
+                <Tip tip="Poäng – det som avgör placeringen">P</Tip>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -149,7 +169,7 @@ function Playoff({ list, groups, matches, mine }: { list: PlayoffMatch[]; groups
   const provisional = rows.some((r) => r.sides.some((s) => s.provisional));
   return (
     <Section title="Slutspel">
-      {provisional && <p className="muted small playoff-note">Preliminärt – paren fylls i från grupptabellerna just nu. A1 = etta i grupp A.</p>}
+      {provisional && <p className="muted small playoff-note">Preliminärt – paren fylls i från grupptabellerna just nu (A1 = etta i grupp A).</p>}
       <div className="playoff">
         {rows.map(({ p, m, sides }) => {
           const played = !!m?.played && m.sets.length > 0;
@@ -159,7 +179,11 @@ function Playoff({ list, groups, matches, mine }: { list: PlayoffMatch[]; groups
             const won = played && !!m?.sides[i].isWinner;
             return (
               <div className={`playoff__side ${i === 0 ? 'playoff__side--left' : ''} ${won ? 'is-won' : ''} ${mine(s.ids) ? 'is-mine' : ''}`}>
-                {seed && <span className="seed">{seed}</span>}
+                {seed && (
+                  <span className="seed">
+                    <Tip tip={`${['Etta', 'Tvåa', 'Trea', 'Fyra', 'Femma', 'Sexa'][s.place! - 1] ?? `Nr ${s.place}`} i grupp ${s.group}`}>{seed}</Tip>
+                  </span>
+                )}
                 <span className={s.names.length ? '' : 'muted'}>{s.names.length ? short(s.names) : 'Ej klart'}</span>
               </div>
             );
