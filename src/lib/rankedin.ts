@@ -699,3 +699,82 @@ export async function getClassDraws(classId: number, fresh = false): Promise<Dra
     })
     .filter((g) => g.pairs.length > 0);
 }
+
+/** One side of a playoff match: real players once known, else Rankedin's placeholder ("Group A#1" → group A, place 1). */
+export type PlayoffSide = { names: string[]; ids: number[]; group: string | null; place: number | null };
+export type PlayoffMatch = {
+  matchId: number;
+  challengeId: number;
+  round: number;
+  maxRound: number;
+  order: number;
+  date: string | null;
+  court: string | null;
+  /** Places decided by the match when it's a placement draw (e.g. [3, 4]), else null. */
+  places: [number, number] | null;
+  sides: [PlayoffSide, PlayoffSide];
+};
+
+/** Rankedin's playoff (stage 1, elimination) for a class; empty when the class has only groups. */
+export async function getClassPlayoff(classId: number, fresh = false): Promise<PlayoffMatch[]> {
+  type RPl = { Id: number; Name: string | null } | null;
+  type RPart = { FirstPlayer: RPl; SecondPlayer: RPl } | null;
+  type RCell = {
+    Round: number;
+    MaxRound: number;
+    MatchOrder: number;
+    MatchId: number;
+    ChallengeId: number;
+    Date: string | null;
+    CourtName: string | null;
+    ShouldShowSchedule: boolean;
+    ChallengerParticipant: RPart;
+    ChallengedParticipant: RPart;
+  };
+  type RElim = { DrawCells: RCell[] | null; Consolation: number; PlacesStartPos: number } | null;
+  const raw = await rin<{ Elimination: RElim }[]>(
+    `tournament/GetDrawsForStageAndStrengthAsync?tournamentClassId=${classId}&drawStrength=0&drawStage=1&isReadonly=true&language=sv`,
+    fresh ? { fresh: true, auth: true } : {},
+  );
+  const side = (p: RPart): PlayoffSide => {
+    const real = [p?.FirstPlayer, p?.SecondPlayer].filter((x): x is NonNullable<RPl> => !!x && x.Id > 0 && !!x.Name);
+    if (real.length) return { names: real.map((x) => x.Name!), ids: real.map((x) => x.Id), group: null, place: null };
+    const m = /group\s+(\S+)\s*#\s*(\d+)/i.exec(p?.FirstPlayer?.Name || '');
+    return { names: [], ids: [], group: m ? m[1] : null, place: m ? Number(m[2]) : null };
+  };
+  return (raw || []).flatMap((d) => {
+    const e = d.Elimination;
+    if (!e || !Array.isArray(e.DrawCells)) return [];
+    // Placement draws ("Consolation") play every round-1 match for two places: 1–2, 3–4, …
+    const placement = !!e.Consolation && e.DrawCells.every((c) => c.MaxRound === 1);
+    const start = e.PlacesStartPos || 1;
+    return e.DrawCells.map((c) => ({
+      matchId: c.MatchId,
+      challengeId: c.ChallengeId,
+      round: c.Round,
+      maxRound: c.MaxRound,
+      order: c.MatchOrder,
+      date: c.ShouldShowSchedule ? c.Date : null,
+      court: c.CourtName,
+      places: placement ? ([start + 2 * (c.MatchOrder - 1), start + 2 * (c.MatchOrder - 1) + 1] as [number, number]) : null,
+      sides: [side(c.ChallengerParticipant), side(c.ChallengedParticipant)] as [PlayoffSide, PlayoffSide],
+    }));
+  });
+}
+
+/** Group letter from our group name ("Grupp A" → "A"). */
+export const groupLetter = (name: string) => name.replace(/^(grupp|group)\s*/i, '').trim();
+
+/** A group is decided when every pair has played everyone else. */
+export const groupDone = (g: DrawGroup) => g.standings.length > 0 && g.standings.every((s) => s.played >= g.pairs.length - 1);
+
+/** Fill a placeholder side from the group tables: decided → the pair, otherwise the current holder of that place. */
+export function resolvePlayoffSide(s: PlayoffSide, groups: DrawGroup[]): PlayoffSide & { label: string | null; provisional: boolean } {
+  if (s.names.length || !s.group || !s.place) return { ...s, label: null, provisional: false };
+  const label = `${s.place}:${s.place <= 2 ? 'a' : 'e'} grupp ${s.group}`;
+  const g = groups.find((x) => groupLetter(x.name).toUpperCase() === s.group!.toUpperCase());
+  const anyPlayed = !!g && g.standings.some((x) => x.played > 0);
+  const st = anyPlayed ? g!.standings.find((x) => x.position === s.place) : undefined;
+  if (!st) return { ...s, label, provisional: false };
+  return { ...s, names: st.names, ids: st.ids, label, provisional: !groupDone(g!) };
+}
