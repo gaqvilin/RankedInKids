@@ -163,15 +163,27 @@ export function Avatar({ name, imageUrl, large }: { name: string; imageUrl?: str
   );
 }
 
-/** Svenska | English. The choice is remembered on the device. */
-export function LangSwitch() {
+/**
+ * Svenska / English as two plain text choices – the current one in bold. `icon` adds a globe in front (sidebar).
+ * The choice is remembered on the device.
+ */
+export function LangSwitch({ icon }: { icon?: boolean }) {
   const lang = useLang();
   return (
-    <span className="seg" role="group" aria-label={t('Språk')}>
-      {(['sv', 'en'] as const).map((l) => (
-        <button key={l} className={`seg__btn ${lang === l ? 'is-on' : ''}`} aria-pressed={lang === l} onClick={() => setLang(l)} lang={l}>
-          {l === 'sv' ? 'Svenska' : 'English'}
-        </button>
+    <span className="lang" role="group" aria-label={t('Språk')}>
+      {icon && (
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" className="lang__icon">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        </svg>
+      )}
+      {(['sv', 'en'] as const).map((l, i) => (
+        <span key={l}>
+          {i > 0 && <span className="lang__sep" aria-hidden="true">/</span>}
+          <button className={`lang__opt ${lang === l ? 'is-on' : ''}`} aria-pressed={lang === l} onClick={() => setLang(l)} lang={l}>
+            {l === 'sv' ? 'Svenska' : 'English'}
+          </button>
+        </span>
       ))}
     </span>
   );

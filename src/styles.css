@@ -2800,3 +2800,44 @@ button.tabbar__link {
 .group-row__action {
   flex: none;
 }
+
+/* Language choice: two text options, the current one bold. */
+.lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.lang__icon {
+  margin-right: 10px;
+  flex: none;
+}
+.lang__opt {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--muted);
+  padding: 4px 2px;
+  cursor: pointer;
+}
+.lang__opt:hover {
+  color: var(--text);
+}
+.lang__opt.is-on {
+  color: var(--text);
+  font-weight: 650;
+  cursor: default;
+}
+.lang__sep {
+  color: var(--muted);
+  margin: 0 6px;
+}
+.sidebar__lang {
+  padding: 3px 8px; /* lines up with the sidebar links */
+  font-size: 15px;
+}
+.menu__lang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

@@ -182,7 +182,9 @@ function Sidebar({ onHide }: { onHide: () => void }) {
             </span>
           </NavLink>
         </nav>
-        <LangSwitch />
+        <div className="sidebar__lang">
+          <LangSwitch icon />
+        </div>
         <ReleasesLink className="sidebar__releases small" />
       </div>
     </aside>
@@ -260,13 +262,14 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
             <strong>{t('Nyheter')}</strong>
             {unseen && <span className="new-dot" aria-label={t('nytt')} />}
           </Link>
+          <div className="item menu__lang">
+            <strong>{t('Språk')}</strong>
+            <LangSwitch />
+          </div>
           <button type="button" className="item item--button" onClick={() => setFeedback(true)}>
             <strong>{t('Ge feedback')}</strong>
           </button>
         </nav>
-        <p className="center">
-          <LangSwitch />
-        </p>
         <p className="center">
           <InstallButton />
         </p>
