@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import { MatchCard } from '../components/MatchCard';
 import { ResultSheet } from '../components/ResultSheet';
 import { Go } from '../components/shell';
-import { AppHeader, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
+import { AppHeader, Avatar, Empty, ErrorBox, ExternalLink, Loading, Notice, Page, RefreshButton, Section } from '../components/ui';
 import { fmtDay, fmtTime, hoursUntil, relativeDays } from '../lib/format';
 import { buildAgenda, loadOverview, type LeagueTeamSummary } from '../lib/overview';
 import { Agenda } from '../components/Agenda';
@@ -113,7 +113,9 @@ export default function Player() {
       <AppHeader back="/" backLabel="Översikt" title={p.name} />
       <Page wide>
         <div className="page-title">
-          <div>
+          <div className="page-title__who">
+            <Avatar name={p.name} imageUrl={p.imageUrl} large />
+            <div>
             <h1>{p.name}</h1>
             <p className="muted">
               {p.club &&
@@ -127,12 +129,13 @@ export default function Player() {
               {[p.age && `${p.age} år`, p.doublesThisYear && `dubbel i år ${p.doublesThisYear}`]
                 .filter(Boolean)
                 .map((part, i) => (
-                  <span key={i} className="nowrap">
+                  <span key={i}>
                     {i > 0 || p.club ? ' · ' : ''}
-                    {part}
+                    <span className="nowrap">{part}</span>
                   </span>
                 ))}
             </p>
+            </div>
           </div>
           <button className={`btn btn--small ${saved ? '' : 'btn--primary'}`} onClick={toggleSave} aria-pressed={saved}>
             {saved ? 'Sparad' : 'Spara som min spelare'}

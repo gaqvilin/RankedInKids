@@ -9,6 +9,7 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'Spelarsidan visar spelarens profilbild från Rankedin (eller initialen om bild saknas).',
       'Slutresultat: när slutspelet rapporteras visas placeringarna 1–8 i en egen ruta ovanför Slutspel.',
       'Tävlingslistan visar ort även när Rankedin saknar adress – orten hämtas då från tävlingens namn (t.ex. "… SKURUP").',
       '"Pågår nu" syns även på tavlan, och bara på matcher som kan ha börjat: om spelarna eller banan fortfarande är upptagna i en tidigare match utan resultat står det "Väntar på förra matchen".',
