@@ -2401,3 +2401,45 @@ button.tabbar__link {
 .reset-confirm p {
   margin: 0 0 8px;
 }
+
+/* Hide the sidebar (desktop) and let pages use the whole screen. */
+.sidebar__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+}
+.sidebar__top .icon-btn,
+.show-sidebar {
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+}
+.sidebar__top .icon-btn:hover,
+.show-sidebar:hover {
+  color: var(--text);
+  background: var(--subtle);
+}
+.show-sidebar {
+  display: none;
+}
+@media (min-width: 960px) {
+  .shell.shell--full {
+    grid-template-columns: 1fr;
+  }
+  .shell--full .show-sidebar {
+    display: inline-flex;
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 30;
+  }
+  .shell--full .app-header__inner {
+    padding-left: 56px;
+  }
+  .shell--full .page {
+    padding-left: 56px;
+  }
+  .shell--full .page--wide {
+    max-width: none;
+  }
+}

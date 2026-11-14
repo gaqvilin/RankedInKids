@@ -16,6 +16,8 @@ type Props = {
   canEnterResult?: boolean;
   awaitingConfirmation?: boolean;
   onEnterResult?: () => void;
+  /** Organiser: move the match to another time/court. */
+  onMove?: () => void;
   /** Link to the whole team match (team leagues). */
   teamMatchPath?: string;
   /** Label for "back" on pages opened from this card. */
@@ -46,7 +48,7 @@ export function MatchCard(p: Props) {
           </div>
         ))}
       </div>
-      {(p.refereeCode || p.canEnterResult || p.awaitingConfirmation || p.teamMatchPath) && (
+      {(p.refereeCode || p.canEnterResult || p.awaitingConfirmation || p.teamMatchPath || p.onMove) && (
         <div className="match__actions">
           {p.teamMatchPath && (
             <Go className="btn btn--ghost btn--small" to={p.teamMatchPath} from={p.from ?? 'Tillbaka'}>
@@ -60,6 +62,11 @@ export function MatchCard(p: Props) {
             <Go className="btn btn--small" to={`/doma/${encodeURIComponent(p.refereeCode)}`} from={p.from ?? 'Tillbaka'}>
               Döm live
             </Go>
+          )}
+          {p.onMove && !p.played && (
+            <button className="btn btn--ghost btn--small" onClick={p.onMove}>
+              Flytta
+            </button>
           )}
           {p.canEnterResult && p.onEnterResult && (
             <button className="btn btn--small" onClick={p.onEnterResult}>

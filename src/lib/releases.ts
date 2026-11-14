@@ -9,6 +9,8 @@ export const RELEASES: Release[] = [
     date: '2026-11-08',
     title: 'Tävlingsledning för arrangörer',
     items: [
+      'På datorn kan sidomenyn döljas (knappen bredvid loggan) så att sidan, t.ex. tavlan, använder hela skärmen. Samma knapp uppe till vänster tar tillbaka menyn.',
+      'Arrangörer kan flytta en match till en annan tid och bana: tryck Flytta på matchen (lista eller tavla). Bara lediga banor visas, och spelare som redan spelar den tiden varnas för.',
       'Fel resultat? Tävlingsledning → Resultat → Rapporterade: tryck Ändra resultat på matchen, rätta eller tryck Ta bort resultatet – matchen blir ospelad i Rankedin igen.',
       'Matcherna kan visas som en tavla: en kolumn per klockslag med banorna under och hur många som är spelade. Växla mellan Lista och Tavla vid rubriken Matcher – valet sparas.',
       'Förklaringar i tabellerna: håll över eller tryck på S, V, F, +/- och P (och A1, B1 i slutspelet, "Väntar på bekräftelse" och "Licens saknas") för att se vad de betyder. En rad under Grupper säger hur gruppen avgör slutspelet.',

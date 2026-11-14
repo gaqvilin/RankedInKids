@@ -289,3 +289,86 @@ export async function unpublish(call: Call, tournamentId: number) {
   if (bool(ms, 'areMatchesPublished')) await post(call, 'tournament/PublishMatchesAsync', { tournamentId }, 'Dölja matchtiderna');
   await post(call, 'tournament/PublishTournamentDrawsAsync', { tournamentId, publish: false }, 'Dölja lottningen');
 }
+
+// ---------- Move one match (Rankedin's court planner) ----------
+// The planner (Tournament/GetCourtPlannerAsync) gives each court's play window and slot length; the usage
+// (Tournament/GetCourtUsageAsync) places every match in a cell "<courtId><MMDDHHmm>". Dropping a match on a
+// cell posts tournament/MultiMoveMatchAsync with that cell (see handleMultiDrop/scheduleMove in rankedin.com's bundle).
+
+export type PlannerCourt = { id: number; name: string };
+export type PlannerCell = { courtId: number; time: string; challengeId: number };
+export type Planner = { date: string; slots: string[]; courts: PlannerCourt[]; busy: PlannerCell[] };
+
+const day = (iso: unknown) => String(iso ?? '').slice(0, 10);
+
+async function plannerData(call: Call, tournamentId: number) {
+  const dates = list(await get(call, `Tournament/GetTimetableDatesAsync?tournamentId=${tournamentId}`));
+  const body = { tournamentId, dates };
+  const planner = await post(call, 'Tournament/GetCourtPlannerAsync', body, 'Läsa banplaneringen');
+  const usage = list(await post(call, 'Tournament/GetCourtUsageAsync', body, 'Läsa banplaneringen'));
+  const info = await get(call, `Tournament/GetTournamentTimetableInfoAsync/?tournamentId=${tournamentId}`);
+  return { dates, planner, usage, info };
+}
+
+/** Courts, the day's slots and which cells are taken – for the first play day (Step In is one day). */
+export async function loadPlanner(call: Call, tournamentId: number): Promise<Planner> {
+  const { dates, planner, usage, info } = await plannerData(call, tournamentId);
+  return toPlanner(dates, planner, usage, info);
+}
+
+export function toPlanner(dates: unknown[], planner: unknown, usage: unknown[], info: unknown): Planner {
+  const date = day(dates[0]);
+  const names = new Map(list(prop(info, 'courts')).map((c) => [Number(prop(c, 'item1')), String(prop(c, 'item2') ?? '')]));
+  const courts = list(prop(planner, 'courts')).map((c) => {
+    const id = Number(prop(c, 'courtId'));
+    return { id, name: names.get(id) || `Bana ${id}` };
+  });
+  // Slots as the planner draws them: from Start, every Duration minutes, while before End.
+  const setting = prop(list(prop(list(prop(planner, 'courts'))[0], 'dates')).find((d) => day(prop(d, 'date')) === date), 'playingDatesSetting');
+  const slots: string[] = [];
+  const [sh, sm] = hhmm(prop(setting, 'start')).split(':').map(Number);
+  const [eh, em] = hhmm(prop(setting, 'end')).split(':').map(Number);
+  const step = Number(prop(setting, 'duration')) || 0;
+  if (step > 0 && Number.isFinite(sh) && Number.isFinite(eh)) {
+    for (let t = sh * 60 + (sm || 0); t < eh * 60 + (em || 0) && slots.length < 48; t += step) {
+      slots.push(`${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`);
+    }
+  }
+  const busy = usage
+    .filter((u) => day(prop(u, 'matchDate')) === date && prop(u, 'noScheduleCourtPosition') == null)
+    .map((u) => ({ courtId: Number(prop(u, 'courtId')), time: hhmm(prop(u, 'matchDate')), challengeId: Number(prop(u, 'challengeId')) }));
+  return { date, slots, courts, busy };
+}
+
+/** The body Rankedin's planner posts when one match is dropped on a free cell. */
+export function buildMove(tournamentId: number, p: Planner, usage: unknown[], challengeId: number, courtId: number, time: string) {
+  const entry = usage.find((u) => Number(prop(u, 'challengeId')) === challengeId);
+  if (!entry) throw new DrawError('not_found', 'Matchen finns inte i banplaneringen.');
+  if (!p.courts.some((c) => c.id === courtId)) throw new DrawError('bad_target', 'Banan finns inte i tävlingen.');
+  if (!p.slots.includes(time)) throw new DrawError('bad_target', 'Tiden ligger utanför speldagens tider.');
+  const taken = p.busy.find((b) => b.courtId === courtId && b.time === time && b.challengeId !== challengeId);
+  if (taken) throw new DrawError('taken', 'Banan är upptagen den tiden.');
+  return [
+    {
+      TargetShowDate: p.date,
+      TournamentMatchId: Number(prop(entry, 'tournamentMatchId')),
+      TargetCourtId: courtId,
+      TargetDateTime: `${p.date}T${time}:00`,
+      TargetNoschedulecourtpos: 0,
+      TournamentId: tournamentId,
+    },
+  ];
+}
+
+/** Move one match to a free court and time, then read back that Rankedin has it there. */
+export async function moveMatch(call: Call, tournamentId: number, challengeId: number, courtId: number, time: string) {
+  const before = await plannerData(call, tournamentId);
+  const p = toPlanner(before.dates, before.planner, before.usage, before.info);
+  const body = buildMove(tournamentId, p, before.usage, challengeId, courtId, time);
+  await post(call, 'tournament/MultiMoveMatchAsync', body, 'Flytta matchen');
+  const after = await plannerData(call, tournamentId);
+  const now = toPlanner(after.dates, after.planner, after.usage, after.info).busy.find((b) => b.challengeId === challengeId);
+  if (!now || now.courtId !== courtId || now.time !== time) {
+    throw new DrawError('not_moved', 'Rankedin tog emot flytten men matchen ligger inte där än. Uppdatera och kontrollera.');
+  }
+}
