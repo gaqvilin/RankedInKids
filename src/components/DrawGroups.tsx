@@ -1,6 +1,6 @@
 // The class's groups like a football group stage: table, the group's matches, then the playoff filled from the tables.
 import { fmtTime } from '../lib/format';
-import { getClassDraws, getClassPlayoff, groupLetter, playoffRoundName, resolvePlayoffSide, type DrawGroup, type PlayoffMatch, type TournamentMatch } from '../lib/rankedin';
+import { finalPlacings, getClassDraws, getClassPlayoff, groupLetter, playoffRoundName, resolvePlayoffSide, type DrawGroup, type PlayoffMatch, type TournamentMatch } from '../lib/rankedin';
 import { useAsync } from '../lib/useAsync';
 import { Section, Tip } from './ui';
 
@@ -191,11 +191,34 @@ function Playoff({ list, groups, matches, mine }: { list: PlayoffMatch[]; groups
   const sorted = [...list].sort((a, b) => a.round - b.round || a.order - b.order);
   const rows = sorted.map((p) => {
     const m = matches.find((x) => x.id === p.matchId || x.id === p.challengeId);
-    const sides = p.sides.map((s) => resolvePlayoffSide(s, groups));
+    // When Rankedin lists the match, show its sides in the match's own order: the score and the winner follow that
+    // order, and the draw can list the same pairs the other way round.
+    const listed = !!m && m.sides.every((x) => x.ids.length > 0);
+    const sides = listed
+      ? m!.sides.map((x) => ({ names: x.names, ids: x.ids, group: null, place: null, label: null, provisional: false }))
+      : p.sides.map((s) => resolvePlayoffSide(s, groups));
     return { p, m, sides };
   });
   const provisional = rows.some((r) => r.sides.some((s) => s.provisional));
+  const placings = finalPlacings(list, matches);
+  const total = list.every((m) => m.places) ? list.length * 2 : 0;
   return (
+    <>
+    {placings.length > 0 && (
+      <Section title={placings.length === total ? 'Slutresultat' : 'Slutresultat hittills'}>
+        <ol className="placings">
+          {Array.from({ length: total }, (_, i) => i + 1).map((place) => {
+            const pl = placings.find((x) => x.place === place);
+            return (
+              <li key={place} className={pl && mine(pl.ids) ? 'is-mine' : ''}>
+                <span className={`rank ${place === 1 && pl ? 'rank--final' : ''}`}>{place}</span>
+                {pl ? pl.names.join(' / ') : <span className="muted">Inte avgjort</span>}
+              </li>
+            );
+          })}
+        </ol>
+      </Section>
+    )}
     <Section title="Slutspel">
       {provisional && <p className="muted small playoff-note">Preliminärt – paren fylls i från grupptabellerna just nu (A1 = etta i grupp A).</p>}
       <div className="playoff">
@@ -228,5 +251,6 @@ function Playoff({ list, groups, matches, mine }: { list: PlayoffMatch[]; groups
         })}
       </div>
     </Section>
+    </>
   );
 }

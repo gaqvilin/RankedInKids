@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getClassPlayoff, groupDone, playoffAsMatches, resolvePlayoffSide, type DrawGroup, type PlayoffSide } from '../src/lib/rankedin';
+import { finalPlacings, getClassPlayoff, groupDone, playoffAsMatches, resolvePlayoffSide, type DrawGroup, type PlayoffSide } from '../src/lib/rankedin';
 import placement from './fixtures/playoff-placement.json';
 
 const pair = (i: number, names: string[], ids: number[]) => ({ index: i, names, ids });
@@ -68,5 +68,19 @@ describe('playoffAsMatches', () => {
     expect(final).toMatchObject({ id: 7064227, draw: 'Final', court: 'Ludz', date: '2026-11-14T14:00:00', played: false, canEnterResult: false, upcoming: true });
     expect(final.sides.map((s) => s.names)).toEqual([['1:a grupp A'], ['1:a grupp B']]);
     expect(third.draw).toBe('Om plats 3–4');
+  });
+});
+
+describe('finalPlacings', () => {
+  it('winner of the final is 1st, loser 2nd; undecided matches give no place', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(placement))));
+    const list = await getClassPlayoff(178912);
+    const [final] = playoffAsMatches('P12', list);
+    const played = { ...final, played: true, sets: [[6, 3], [6, 4]] as [number, number][], sides: [{ names: ['Malte', 'Charlie'], ids: [1, 2], isWinner: false }, { names: ['Aron', 'Eric'], ids: [3, 4], isWinner: true }] as typeof final.sides };
+    expect(finalPlacings(list, [played])).toEqual([
+      { place: 1, names: ['Aron', 'Eric'], ids: [3, 4] },
+      { place: 2, names: ['Malte', 'Charlie'], ids: [1, 2] },
+    ]);
+    expect(finalPlacings(list, [final])).toEqual([]);
   });
 });

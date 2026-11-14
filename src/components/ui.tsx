@@ -1,5 +1,5 @@
 import { Logo } from './Logo';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { From } from './shell';
 import { reportError } from '../lib/errors';
@@ -149,5 +149,15 @@ export function Tip({ tip, children }: { tip: string; children: ReactNode }) {
     <abbr className="tip" data-tip={tip} tabIndex={0} aria-label={tip}>
       {children}
     </abbr>
+  );
+}
+
+/** A player's profile picture from Rankedin, or the initial when they have none (or it cannot be loaded). */
+export function Avatar({ name, imageUrl, large }: { name: string; imageUrl?: string | null; large?: boolean }) {
+  const [broken, setBroken] = useState(false);
+  return (
+    <span className={`avatar ${large ? 'avatar--large' : ''}`} aria-hidden="true">
+      {imageUrl && !broken ? <img src={imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} /> : name.trim()[0]}
+    </span>
   );
 }

@@ -812,6 +812,25 @@ export function playoffAsMatches(className: string, list: PlayoffMatch[]): Tourn
   }));
 }
 
+export type Placing = { place: number; names: string[]; ids: number[] };
+
+/**
+ * Final placings from a placement playoff: the winner of "Om plats 3–4" is 3rd, the loser 4th.
+ * Only places whose match has a result are returned; [] when the playoff is not a placement playoff.
+ */
+export function finalPlacings(list: PlayoffMatch[], matches: TournamentMatch[]): Placing[] {
+  if (!list.length || !list.every((m) => m.places)) return [];
+  const out: Placing[] = [];
+  for (const p of list) {
+    const m = matches.find((x) => x.id === p.challengeId || x.id === p.matchId);
+    if (!m || !m.played || !m.sides.some((s) => s.isWinner)) continue;
+    const winner = m.sides.find((s) => s.isWinner)!;
+    const loser = m.sides.find((s) => !s.isWinner)!;
+    out.push({ place: p.places![0], names: winner.names, ids: winner.ids }, { place: p.places![1], names: loser.names, ids: loser.ids });
+  }
+  return out.sort((a, b) => a.place - b.place);
+}
+
 /** Group letter from our group name ("Grupp A" → "A"). */
 export const groupLetter = (name: string) => name.replace(/^(grupp|group)\s*/i, '').trim();
 
